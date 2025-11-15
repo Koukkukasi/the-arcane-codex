@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills & Abilities System - The Arcane Codex</title>
+    <link rel="stylesheet" href="css/design-system/00-tokens.css">
+    <link rel="stylesheet" href="css/design-system/03-animations.css">
+    <link rel="stylesheet" href="skills_abilities_system.css">
+</head>
+<body>
+    <!-- Main Game Container -->
+    <div class="game-container">
+
+        <!-- Top HUD - Always Visible -->
+        <div class="hud-top">
+            <div class="hud-player-info">
+                <div class="player-avatar"></div>
+                <div class="player-stats">
+                    <div class="player-name">Aric Stormwind</div>
+                    <div class="player-level">Level 12 Battle Mage</div>
+                </div>
+            </div>
+
+            <div class="hud-resources">
+                <div class="resource-bar health">
+                    <div class="resource-label">HP</div>
+                    <div class="resource-progress-container">
+                        <div class="resource-progress" style="width: 78%"></div>
+                        <div class="resource-text">780/1000</div>
+                    </div>
+                </div>
+                <div class="resource-bar mana">
+                    <div class="resource-label">MP</div>
+                    <div class="resource-progress-container">
+                        <div class="resource-progress" style="width: 45%"></div>
+                        <div class="resource-text">225/500</div>
+                    </div>
+                </div>
+                <div class="resource-bar stamina">
+                    <div class="resource-label">SP</div>
+                    <div class="resource-progress-container">
+                        <div class="resource-progress" style="width: 92%"></div>
+                        <div class="resource-text">92/100</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-open-skills" aria-label="Open Skills Panel">
+                Skills & Abilities
+            </button>
+        </div>
+
+        <!-- Action Bar - Always Visible at Bottom -->
+        <div class="action-bar">
+            <div class="action-bar-slots">
+                <div class="action-slot" data-hotkey="1" data-ability-id="melee-attack">
+                    <div class="ability-icon">⚔️</div>
+                    <div class="ability-hotkey">1</div>
+                    <div class="ability-cooldown-overlay" style="display: none;">
+                        <div class="cooldown-progress"></div>
+                        <div class="cooldown-text">3.2s</div>
+                    </div>
+                </div>
+
+                <div class="action-slot" data-hotkey="2" data-ability-id="fireball">
+                    <div class="ability-icon">🔥</div>
+                    <div class="ability-hotkey">2</div>
+                    <div class="ability-cooldown-overlay" style="display: none;">
+                        <div class="cooldown-progress"></div>
+                        <div class="cooldown-text">8.5s</div>
+                    </div>
+                </div>
+
+                <div class="action-slot" data-hotkey="3" data-ability-id="shield-block">
+                    <div class="ability-icon">🛡️</div>
+                    <div class="ability-hotkey">3</div>
+                    <div class="ability-cooldown-overlay" style="display: none;">
+                        <div class="cooldown-progress"></div>
+                        <div class="cooldown-text">12s</div>
+                    </div>
+                </div>
+
+                <div class="action-slot" data-hotkey="4" data-ability-id="lightning-bolt">
+                    <div class="ability-icon">⚡</div>
+                    <div class="ability-hotkey">4</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="5">
+                    <div class="ability-hotkey">5</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="6">
+                    <div class="ability-hotkey">6</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="7">
+                    <div class="ability-hotkey">7</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="8">
+                    <div class="ability-hotkey">8</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+            </div>
+
+            <div class="action-bar-helpers">
+                <div class="combat-toggle">
+                    <input type="checkbox" id="combat-mode" class="combat-mode-toggle">
+                    <label for="combat-mode">Combat Mode</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills & Abilities Overlay -->
+        <div id="skills-overlay" class="overlay">
+            <div class="overlay-backdrop"></div>
+            <div class="overlay-panel">
+
+                <!-- Overlay Header -->
+                <div class="overlay-header">
+                    <div class="overlay-title">
+                        <span class="overlay-icon">⚔️</span>
+                        <h2>Skills & Abilities</h2>
+                    </div>
+                    <button class="btn-close-overlay" aria-label="Close Skills Panel">×</button>
+                </div>
+
+                <!-- Skill Points Display -->
+                <div class="skill-points-banner">
+                    <div class="skill-points-available">
+                        <div class="skill-points-label">Skill Points Available</div>
+                        <div class="skill-points-value">5</div>
+                    </div>
+                    <div class="skill-points-total">
+                        <div class="skill-points-label">Total Spent</div>
+                        <div class="skill-points-value">37/50</div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="overlay-tabs">
+                    <button class="tab-btn active" data-tab="skill-tree">
+                        <span class="tab-icon">🌳</span>
+                        <span class="tab-label">Skill Tree</span>
+                    </button>
+                    <button class="tab-btn" data-tab="abilities">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-label">All Abilities</span>
+                    </button>
+                    <button class="tab-btn" data-tab="passives">
+                        <span class="tab-icon">✨</span>
+                        <span class="tab-label">Passive Skills</span>
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="overlay-body">
+
+                    <!-- SKILL TREE TAB -->
+                    <div id="tab-skill-tree" class="tab-content active">
+                        <div class="skill-tree-container">
+
+                            <!-- Skill Tree Specialization Selector -->
+                            <div class="specialization-selector">
+                                <button class="spec-btn active" data-spec="battle-mage">
+                                    <div class="spec-icon">⚔️🔮</div>
+                                    <div class="spec-name">Battle Mage</div>
+                                </button>
+                                <button class="spec-btn" data-spec="elementalist">
+                                    <div class="spec-icon">🔥💧</div>
+                                    <div class="spec-name">Elementalist</div>
+                                </button>
+                                <button class="spec-btn" data-spec="arcane-warrior">
+                                    <div class="spec-icon">🗡️✨</div>
+                                    <div class="spec-name">Arcane Warrior</div>
+                                </button>
+                            </div>
+
+                            <!-- Skill Tree Canvas -->
+                            <div class="skill-tree-canvas">
+                                <svg class="skill-tree-connections" preserveAspectRatio="none">
+                                    <!-- Connection Lines (dynamically drawn in JS) -->
+                                    <line x1="50%" y1="10%" x2="30%" y2="25%" class="tree-connection unlocked" />
+                                    <line x1="50%" y1="10%" x2="70%" y2="25%" class="tree-connection unlocked" />
+                                    <line x1="30%" y1="25%" x2="30%" y2="40%" class="tree-connection unlocked" />
+                                    <line x1="70%" y1="25%" x2="70%" y2="40%" class="tree-connection locked" />
+                                    <line x1="30%" y1="40%" x2="20%" y2="55%" class="tree-connection unlocked" />
+                                    <line x1="30%" y1="40%" x2="40%" y2="55%" class="tree-connection locked" />
+                                    <line x1="70%" y1="40%" x2="60%" y2="55%" class="tree-connection locked" />
+                                    <line x1="70%" y1="40%" x2="80%" y2="55%" class="tree-connection locked" />
+                                </svg>
+
+                                <!-- Tier 1 - Foundation -->
+                                <div class="skill-tree-tier" data-tier="1">
+                                    <div class="tier-label">Foundation</div>
+                                    <div class="skill-tree-row">
+                                        <div class="skill-node unlocked max-rank"
+                                             data-skill-id="basic-combat"
+                                             style="left: 50%; top: 10%;">
+                                            <div class="skill-node-icon">⚔️</div>
+                                            <div class="skill-node-rank">5/5</div>
+                                            <div class="skill-node-name">Basic Combat</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tier 2 - Specialization -->
+                                <div class="skill-tree-tier" data-tier="2">
+                                    <div class="tier-label">Specialization</div>
+                                    <div class="skill-tree-row">
+                                        <div class="skill-node unlocked"
+                                             data-skill-id="weapon-mastery"
+                                             style="left: 30%; top: 25%;">
+                                            <div class="skill-node-icon">🗡️</div>
+                                            <div class="skill-node-rank">3/5</div>
+                                            <div class="skill-node-name">Weapon Mastery</div>
+                                        </div>
+
+                                        <div class="skill-node unlocked available"
+                                             data-skill-id="arcane-fundamentals"
+                                             style="left: 70%; top: 25%;">
+                                            <div class="skill-node-icon">🔮</div>
+                                            <div class="skill-node-rank">0/5</div>
+                                            <div class="skill-node-name">Arcane Fundamentals</div>
+                                            <div class="skill-node-pulse"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tier 3 - Advanced -->
+                                <div class="skill-tree-tier" data-tier="3">
+                                    <div class="tier-label">Advanced</div>
+                                    <div class="skill-tree-row">
+                                        <div class="skill-node unlocked"
+                                             data-skill-id="power-strikes"
+                                             style="left: 30%; top: 40%;">
+                                            <div class="skill-node-icon">💥</div>
+                                            <div class="skill-node-rank">2/5</div>
+                                            <div class="skill-node-name">Power Strikes</div>
+                                        </div>
+
+                                        <div class="skill-node locked"
+                                             data-skill-id="spell-weaving"
+                                             style="left: 70%; top: 40%;">
+                                            <div class="skill-node-icon locked-icon">🔒</div>
+                                            <div class="skill-node-rank">0/3</div>
+                                            <div class="skill-node-name">Spell Weaving</div>
+                                            <div class="skill-node-requirement">Requires: Arcane Fundamentals Rank 3</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tier 4 - Mastery -->
+                                <div class="skill-tree-tier" data-tier="4">
+                                    <div class="tier-label">Mastery</div>
+                                    <div class="skill-tree-row">
+                                        <div class="skill-node unlocked"
+                                             data-skill-id="whirlwind"
+                                             style="left: 20%; top: 55%;">
+                                            <div class="skill-node-icon">🌪️</div>
+                                            <div class="skill-node-rank">1/3</div>
+                                            <div class="skill-node-name">Whirlwind</div>
+                                        </div>
+
+                                        <div class="skill-node locked"
+                                             data-skill-id="berserker-rage"
+                                             style="left: 40%; top: 55%;">
+                                            <div class="skill-node-icon locked-icon">🔒</div>
+                                            <div class="skill-node-rank">0/3</div>
+                                            <div class="skill-node-name">Berserker Rage</div>
+                                            <div class="skill-node-requirement">Requires: Power Strikes Rank 5</div>
+                                        </div>
+
+                                        <div class="skill-node locked"
+                                             data-skill-id="elemental-fusion"
+                                             style="left: 60%; top: 55%;">
+                                            <div class="skill-node-icon locked-icon">🔒</div>
+                                            <div class="skill-node-rank">0/5</div>
+                                            <div class="skill-node-name">Elemental Fusion</div>
+                                            <div class="skill-node-requirement">Requires: Level 15</div>
+                                        </div>
+
+                                        <div class="skill-node locked"
+                                             data-skill-id="arcane-mastery"
+                                             style="left: 80%; top: 55%;">
+                                            <div class="skill-node-icon locked-icon">🔒</div>
+                                            <div class="skill-node-rank">0/1</div>
+                                            <div class="skill-node-name">Arcane Mastery</div>
+                                            <div class="skill-node-requirement">Requires: Spell Weaving Rank 3</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tier 5 - Ultimate -->
+                                <div class="skill-tree-tier" data-tier="5">
+                                    <div class="tier-label">Ultimate Abilities</div>
+                                    <div class="skill-tree-row">
+                                        <div class="skill-node locked ultimate"
+                                             data-skill-id="battle-trance"
+                                             style="left: 30%; top: 75%;">
+                                            <div class="skill-node-icon locked-icon">🔒</div>
+                                            <div class="skill-node-rank">0/1</div>
+                                            <div class="skill-node-name">Battle Trance</div>
+                                            <div class="skill-node-requirement">Requires: Level 20</div>
+                                        </div>
+
+                                        <div class="skill-node locked ultimate"
+                                             data-skill-id="astral-convergence"
+                                             style="left: 70%; top: 75%;">
+                                            <div class="skill-node-icon locked-icon">🔒</div>
+                                            <div class="skill-node-rank">0/1</div>
+                                            <div class="skill-node-name">Astral Convergence</div>
+                                            <div class="skill-node-requirement">Requires: Arcane Mastery</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Detail Panel -->
+                        <div class="skill-detail-panel">
+                            <div class="no-skill-selected">
+                                <div class="placeholder-icon">👆</div>
+                                <div class="placeholder-text">Click a skill node to view details</div>
+                            </div>
+
+                            <!-- This appears when a skill is selected -->
+                            <div class="skill-details" style="display: none;">
+                                <div class="skill-detail-header">
+                                    <div class="skill-detail-icon">⚔️</div>
+                                    <div class="skill-detail-title">
+                                        <h3>Basic Combat</h3>
+                                        <div class="skill-detail-type">Active Ability</div>
+                                    </div>
+                                </div>
+
+                                <div class="skill-detail-rank">
+                                    <div class="rank-label">Current Rank: 5/5</div>
+                                    <div class="rank-progress">
+                                        <div class="rank-progress-bar" style="width: 100%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="skill-detail-description">
+                                    <h4>Description</h4>
+                                    <p>Master the fundamentals of combat. Increases damage with all weapons and improves combat efficiency.</p>
+                                </div>
+
+                                <div class="skill-detail-lore">
+                                    <h4>Lore</h4>
+                                    <p><em>"Every master was once a student. Every legend began with a single strike."</em></p>
+                                </div>
+
+                                <div class="skill-detail-stats">
+                                    <h4>Current Effects</h4>
+                                    <div class="stat-line">
+                                        <span class="stat-label">Weapon Damage:</span>
+                                        <span class="stat-value">+25%</span>
+                                    </div>
+                                    <div class="stat-line">
+                                        <span class="stat-label">Attack Speed:</span>
+                                        <span class="stat-value">+10%</span>
+                                    </div>
+                                    <div class="stat-line">
+                                        <span class="stat-label">Critical Chance:</span>
+                                        <span class="stat-value">+5%</span>
+                                    </div>
+                                </div>
+
+                                <div class="skill-detail-next-rank" style="display: none;">
+                                    <h4>Next Rank (6/5) - MAX RANK</h4>
+                                    <div class="next-rank-info">This skill is at maximum rank.</div>
+                                </div>
+
+                                <div class="skill-detail-requirements">
+                                    <h4>Requirements</h4>
+                                    <div class="requirement-line met">
+                                        <span class="requirement-icon">✓</span>
+                                        <span class="requirement-text">Level 1 or higher</span>
+                                    </div>
+                                </div>
+
+                                <div class="skill-detail-actions">
+                                    <button class="btn-invest-point" disabled>MAX RANK</button>
+                                    <button class="btn-refund-points">Refund All Points (-37 Gold)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ALL ABILITIES TAB -->
+                    <div id="tab-abilities" class="tab-content">
+                        <div class="abilities-filter">
+                            <input type="text" class="ability-search" placeholder="Search abilities...">
+                            <div class="ability-filters">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="combat">Combat</button>
+                                <button class="filter-btn" data-filter="magic">Magic</button>
+                                <button class="filter-btn" data-filter="utility">Utility</button>
+                                <button class="filter-btn" data-filter="unlocked">Unlocked Only</button>
+                            </div>
+                        </div>
+
+                        <div class="abilities-grid">
+                            <!-- Unlocked Active Ability -->
+                            <div class="ability-card unlocked draggable" draggable="true" data-ability-id="melee-attack">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon">⚔️</div>
+                                    <div class="ability-card-level">Rank 5</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Melee Attack</h4>
+                                    <div class="ability-card-type">Active - Combat</div>
+                                    <div class="ability-card-cost">
+                                        <span class="cost-label">Cost:</span>
+                                        <span class="cost-value">10 SP</span>
+                                    </div>
+                                    <div class="ability-card-cooldown">
+                                        <span class="cooldown-label">Cooldown:</span>
+                                        <span class="cooldown-value">1.5s</span>
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                                <div class="ability-assigned-badge">Hotkey: 1</div>
+                            </div>
+
+                            <!-- Unlocked Active Ability -->
+                            <div class="ability-card unlocked draggable" draggable="true" data-ability-id="fireball">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon">🔥</div>
+                                    <div class="ability-card-level">Rank 4</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Fireball</h4>
+                                    <div class="ability-card-type">Active - Magic</div>
+                                    <div class="ability-card-cost">
+                                        <span class="cost-label">Cost:</span>
+                                        <span class="cost-value">50 MP</span>
+                                    </div>
+                                    <div class="ability-card-cooldown">
+                                        <span class="cooldown-label">Cooldown:</span>
+                                        <span class="cooldown-value">8.0s</span>
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                                <div class="ability-assigned-badge">Hotkey: 2</div>
+                            </div>
+
+                            <!-- Unlocked Active Ability -->
+                            <div class="ability-card unlocked draggable" draggable="true" data-ability-id="shield-block">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon">🛡️</div>
+                                    <div class="ability-card-level">Rank 3</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Shield Block</h4>
+                                    <div class="ability-card-type">Active - Defense</div>
+                                    <div class="ability-card-cost">
+                                        <span class="cost-label">Cost:</span>
+                                        <span class="cost-value">15 SP</span>
+                                    </div>
+                                    <div class="ability-card-cooldown">
+                                        <span class="cooldown-label">Cooldown:</span>
+                                        <span class="cooldown-value">12.0s</span>
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                                <div class="ability-assigned-badge">Hotkey: 3</div>
+                            </div>
+
+                            <!-- Unlocked Active Ability -->
+                            <div class="ability-card unlocked draggable" draggable="true" data-ability-id="lightning-bolt">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon">⚡</div>
+                                    <div class="ability-card-level">Rank 2</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Lightning Bolt</h4>
+                                    <div class="ability-card-type">Active - Magic</div>
+                                    <div class="ability-card-cost">
+                                        <span class="cost-label">Cost:</span>
+                                        <span class="cost-value">40 MP</span>
+                                    </div>
+                                    <div class="ability-card-cooldown">
+                                        <span class="cooldown-label">Cooldown:</span>
+                                        <span class="cooldown-value">6.0s</span>
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                                <div class="ability-assigned-badge">Hotkey: 4</div>
+                            </div>
+
+                            <!-- Unlocked Active Ability - Not Assigned -->
+                            <div class="ability-card unlocked draggable" draggable="true" data-ability-id="heal">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon">💚</div>
+                                    <div class="ability-card-level">Rank 3</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Healing Light</h4>
+                                    <div class="ability-card-type">Active - Restoration</div>
+                                    <div class="ability-card-cost">
+                                        <span class="cost-label">Cost:</span>
+                                        <span class="cost-value">60 MP</span>
+                                    </div>
+                                    <div class="ability-card-cooldown">
+                                        <span class="cooldown-label">Cooldown:</span>
+                                        <span class="cooldown-value">15.0s</span>
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                            </div>
+
+                            <!-- Unlocked Active Ability - Not Assigned -->
+                            <div class="ability-card unlocked draggable" draggable="true" data-ability-id="dash">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon">💨</div>
+                                    <div class="ability-card-level">Rank 2</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Quick Dash</h4>
+                                    <div class="ability-card-type">Active - Mobility</div>
+                                    <div class="ability-card-cost">
+                                        <span class="cost-label">Cost:</span>
+                                        <span class="cost-value">20 SP</span>
+                                    </div>
+                                    <div class="ability-card-cooldown">
+                                        <span class="cooldown-label">Cooldown:</span>
+                                        <span class="cooldown-value">5.0s</span>
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                            </div>
+
+                            <!-- Locked Ability -->
+                            <div class="ability-card locked" data-ability-id="meteor">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon locked-icon">🔒</div>
+                                    <div class="ability-card-level">Rank 0</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Meteor Strike</h4>
+                                    <div class="ability-card-type">Active - Magic</div>
+                                    <div class="ability-card-requirement">
+                                        Requires: Level 15, Fireball Rank 5
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                            </div>
+
+                            <!-- Locked Ability -->
+                            <div class="ability-card locked" data-ability-id="time-warp">
+                                <div class="ability-card-header">
+                                    <div class="ability-card-icon locked-icon">🔒</div>
+                                    <div class="ability-card-level">Rank 0</div>
+                                </div>
+                                <div class="ability-card-body">
+                                    <h4 class="ability-card-name">Time Warp</h4>
+                                    <div class="ability-card-type">Active - Arcane</div>
+                                    <div class="ability-card-requirement">
+                                        Requires: Level 20, Arcane Mastery
+                                    </div>
+                                </div>
+                                <div class="ability-card-footer">
+                                    <button class="btn-ability-details">View Details</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSIVE SKILLS TAB -->
+                    <div id="tab-passives" class="tab-content">
+                        <div class="passives-info">
+                            <p>Passive skills provide permanent bonuses and are always active. They don't require activation or mana.</p>
+                        </div>
+
+                        <div class="passives-grid">
+                            <!-- Active Passive -->
+                            <div class="passive-card active">
+                                <div class="passive-card-header">
+                                    <div class="passive-icon">💪</div>
+                                    <div class="passive-rank">Rank 5/5</div>
+                                </div>
+                                <div class="passive-card-body">
+                                    <h4 class="passive-name">Enhanced Strength</h4>
+                                    <div class="passive-effect">+25% Physical Damage</div>
+                                    <div class="passive-description">
+                                        Your rigorous training has permanently increased your physical prowess.
+                                    </div>
+                                </div>
+                                <div class="passive-card-footer">
+                                    <div class="passive-status active-badge">ACTIVE</div>
+                                </div>
+                            </div>
+
+                            <!-- Active Passive -->
+                            <div class="passive-card active">
+                                <div class="passive-card-header">
+                                    <div class="passive-icon">🧠</div>
+                                    <div class="passive-rank">Rank 3/5</div>
+                                </div>
+                                <div class="passive-card-body">
+                                    <h4 class="passive-name">Mana Reservoir</h4>
+                                    <div class="passive-effect">+150 Max Mana, +3 MP/sec Regen</div>
+                                    <div class="passive-description">
+                                        Deep meditation has expanded your mana capacity and recovery rate.
+                                    </div>
+                                </div>
+                                <div class="passive-card-footer">
+                                    <div class="passive-status active-badge">ACTIVE</div>
+                                </div>
+                            </div>
+
+                            <!-- Active Passive -->
+                            <div class="passive-card active">
+                                <div class="passive-card-header">
+                                    <div class="passive-icon">🏃</div>
+                                    <div class="passive-rank">Rank 2/3</div>
+                                </div>
+                                <div class="passive-card-body">
+                                    <h4 class="passive-name">Swift Movement</h4>
+                                    <div class="passive-effect">+20% Movement Speed</div>
+                                    <div class="passive-description">
+                                        Years of adventuring have made you naturally faster on your feet.
+                                    </div>
+                                </div>
+                                <div class="passive-card-footer">
+                                    <div class="passive-status active-badge">ACTIVE</div>
+                                </div>
+                            </div>
+
+                            <!-- Locked Passive -->
+                            <div class="passive-card locked">
+                                <div class="passive-card-header">
+                                    <div class="passive-icon locked-icon">🔒</div>
+                                    <div class="passive-rank">Rank 0/5</div>
+                                </div>
+                                <div class="passive-card-body">
+                                    <h4 class="passive-name">Arcane Affinity</h4>
+                                    <div class="passive-effect">-15% Spell Cost, +10% Spell Damage</div>
+                                    <div class="passive-description">
+                                        Attune yourself to the arcane energies, making magic more efficient and powerful.
+                                    </div>
+                                    <div class="passive-requirement">
+                                        Requires: Level 10, Arcane Fundamentals Rank 3
+                                    </div>
+                                </div>
+                                <div class="passive-card-footer">
+                                    <div class="passive-status locked-badge">LOCKED</div>
+                                </div>
+                            </div>
+
+                            <!-- Locked Passive -->
+                            <div class="passive-card locked">
+                                <div class="passive-card-header">
+                                    <div class="passive-icon locked-icon">🔒</div>
+                                    <div class="passive-rank">Rank 0/3</div>
+                                </div>
+                                <div class="passive-card-body">
+                                    <h4 class="passive-name">Battle Hardened</h4>
+                                    <div class="passive-effect">+200 Max HP, +5% Damage Reduction</div>
+                                    <div class="passive-description">
+                                        Countless battles have toughened your body and mind against harm.
+                                    </div>
+                                    <div class="passive-requirement">
+                                        Requires: Level 15, Enhanced Strength Rank 5
+                                    </div>
+                                </div>
+                                <div class="passive-card-footer">
+                                    <div class="passive-status locked-badge">LOCKED</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ability Detail Modal -->
+        <div id="ability-detail-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Ability Details</h3>
+                    <button class="btn-close-modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dynamically populated -->
+                    <div class="ability-detail-full">
+                        <div class="ability-detail-icon-large">🔥</div>
+                        <h2 class="ability-detail-name">Fireball</h2>
+                        <div class="ability-detail-type-badge">Active - Magic Spell</div>
+
+                        <div class="ability-detail-section">
+                            <h4>Description</h4>
+                            <p>Launch a blazing sphere of fire that explodes on impact, dealing massive fire damage to the target and nearby enemies.</p>
+                        </div>
+
+                        <div class="ability-detail-section">
+                            <h4>Lore</h4>
+                            <p><em>"Fire is the primal element of destruction. Master it, and watch your enemies turn to ash."</em> - Pyromancer's Codex</p>
+                        </div>
+
+                        <div class="ability-detail-section">
+                            <h4>Combat Stats</h4>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-label">Damage</div>
+                                    <div class="stat-value">350-450 Fire</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Splash Radius</div>
+                                    <div class="stat-value">5 meters</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Cast Time</div>
+                                    <div class="stat-value">1.2 seconds</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Range</div>
+                                    <div class="stat-value">30 meters</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Mana Cost</div>
+                                    <div class="stat-value">50 MP</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Cooldown</div>
+                                    <div class="stat-value">8.0 seconds</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ability-detail-section">
+                            <h4>Special Effects</h4>
+                            <ul class="effect-list">
+                                <li>15% chance to apply Burning (deals 50 damage per second for 4 seconds)</li>
+                                <li>Deals 25% extra damage to enemies with Frozen status</li>
+                                <li>Can ignite flammable objects in the environment</li>
+                            </ul>
+                        </div>
+
+                        <div class="ability-detail-section">
+                            <h4>Rank Progression</h4>
+                            <div class="rank-table">
+                                <div class="rank-row">
+                                    <span>Rank 1:</span>
+                                    <span>250-300 damage, 6m radius</span>
+                                </div>
+                                <div class="rank-row">
+                                    <span>Rank 2:</span>
+                                    <span>300-350 damage, 6m radius</span>
+                                </div>
+                                <div class="rank-row">
+                                    <span>Rank 3:</span>
+                                    <span>350-400 damage, 7m radius</span>
+                                </div>
+                                <div class="rank-row current">
+                                    <span>Rank 4 (Current):</span>
+                                    <span>350-450 damage, 5m radius</span>
+                                </div>
+                                <div class="rank-row">
+                                    <span>Rank 5:</span>
+                                    <span>450-550 damage, 8m radius, 25% burn chance</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ability-detail-actions">
+                            <button class="btn-assign-hotkey">Assign to Hotkey</button>
+                            <button class="btn-upgrade-ability">Upgrade to Rank 5 (1 Point)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Up Celebration -->
+        <div id="skill-unlock-celebration" class="celebration-overlay" style="display: none;">
+            <div class="celebration-content">
+                <div class="celebration-icon animate-zoomIn">⭐</div>
+                <h2 class="celebration-title animate-fadeInUp">Skill Unlocked!</h2>
+                <div class="celebration-skill-name animate-fadeInUp animation-delay-100">Arcane Fundamentals</div>
+                <div class="celebration-description animate-fadeInUp animation-delay-200">
+                    You've taken your first steps into the arcane arts. New abilities await!
+                </div>
+                <button class="btn-close-celebration animate-fadeInUp animation-delay-300">Continue</button>
+            </div>
+            <div class="celebration-particles">
+                <!-- Dynamically generated sparkle effects -->
+            </div>
+        </div>
+    </div>
+
+    <script src="skills_abilities_system.js"></script>
+</body>
+</html>

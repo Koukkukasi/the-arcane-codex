@@ -7029,9 +7029,26 @@ body {
             color: #FFD700;
         }
     </style>
+    <!-- Phase G: SVG Graphics Integration -->
+    <link rel="stylesheet" href="/static/css/svg-integration.css">
+    <script src="/static/js/divine-council.js" defer></script>
     <script src="quest_map_implementation.js" defer></script>
-}</head>
+</head>
 <body>
+    <!-- Phase G: Corner Flourishes -->
+    <div class="corner-decoration corner-tl">
+        <img src="/static/images/corner_flourish.svg" alt="" aria-hidden="true">
+    </div>
+    <div class="corner-decoration corner-tr">
+        <img src="/static/images/corner_flourish.svg" alt="" aria-hidden="true">
+    </div>
+    <div class="corner-decoration corner-bl">
+        <img src="/static/images/corner_flourish.svg" alt="" aria-hidden="true">
+    </div>
+    <div class="corner-decoration corner-br">
+        <img src="/static/images/corner_flourish.svg" alt="" aria-hidden="true">
+    </div>
+
     <div class="game-container">
         <!-- Game Area -->
         <div class="game-area">
@@ -7133,7 +7150,7 @@ body {
                             <div class="act-header" style="margin-top: 25px;">⚖️ Divine Council Convenes</div>
 
                             <div class="god-speech valdris">
-                                <img src="images/god_valdris.svg" alt="Valdris" class="god-icon">
+                                <img src="/static/images/god_valdris.svg" alt="Valdris" class="god-icon">
                                 <div class="god-content">
                                     <div class="god-name">⚖️ VALDRIS SPEAKS</div>
                                     <div class="god-text">"ORDER DEMANDS ACCOUNTABILITY. This theft, however noble in intent, violates the Duke's law. I vote OPPOSE."</div>
@@ -7141,7 +7158,7 @@ body {
                             </div>
 
                             <div class="god-speech kaitha">
-                                <img src="images/god_kaitha.svg" alt="Kaitha" class="god-icon">
+                                <img src="/static/images/god_kaitha.svg" alt="Kaitha" class="god-icon">
                                 <div class="god-content">
                                     <div class="god-name">🔥 KAITHA SPEAKS</div>
                                     <div class="god-text">"Break the chains of unjust law! The child's life matters more than the Duke's gold. I vote SUPPORT!"</div>
@@ -7378,7 +7395,7 @@ body {
 
                 <!-- VALDRIS - Order/Law (Blue) -->
                 <div class="divine-god">
-                    <img src="images/god_valdris.svg" alt="Valdris" class="divine-icon" title="Valdris - Order/Law">
+                    <img src="/static/images/god_valdris.svg" alt="Valdris" class="divine-icon" title="Valdris - Order/Law">
                     <div class="divine-name valdris-name">VALDRIS</div>
                     <div class="divine-bar">
                         <div class="divine-fill valdris-bar" style="width: 60%;"></div>
@@ -7388,7 +7405,7 @@ body {
 
                 <!-- KAITHA - Chaos/Freedom (Orange-Red) -->
                 <div class="divine-god">
-                    <img src="images/god_kaitha.svg" alt="Kaitha" class="divine-icon" title="Kaitha - Chaos/Freedom">
+                    <img src="/static/images/god_kaitha.svg" alt="Kaitha" class="divine-icon" title="Kaitha - Chaos/Freedom">
                     <div class="divine-name kaitha-name">KAITHA</div>
                     <div class="divine-bar">
                         <div class="divine-fill kaitha-bar" style="width: 40%;"></div>
@@ -7398,7 +7415,7 @@ body {
 
                 <!-- MORVANE - Survival/Pragmatism (Grey) -->
                 <div class="divine-god">
-                    <img src="images/god_morvane.svg" alt="Morvane" class="divine-icon" title="Morvane - Survival/Pragmatism">
+                    <img src="/static/images/god_morvane.svg" alt="Morvane" class="divine-icon" title="Morvane - Survival/Pragmatism">
                     <div class="divine-name morvane-name">MORVANE</div>
                     <div class="divine-bar">
                         <div class="divine-fill morvane-bar" style="width: 80%;"></div>
@@ -7408,7 +7425,7 @@ body {
 
                 <!-- SYLARA - Nature/Life (Green) -->
                 <div class="divine-god">
-                    <img src="images/god_sylara.svg" alt="Sylara" class="divine-icon" title="Sylara - Nature/Life">
+                    <img src="/static/images/god_sylara.svg" alt="Sylara" class="divine-icon" title="Sylara - Nature/Life">
                     <div class="divine-name sylara-name">SYLARA</div>
                     <div class="divine-bar">
                         <div class="divine-fill sylara-bar" style="width: 50%;"></div>
@@ -7418,7 +7435,7 @@ body {
 
                 <!-- KORVAN - War/Courage (Crimson) -->
                 <div class="divine-god">
-                    <img src="images/god_korvan.svg" alt="Korvan" class="divine-icon" title="Korvan - War/Courage">
+                    <img src="/static/images/god_korvan.svg" alt="Korvan" class="divine-icon" title="Korvan - War/Courage">
                     <div class="divine-name korvan-name">KORVAN</div>
                     <div class="divine-bar">
                         <div class="divine-fill korvan-bar" style="width: 100%;"></div>
@@ -7428,7 +7445,7 @@ body {
 
                 <!-- ATHENA - Wisdom/Knowledge (Purple) -->
                 <div class="divine-god">
-                    <img src="images/god_athena.svg" alt="Athena" class="divine-icon" title="Athena - Wisdom/Knowledge">
+                    <img src="/static/images/god_athena.svg" alt="Athena" class="divine-icon" title="Athena - Wisdom/Knowledge">
                     <div class="divine-name athena-name">ATHENA</div>
                     <div class="divine-bar">
                         <div class="divine-fill athena-bar" style="width: 67%;"></div>
@@ -7438,7 +7455,7 @@ body {
 
                 <!-- MERCUS - Commerce/Value (Gold) -->
                 <div class="divine-god">
-                    <img src="images/god_mercus.svg" alt="Mercus" class="divine-icon" title="Mercus - Commerce/Value">
+                    <img src="/static/images/god_mercus.svg" alt="Mercus" class="divine-icon" title="Mercus - Commerce/Value">
                     <div class="divine-name mercus-name">MERCUS</div>
                     <div class="divine-bar">
                         <div class="divine-fill mercus-bar" style="width: 33%;"></div>
@@ -12066,45 +12083,51 @@ body {
         // Simulate achievement unlock
         setTimeout(() => {
             const achievementPopup = document.querySelector('.achievement-popup');
-            if (achievementPopup) {
-                achievementPopup.classList.add('show');
+            achievementPopup.classList.add('show');
 
-                // Play sound effect (in real implementation)
-                // playSound('achievement.mp3');
+            // Play sound effect (in real implementation)
+            // playSound('achievement.mp3');
 
-                setTimeout(() => {
-                    achievementPopup.classList.remove('show');
-                }, 5000);
-            }
+            setTimeout(() => {
+                achievementPopup.classList.remove('show');
+            }, 5000);
         }, 2000);
 
         // Animate battle pass fill
-        let currentProgress = 35;
+        let battlePassProgress = 35;
         setInterval(() => {
-            currentProgress = Math.min(currentProgress + 5, 100);
-            document.querySelector('.tier-fill').style.width = `${currentProgress}%`;
+            battlePassProgress = Math.min(battlePassProgress + 5, 100);
+            const tierFill = document.querySelector('.tier-fill');
+            if (tierFill) {
+                tierFill.style.width = `${battlePassProgress}%`;
+            }
 
-            if (currentProgress === 100) {
+            if (battlePassProgress === 100) {
                 // Unlock next tier
                 const nextNode = document.querySelector('.tier-node:not(.unlocked)');
                 if (nextNode) {
                     nextNode.classList.add('unlocked');
-                    currentProgress = 0;
+                    battlePassProgress = 0;
                 }
             }
         }, 1000);
 
-        // Claim daily reward
-        document.querySelector('.claim-button').addEventListener('click', function() {
-            const todaySlot = document.querySelector('.day-slot.today');
-            todaySlot.classList.remove('today');
-            todaySlot.classList.add('claimed');
-            this.disabled = true;
-            this.textContent = 'Claimed!';
+        // Claim daily reward - with null check
+        const claimButton = document.querySelector('.claim-button');
+        if (claimButton) {
+            claimButton.addEventListener('click', function() {
+                const todaySlot = document.querySelector('.day-slot.today');
+                if (todaySlot) {
+                    todaySlot.classList.remove('today');
+                    todaySlot.classList.add('claimed');
+                }
+                this.disabled = true;
+                this.textContent = 'Claimed!';
 
-            // Show reward animation
-            // In real implementation, show reward details
-        });
+                // Show reward animation
+                // In real implementation, show reward details
+            });
+        }
 
         // Update event timer
         setInterval(() => {
@@ -12124,7 +12147,7 @@ body {
         });
 
         // Tutorial system
-        const tutorialSteps = [
+        const tutorialSteps1 = [ // RENAMED TO AVOID DUPLICATE
             {
                 element: '.character-panel',
                 title: 'Character Panel',
@@ -12304,14 +12327,14 @@ body {
         }, 2000);
 
         // Animate XP bar
-        let currentXP = 65;
+        let xpProgress = 65; // Renamed from currentXP to avoid duplicate declaration
         setInterval(() => {
-            currentXP = Math.min(currentXP + 5, 100);
-            document.querySelector('.xp-fill').style.width = `${currentXP}%`;
+            xpProgress = Math.min(xpProgress + 5, 100);
+            document.querySelector('.xp-fill').style.width = `${xpProgress}%`;
 
-            if (currentXP === 100) {
+            if (xpProgress === 100) {
                 triggerLevelUp();
-                currentXP = 0;
+                xpProgress = 0;
             }
         }, 3000);
 
@@ -12454,10 +12477,18 @@ body {
                         slot.setAttribute('data-item-id', item.id);
                         slot.setAttribute('data-tooltip', item.description);
 
-                        slot.innerHTML = `
-                            <div class="item-icon">${getItemIcon(item.type)}</div>
-                            ${item.quantity > 1 ? `<div class="item-quantity">${item.quantity}</div>` : ''}
-                        `;
+                        // XSS Fix: Use safe DOM manipulation instead of innerHTML
+                        const iconDiv = document.createElement('div');
+                        iconDiv.className = 'item-icon';
+                        iconDiv.textContent = getItemIcon(item.type);
+                        slot.appendChild(iconDiv);
+
+                        if (item.quantity > 1) {
+                            const quantityDiv = document.createElement('div');
+                            quantityDiv.className = 'item-quantity';
+                            quantityDiv.textContent = item.quantity;
+                            slot.appendChild(quantityDiv);
+                        }
 
                         inventoryGrid.appendChild(slot);
                     });
@@ -12521,22 +12552,39 @@ body {
                     questList.innerHTML = ''; // Clear existing
 
                     if (data.quests.length === 0) {
-                        questList.innerHTML = `<div class="no-quests">No ${type} quests</div>`;
+                        // XSS Fix: Use safe DOM manipulation
+                        const noQuestsDiv = document.createElement('div');
+                        noQuestsDiv.className = 'no-quests';
+                        noQuestsDiv.textContent = `No ${type} quests`;
+                        questList.appendChild(noQuestsDiv);
                     } else {
                         data.quests.forEach(quest => {
                             const questItem = document.createElement('div');
                             questItem.className = 'quest-item';
                             questItem.setAttribute('data-quest-id', quest.id);
 
-                            questItem.innerHTML = `
-                                <div class="quest-title">${quest.name}</div>
-                                <div class="quest-description">${quest.description}</div>
-                                ${quest.progress !== undefined ? `
-                                    <div class="quest-progress-bar">
-                                        <div class="quest-progress-fill" style="width: ${quest.progress}%"></div>
-                                    </div>
-                                ` : ''}
-                            `;
+                            // XSS Fix: Use safe DOM manipulation
+                            const titleDiv = document.createElement('div');
+                            titleDiv.className = 'quest-title';
+                            titleDiv.textContent = quest.name;
+                            questItem.appendChild(titleDiv);
+
+                            const descDiv = document.createElement('div');
+                            descDiv.className = 'quest-description';
+                            descDiv.textContent = quest.description;
+                            questItem.appendChild(descDiv);
+
+                            if (quest.progress !== undefined) {
+                                const progressBarDiv = document.createElement('div');
+                                progressBarDiv.className = 'quest-progress-bar';
+
+                                const progressFillDiv = document.createElement('div');
+                                progressFillDiv.className = 'quest-progress-fill';
+                                progressFillDiv.style.width = `${quest.progress}%`;
+
+                                progressBarDiv.appendChild(progressFillDiv);
+                                questItem.appendChild(progressBarDiv);
+                            }
 
                             questList.appendChild(questItem);
                         });
@@ -13114,7 +13162,8 @@ body {
                 const loadingDiv = document.createElement('div');
                 loadingDiv.className = 'act-header';
                 loadingDiv.style.marginTop = '25px';
-                loadingDiv.innerHTML = '⏳ Processing your choice...';
+                // XSS Fix: Use textContent
+                loadingDiv.textContent = '⏳ Processing your choice...';
                 narrativePanel.appendChild(loadingDiv);
 
                 // POST to API
@@ -13170,7 +13219,8 @@ body {
                 const consequenceDiv = document.createElement('div');
                 consequenceDiv.className = 'narrative-text';
                 consequenceDiv.style.marginTop = '20px';
-                consequenceDiv.innerHTML = data.consequence;
+                // XSS Fix: Use textContent to prevent script injection
+                consequenceDiv.textContent = data.consequence;
                 narrativePanel.appendChild(consequenceDiv);
             }
 
@@ -13179,7 +13229,8 @@ body {
                 const councilHeader = document.createElement('div');
                 councilHeader.className = 'act-header';
                 councilHeader.style.marginTop = '25px';
-                councilHeader.innerHTML = '⚖️ Divine Council Convenes';
+                // XSS Fix: Use textContent
+                councilHeader.textContent = '⚖️ Divine Council Convenes';
                 narrativePanel.appendChild(councilHeader);
 
                 // Add each god's speech
@@ -13189,7 +13240,7 @@ body {
                         speechDiv.className = `god-speech ${godSpeech.god.toLowerCase()}`;
                         // XSS Fix: Safely construct god speech DOM
                         const godImg = document.createElement('img');
-                        godImg.src = 'images/god_' + encodeURIComponent(godSpeech.god.toLowerCase()) + '.svg';
+                        godImg.src = '/static/images/god_' + encodeURIComponent(godSpeech.god.toLowerCase()) + '.svg';
                         godImg.alt = godSpeech.god;
                         godImg.className = 'god-icon';
 
@@ -13431,82 +13482,98 @@ body {
                 animation: slideUp 0.3s ease;
             `;
 
-            panel.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h2 style="font-family: 'Cinzel', serif; font-size: 32px; color: #D4AF37; margin: 0;">
-                        ${memberData.emoji} ${memberData.name}
-                    </h2>
-                    <button class="close-details-btn" style="
-                        background: rgba(205, 92, 92, 0.3);
-                        border: 2px solid #CD5C5C;
-                        color: #CD5C5C;
-                        font-size: 24px;
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 50%;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                    ">✕</button>
-                </div>
+            // XSS Fix: Build panel safely using createElement
+            // NOTE: This prevents XSS from memberData.name, memberData.emoji, memberData.role, memberData.hp
 
-                <div style="margin-bottom: 20px;">
-                    <div style="font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                        Role
-                    </div>
-                    <div style="font-family: 'Yrsa', serif; font-size: 20px; color: #D4AF37;">
-                        ${memberData.role}
-                    </div>
-                </div>
+            // Header with name and close button
+            const headerDiv = document.createElement('div');
+            headerDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;';
 
-                <div style="margin-bottom: 20px;">
-                    <div style="font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                        Health
-                    </div>
-                    <div style="
-                        background: rgba(0, 0, 0, 0.5);
-                        border: 2px solid #8B7355;
-                        border-radius: 8px;
-                        padding: 8px;
-                        font-family: 'Yrsa', serif;
-                        font-size: 18px;
-                        color: #90EE90;
-                    ">
-                        ❤️ ${memberData.hp}
-                    </div>
-                </div>
+            const h2 = document.createElement('h2');
+            h2.style.cssText = "font-family: 'Cinzel', serif; font-size: 32px; color: #D4AF37; margin: 0;";
+            h2.textContent = (memberData.emoji || '') + ' ' + (memberData.name || 'Unknown');
 
-                <div style="margin-bottom: 20px;">
-                    <div style="font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                        Equipment
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                        <div style="background: rgba(0, 0, 0, 0.5); border: 2px solid #8B7355; border-radius: 6px; padding: 10px; text-align: center; color: #D4AF37;">
-                            ⚔️ Weapon
-                        </div>
-                        <div style="background: rgba(0, 0, 0, 0.5); border: 2px solid #8B7355; border-radius: 6px; padding: 10px; text-align: center; color: #D4AF37;">
-                            🛡️ Armor
-                        </div>
-                    </div>
-                </div>
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'close-details-btn';
+            closeBtn.style.cssText = `background: rgba(205, 92, 92, 0.3); border: 2px solid #CD5C5C; color: #CD5C5C; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease;`;
+            closeBtn.textContent = '✕';
 
-                <div style="margin-bottom: 20px;">
-                    <div style="font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                        Active Effects
-                    </div>
-                    <div style="
-                        background: rgba(139, 69, 139, 0.2);
-                        border: 2px solid #8B458B;
-                        border-radius: 6px;
-                        padding: 12px;
-                        font-family: 'Yrsa', serif;
-                        font-size: 16px;
-                        color: #DA70D6;
-                        font-style: italic;
-                    ">
-                        ✨ No active effects
-                    </div>
-                </div>
-            `;
+            headerDiv.appendChild(h2);
+            headerDiv.appendChild(closeBtn);
+            panel.appendChild(headerDiv);
+
+            // Role section
+            const roleContainer = document.createElement('div');
+            roleContainer.style.marginBottom = '20px';
+
+            const roleLabel = document.createElement('div');
+            roleLabel.style.cssText = "font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;";
+            roleLabel.textContent = 'Role';
+
+            const roleValue = document.createElement('div');
+            roleValue.style.cssText = "font-family: 'Yrsa', serif; font-size: 20px; color: #D4AF37;";
+            roleValue.textContent = memberData.role || 'Unknown';
+
+            roleContainer.appendChild(roleLabel);
+            roleContainer.appendChild(roleValue);
+            panel.appendChild(roleContainer);
+
+            // Health section
+            const healthContainer = document.createElement('div');
+            healthContainer.style.marginBottom = '20px';
+
+            const healthLabel = document.createElement('div');
+            healthLabel.style.cssText = "font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;";
+            healthLabel.textContent = 'Health';
+
+            const healthValue = document.createElement('div');
+            healthValue.style.cssText = 'background: rgba(0, 0, 0, 0.5); border: 2px solid #8B7355; border-radius: 8px; padding: 8px; font-family: "Yrsa", serif; font-size: 18px; color: #90EE90;';
+            healthValue.textContent = '❤️ ' + (memberData.hp || 0);
+
+            healthContainer.appendChild(healthLabel);
+            healthContainer.appendChild(healthValue);
+            panel.appendChild(healthContainer);
+
+            // Equipment section
+            const equipContainer = document.createElement('div');
+            equipContainer.style.marginBottom = '20px';
+
+            const equipLabel = document.createElement('div');
+            equipLabel.style.cssText = "font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;";
+            equipLabel.textContent = 'Equipment';
+
+            const equipGrid = document.createElement('div');
+            equipGrid.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;';
+
+            const weaponDiv = document.createElement('div');
+            weaponDiv.style.cssText = 'background: rgba(0, 0, 0, 0.5); border: 2px solid #8B7355; border-radius: 6px; padding: 10px; text-align: center; color: #D4AF37;';
+            weaponDiv.textContent = '⚔️ Weapon';
+
+            const armorDiv = document.createElement('div');
+            armorDiv.style.cssText = 'background: rgba(0, 0, 0, 0.5); border: 2px solid #8B7355; border-radius: 6px; padding: 10px; text-align: center; color: #D4AF37;';
+            armorDiv.textContent = '🛡️ Armor';
+
+            equipGrid.appendChild(weaponDiv);
+            equipGrid.appendChild(armorDiv);
+            equipContainer.appendChild(equipLabel);
+            equipContainer.appendChild(equipGrid);
+            panel.appendChild(equipContainer);
+
+            // Active Effects section
+            const effectsContainer = document.createElement('div');
+            effectsContainer.style.marginBottom = '20px';
+
+            const effectsLabel = document.createElement('div');
+            effectsLabel.style.cssText = "font-family: 'Cinzel', serif; font-size: 14px; color: #8B7355; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;";
+            effectsLabel.textContent = 'Active Effects';
+
+            const effectsValue = document.createElement('div');
+            effectsValue.style.cssText = 'background: rgba(139, 69, 139, 0.2); border: 2px solid #8B458B; border-radius: 6px; padding: 12px; font-family: "Yrsa", serif; font-size: 16px; color: #DA70D6; font-style: italic;';
+            effectsValue.textContent = '✨ No active effects';
+
+            effectsContainer.appendChild(effectsLabel);
+            effectsContainer.appendChild(effectsValue);
+            panel.appendChild(effectsContainer);
 
             modal.appendChild(panel);
             document.body.appendChild(modal);
@@ -13607,7 +13674,12 @@ body {
         });
 
         item.addEventListener('mouseleave', () => {
-            detailsContent.innerHTML = '<p class="details-placeholder">Hover over an item to view details</p>';
+            // XSS Fix: Use safe DOM manipulation
+            detailsContent.innerHTML = ''; // Clear first
+            const placeholderP = document.createElement('p');
+            placeholderP.className = 'details-placeholder';
+            placeholderP.textContent = 'Hover over an item to view details';
+            detailsContent.appendChild(placeholderP);
         });
     });
 
@@ -14054,45 +14126,51 @@ console.log('Overlay enhancements loaded successfully');
         // Simulate achievement unlock
         setTimeout(() => {
             const achievementPopup = document.querySelector('.achievement-popup');
-            if (achievementPopup) {
-                achievementPopup.classList.add('show');
+            achievementPopup.classList.add('show');
 
-                // Play sound effect (in real implementation)
-                // playSound('achievement.mp3');
+            // Play sound effect (in real implementation)
+            // playSound('achievement.mp3');
 
-                setTimeout(() => {
-                    achievementPopup.classList.remove('show');
-                }, 5000);
-            }
+            setTimeout(() => {
+                achievementPopup.classList.remove('show');
+            }, 5000);
         }, 2000);
 
         // Animate battle pass fill
-        let currentProgress = 35;
+        let battlePassProgress = 35;
         setInterval(() => {
-            currentProgress = Math.min(currentProgress + 5, 100);
-            document.querySelector('.tier-fill').style.width = `${currentProgress}%`;
+            battlePassProgress = Math.min(battlePassProgress + 5, 100);
+            const tierFill = document.querySelector('.tier-fill');
+            if (tierFill) {
+                tierFill.style.width = `${battlePassProgress}%`;
+            }
 
-            if (currentProgress === 100) {
+            if (battlePassProgress === 100) {
                 // Unlock next tier
                 const nextNode = document.querySelector('.tier-node:not(.unlocked)');
                 if (nextNode) {
                     nextNode.classList.add('unlocked');
-                    currentProgress = 0;
+                    battlePassProgress = 0;
                 }
             }
         }, 1000);
 
-        // Claim daily reward
-        document.querySelector('.claim-button').addEventListener('click', function() {
-            const todaySlot = document.querySelector('.day-slot.today');
-            todaySlot.classList.remove('today');
-            todaySlot.classList.add('claimed');
-            this.disabled = true;
-            this.textContent = 'Claimed!';
+        // Claim daily reward - with null check
+        const claimButton = document.querySelector('.claim-button');
+        if (claimButton) {
+            claimButton.addEventListener('click', function() {
+                const todaySlot = document.querySelector('.day-slot.today');
+                if (todaySlot) {
+                    todaySlot.classList.remove('today');
+                    todaySlot.classList.add('claimed');
+                }
+                this.disabled = true;
+                this.textContent = 'Claimed!';
 
-            // Show reward animation
-            // In real implementation, show reward details
-        });
+                // Show reward animation
+                // In real implementation, show reward details
+            });
+        }
 
         // Update event timer
         setInterval(() => {
@@ -14112,7 +14190,7 @@ console.log('Overlay enhancements loaded successfully');
         });
 
         // Tutorial system
-        const tutorialSteps = [
+        const tutorialSteps1 = [ // RENAMED TO AVOID DUPLICATE
             {
                 element: '.character-panel',
                 title: 'Character Panel',
@@ -14292,14 +14370,14 @@ console.log('Overlay enhancements loaded successfully');
         }, 2000);
 
         // Animate XP bar
-        let currentXP = 65;
+        let xpProgress = 65; // Renamed from currentXP to avoid duplicate declaration
         setInterval(() => {
-            currentXP = Math.min(currentXP + 5, 100);
-            document.querySelector('.xp-fill').style.width = `${currentXP}%`;
+            xpProgress = Math.min(xpProgress + 5, 100);
+            document.querySelector('.xp-fill').style.width = `${xpProgress}%`;
 
-            if (currentXP === 100) {
+            if (xpProgress === 100) {
                 triggerLevelUp();
-                currentXP = 0;
+                xpProgress = 0;
             }
         }, 3000);
 
@@ -14442,10 +14520,18 @@ console.log('Overlay enhancements loaded successfully');
                         slot.setAttribute('data-item-id', item.id);
                         slot.setAttribute('data-tooltip', item.description);
 
-                        slot.innerHTML = `
-                            <div class="item-icon">${getItemIcon(item.type)}</div>
-                            ${item.quantity > 1 ? `<div class="item-quantity">${item.quantity}</div>` : ''}
-                        `;
+                        // XSS Fix: Use safe DOM manipulation instead of innerHTML
+                        const iconDiv = document.createElement('div');
+                        iconDiv.className = 'item-icon';
+                        iconDiv.textContent = getItemIcon(item.type);
+                        slot.appendChild(iconDiv);
+
+                        if (item.quantity > 1) {
+                            const quantityDiv = document.createElement('div');
+                            quantityDiv.className = 'item-quantity';
+                            quantityDiv.textContent = item.quantity;
+                            slot.appendChild(quantityDiv);
+                        }
 
                         inventoryGrid.appendChild(slot);
                     });
@@ -14509,22 +14595,39 @@ console.log('Overlay enhancements loaded successfully');
                     questList.innerHTML = ''; // Clear existing
 
                     if (data.quests.length === 0) {
-                        questList.innerHTML = `<div class="no-quests">No ${type} quests</div>`;
+                        // XSS Fix: Use safe DOM manipulation
+                        const noQuestsDiv = document.createElement('div');
+                        noQuestsDiv.className = 'no-quests';
+                        noQuestsDiv.textContent = `No ${type} quests`;
+                        questList.appendChild(noQuestsDiv);
                     } else {
                         data.quests.forEach(quest => {
                             const questItem = document.createElement('div');
                             questItem.className = 'quest-item';
                             questItem.setAttribute('data-quest-id', quest.id);
 
-                            questItem.innerHTML = `
-                                <div class="quest-title">${quest.name}</div>
-                                <div class="quest-description">${quest.description}</div>
-                                ${quest.progress !== undefined ? `
-                                    <div class="quest-progress-bar">
-                                        <div class="quest-progress-fill" style="width: ${quest.progress}%"></div>
-                                    </div>
-                                ` : ''}
-                            `;
+                            // XSS Fix: Use safe DOM manipulation
+                            const titleDiv = document.createElement('div');
+                            titleDiv.className = 'quest-title';
+                            titleDiv.textContent = quest.name;
+                            questItem.appendChild(titleDiv);
+
+                            const descDiv = document.createElement('div');
+                            descDiv.className = 'quest-description';
+                            descDiv.textContent = quest.description;
+                            questItem.appendChild(descDiv);
+
+                            if (quest.progress !== undefined) {
+                                const progressBarDiv = document.createElement('div');
+                                progressBarDiv.className = 'quest-progress-bar';
+
+                                const progressFillDiv = document.createElement('div');
+                                progressFillDiv.className = 'quest-progress-fill';
+                                progressFillDiv.style.width = `${quest.progress}%`;
+
+                                progressBarDiv.appendChild(progressFillDiv);
+                                questItem.appendChild(progressBarDiv);
+                            }
 
                             questList.appendChild(questItem);
                         });
@@ -14948,49 +15051,7 @@ console.log('Overlay enhancements loaded successfully');
     </div>
 
     <script>
-        // Simulate achievement unlock
-        setTimeout(() => {
-            const achievementPopup = document.querySelector('.achievement-popup');
-            if (achievementPopup) {
-                achievementPopup.classList.add('show');
-
-                // Play sound effect (in real implementation)
-                // playSound('achievement.mp3');
-
-                setTimeout(() => {
-                    achievementPopup.classList.remove('show');
-                }, 5000);
-            }
-        }, 2000);
-
-        // Animate battle pass fill
-        let currentProgress = 35;
-        setInterval(() => {
-            currentProgress = Math.min(currentProgress + 5, 100);
-            document.querySelector('.tier-fill').style.width = `${currentProgress}%`;
-
-            if (currentProgress === 100) {
-                // Unlock next tier
-                const nextNode = document.querySelector('.tier-node:not(.unlocked)');
-                if (nextNode) {
-                    nextNode.classList.add('unlocked');
-                    currentProgress = 0;
-                }
-            }
-        }, 1000);
-
-        // Claim daily reward
-        document.querySelector('.claim-button').addEventListener('click', function() {
-            const todaySlot = document.querySelector('.day-slot.today');
-            todaySlot.classList.remove('today');
-            todaySlot.classList.add('claimed');
-            this.disabled = true;
-            this.textContent = 'Claimed!';
-
-            // Show reward animation
-            // In real implementation, show reward details
-        });
-
+        // [DUPLICATE CODE REMOVED - Already exists in main script block]
         // Update event timer
         setInterval(() => {
             // In real implementation, calculate actual time remaining
@@ -15126,7 +15187,7 @@ console.log('Overlay enhancements loaded successfully');
         });
 
         // Tutorial system
-        const tutorialSteps = [
+        const tutorialSteps1 = [ // RENAMED TO AVOID DUPLICATE
             {
                 element: '.character-panel',
                 title: 'Character Panel',
@@ -15340,14 +15401,14 @@ console.log('Overlay enhancements loaded successfully');
         }, 2000);
 
         // Animate XP bar
-        let currentXP = 65;
+        let xpProgress = 65; // Renamed from currentXP to avoid duplicate declaration
         setInterval(() => {
-            currentXP = Math.min(currentXP + 5, 100);
-            document.querySelector('.xp-fill').style.width = `${currentXP}%`;
+            xpProgress = Math.min(xpProgress + 5, 100);
+            document.querySelector('.xp-fill').style.width = `${xpProgress}%`;
 
-            if (currentXP === 100) {
+            if (xpProgress === 100) {
                 triggerLevelUp();
-                currentXP = 0;
+                xpProgress = 0;
             }
         }, 3000);
     
@@ -15475,10 +15536,18 @@ console.log('Overlay enhancements loaded successfully');
                         slot.setAttribute('data-item-id', item.id);
                         slot.setAttribute('data-tooltip', item.description);
 
-                        slot.innerHTML = `
-                            <div class="item-icon">${getItemIcon(item.type)}</div>
-                            ${item.quantity > 1 ? `<div class="item-quantity">${item.quantity}</div>` : ''}
-                        `;
+                        // XSS Fix: Use safe DOM manipulation instead of innerHTML
+                        const iconDiv = document.createElement('div');
+                        iconDiv.className = 'item-icon';
+                        iconDiv.textContent = getItemIcon(item.type);
+                        slot.appendChild(iconDiv);
+
+                        if (item.quantity > 1) {
+                            const quantityDiv = document.createElement('div');
+                            quantityDiv.className = 'item-quantity';
+                            quantityDiv.textContent = item.quantity;
+                            slot.appendChild(quantityDiv);
+                        }
 
                         inventoryGrid.appendChild(slot);
                     });
@@ -15542,22 +15611,39 @@ console.log('Overlay enhancements loaded successfully');
                     questList.innerHTML = ''; // Clear existing
 
                     if (data.quests.length === 0) {
-                        questList.innerHTML = `<div class="no-quests">No ${type} quests</div>`;
+                        // XSS Fix: Use safe DOM manipulation
+                        const noQuestsDiv = document.createElement('div');
+                        noQuestsDiv.className = 'no-quests';
+                        noQuestsDiv.textContent = `No ${type} quests`;
+                        questList.appendChild(noQuestsDiv);
                     } else {
                         data.quests.forEach(quest => {
                             const questItem = document.createElement('div');
                             questItem.className = 'quest-item';
                             questItem.setAttribute('data-quest-id', quest.id);
 
-                            questItem.innerHTML = `
-                                <div class="quest-title">${quest.name}</div>
-                                <div class="quest-description">${quest.description}</div>
-                                ${quest.progress !== undefined ? `
-                                    <div class="quest-progress-bar">
-                                        <div class="quest-progress-fill" style="width: ${quest.progress}%"></div>
-                                    </div>
-                                ` : ''}
-                            `;
+                            // XSS Fix: Use safe DOM manipulation
+                            const titleDiv = document.createElement('div');
+                            titleDiv.className = 'quest-title';
+                            titleDiv.textContent = quest.name;
+                            questItem.appendChild(titleDiv);
+
+                            const descDiv = document.createElement('div');
+                            descDiv.className = 'quest-description';
+                            descDiv.textContent = quest.description;
+                            questItem.appendChild(descDiv);
+
+                            if (quest.progress !== undefined) {
+                                const progressBarDiv = document.createElement('div');
+                                progressBarDiv.className = 'quest-progress-bar';
+
+                                const progressFillDiv = document.createElement('div');
+                                progressFillDiv.className = 'quest-progress-fill';
+                                progressFillDiv.style.width = `${quest.progress}%`;
+
+                                progressBarDiv.appendChild(progressFillDiv);
+                                questItem.appendChild(progressBarDiv);
+                            }
 
                             questList.appendChild(questItem);
                         });
@@ -15850,45 +15936,51 @@ console.log('Overlay enhancements loaded successfully');
         // Simulate achievement unlock
         setTimeout(() => {
             const achievementPopup = document.querySelector('.achievement-popup');
-            if (achievementPopup) {
-                achievementPopup.classList.add('show');
+            achievementPopup.classList.add('show');
 
-                // Play sound effect (in real implementation)
-                // playSound('achievement.mp3');
+            // Play sound effect (in real implementation)
+            // playSound('achievement.mp3');
 
-                setTimeout(() => {
-                    achievementPopup.classList.remove('show');
-                }, 5000);
-            }
+            setTimeout(() => {
+                achievementPopup.classList.remove('show');
+            }, 5000);
         }, 2000);
 
         // Animate battle pass fill
-        let currentProgress = 35;
+        let battlePassProgress = 35;
         setInterval(() => {
-            currentProgress = Math.min(currentProgress + 5, 100);
-            document.querySelector('.tier-fill').style.width = `${currentProgress}%`;
+            battlePassProgress = Math.min(battlePassProgress + 5, 100);
+            const tierFill = document.querySelector('.tier-fill');
+            if (tierFill) {
+                tierFill.style.width = `${battlePassProgress}%`;
+            }
 
-            if (currentProgress === 100) {
+            if (battlePassProgress === 100) {
                 // Unlock next tier
                 const nextNode = document.querySelector('.tier-node:not(.unlocked)');
                 if (nextNode) {
                     nextNode.classList.add('unlocked');
-                    currentProgress = 0;
+                    battlePassProgress = 0;
                 }
             }
         }, 1000);
 
-        // Claim daily reward
-        document.querySelector('.claim-button').addEventListener('click', function() {
-            const todaySlot = document.querySelector('.day-slot.today');
-            todaySlot.classList.remove('today');
-            todaySlot.classList.add('claimed');
-            this.disabled = true;
-            this.textContent = 'Claimed!';
+        // Claim daily reward - with null check
+        const claimButton = document.querySelector('.claim-button');
+        if (claimButton) {
+            claimButton.addEventListener('click', function() {
+                const todaySlot = document.querySelector('.day-slot.today');
+                if (todaySlot) {
+                    todaySlot.classList.remove('today');
+                    todaySlot.classList.add('claimed');
+                }
+                this.disabled = true;
+                this.textContent = 'Claimed!';
 
-            // Show reward animation
-            // In real implementation, show reward details
-        });
+                // Show reward animation
+                // In real implementation, show reward details
+            });
+        }
 
         // Update event timer
         setInterval(() => {
@@ -15908,7 +16000,7 @@ console.log('Overlay enhancements loaded successfully');
         });
 
         // Tutorial system
-        const tutorialSteps = [
+        const tutorialSteps1 = [ // RENAMED TO AVOID DUPLICATE
             {
                 element: '.character-panel',
                 title: 'Character Panel',
@@ -16088,14 +16180,14 @@ console.log('Overlay enhancements loaded successfully');
         }, 2000);
 
         // Animate XP bar
-        let currentXP = 65;
+        let xpProgress = 65; // Renamed from currentXP to avoid duplicate declaration
         setInterval(() => {
-            currentXP = Math.min(currentXP + 5, 100);
-            document.querySelector('.xp-fill').style.width = `${currentXP}%`;
+            xpProgress = Math.min(xpProgress + 5, 100);
+            document.querySelector('.xp-fill').style.width = `${xpProgress}%`;
 
-            if (currentXP === 100) {
+            if (xpProgress === 100) {
                 triggerLevelUp();
-                currentXP = 0;
+                xpProgress = 0;
             }
         }, 3000);
 
@@ -16238,10 +16330,18 @@ console.log('Overlay enhancements loaded successfully');
                         slot.setAttribute('data-item-id', item.id);
                         slot.setAttribute('data-tooltip', item.description);
 
-                        slot.innerHTML = `
-                            <div class="item-icon">${getItemIcon(item.type)}</div>
-                            ${item.quantity > 1 ? `<div class="item-quantity">${item.quantity}</div>` : ''}
-                        `;
+                        // XSS Fix: Use safe DOM manipulation instead of innerHTML
+                        const iconDiv = document.createElement('div');
+                        iconDiv.className = 'item-icon';
+                        iconDiv.textContent = getItemIcon(item.type);
+                        slot.appendChild(iconDiv);
+
+                        if (item.quantity > 1) {
+                            const quantityDiv = document.createElement('div');
+                            quantityDiv.className = 'item-quantity';
+                            quantityDiv.textContent = item.quantity;
+                            slot.appendChild(quantityDiv);
+                        }
 
                         inventoryGrid.appendChild(slot);
                     });
@@ -16305,22 +16405,39 @@ console.log('Overlay enhancements loaded successfully');
                     questList.innerHTML = ''; // Clear existing
 
                     if (data.quests.length === 0) {
-                        questList.innerHTML = `<div class="no-quests">No ${type} quests</div>`;
+                        // XSS Fix: Use safe DOM manipulation
+                        const noQuestsDiv = document.createElement('div');
+                        noQuestsDiv.className = 'no-quests';
+                        noQuestsDiv.textContent = `No ${type} quests`;
+                        questList.appendChild(noQuestsDiv);
                     } else {
                         data.quests.forEach(quest => {
                             const questItem = document.createElement('div');
                             questItem.className = 'quest-item';
                             questItem.setAttribute('data-quest-id', quest.id);
 
-                            questItem.innerHTML = `
-                                <div class="quest-title">${quest.name}</div>
-                                <div class="quest-description">${quest.description}</div>
-                                ${quest.progress !== undefined ? `
-                                    <div class="quest-progress-bar">
-                                        <div class="quest-progress-fill" style="width: ${quest.progress}%"></div>
-                                    </div>
-                                ` : ''}
-                            `;
+                            // XSS Fix: Use safe DOM manipulation
+                            const titleDiv = document.createElement('div');
+                            titleDiv.className = 'quest-title';
+                            titleDiv.textContent = quest.name;
+                            questItem.appendChild(titleDiv);
+
+                            const descDiv = document.createElement('div');
+                            descDiv.className = 'quest-description';
+                            descDiv.textContent = quest.description;
+                            questItem.appendChild(descDiv);
+
+                            if (quest.progress !== undefined) {
+                                const progressBarDiv = document.createElement('div');
+                                progressBarDiv.className = 'quest-progress-bar';
+
+                                const progressFillDiv = document.createElement('div');
+                                progressFillDiv.className = 'quest-progress-fill';
+                                progressFillDiv.style.width = `${quest.progress}%`;
+
+                                progressBarDiv.appendChild(progressFillDiv);
+                                questItem.appendChild(progressBarDiv);
+                            }
 
                             questList.appendChild(questItem);
                         });
@@ -16537,5 +16654,75 @@ console.log('Overlay enhancements loaded successfully');
         console.log('[Phase B] UX improvements initialized');
 
     </script>
+
+    <!-- Phase G: Divine Council Voting Modal -->
+    <div id="council-voting-modal" class="divine-council-modal">
+        <!-- Mystical Backdrop -->
+        <div class="modal-backdrop mystical-backdrop"></div>
+
+        <!-- Modal Content -->
+        <div class="modal-content council-content">
+
+            <!-- Header with Runes -->
+            <div class="council-header">
+                <img src="/static/images/rune_symbol_2.svg" class="header-rune" alt="" aria-hidden="true">
+                <h2>The Divine Council Convenes</h2>
+                <img src="/static/images/rune_symbol_2.svg" class="header-rune" alt="" aria-hidden="true">
+            </div>
+
+            <!-- Divider -->
+            <img src="/static/images/divider_line.svg" class="divider" alt="" aria-hidden="true">
+
+            <!-- Context Text -->
+            <div class="council-context">
+                <p>Your choice to <strong id="choice-text">make this decision</strong> has drawn the attention of the gods...</p>
+            </div>
+
+            <!-- God Voting Arena -->
+            <div class="god-voting-arena" role="region" aria-label="Divine votes">
+
+                <!-- Approve Side (Left) -->
+                <div class="vote-column approve-column">
+                    <div class="vote-label approve-label">Approve</div>
+                    <div class="god-votes-list" id="approve-gods" role="list">
+                        <!-- Gods who approve will be inserted here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Center Divider with Rune -->
+                <div class="vote-divider" aria-hidden="true">
+                    <div class="divider-line"></div>
+                    <img src="/static/images/rune_symbol_3.svg" class="center-rune" alt="">
+                </div>
+
+                <!-- Condemn Side (Right) -->
+                <div class="vote-column condemn-column">
+                    <div class="vote-label condemn-label">Condemn</div>
+                    <div class="god-votes-list" id="condemn-gods" role="list">
+                        <!-- Gods who condemn will be inserted here by JavaScript -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Divider -->
+            <img src="/static/images/divider_line.svg" class="divider" alt="" aria-hidden="true">
+
+            <!-- Judgment Result -->
+            <div class="council-judgment" role="alert">
+                <div class="judgment-header">Divine Judgment</div>
+                <div class="judgment-result" id="judgment-text">
+                    The Council deliberates upon your choice...
+                </div>
+            </div>
+
+            <!-- Continue Button -->
+            <button class="btn-primary council-continue" type="button">
+                Continue Your Journey
+            </button>
+
+        </div>
+    </div>
+
 </body>
 </html>

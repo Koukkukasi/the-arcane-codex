@@ -288,12 +288,17 @@ class Character:
     # Skills (0-100)
     skills: Dict[str, int] = None
 
+    # PHASE J: Skills & Abilities System
+    skill_points: int = 3  # Start with 3 points for abilities, gain 2 per level
+    mp: int = 60  # Alias for mana (skills system uses 'mp')
+
     # Divine Favor (-100 to +100 per god)
     divine_favor: Dict[str, int] = None
 
-    # Inventory
+    # Inventory (PHASE I: Inventory System)
     inventory: List[str] = None
     equipment: Dict[str, str] = None
+    max_carry_weight: float = 100.0  # Maximum carrying capacity
 
     def __post_init__(self):
         if self.skills is None:
@@ -689,6 +694,23 @@ The gods have judged you.
                 character.mana += bonus
             else:
                 character.skills[skill] += bonus
+
+        # Add starting inventory based on class
+        try:
+            from inventory_manager import create_starting_inventory
+            starting_items = create_starting_inventory(base_class)
+
+            # Ensure character has inventory list
+            if not hasattr(character, 'inventory') or character.inventory is None:
+                character.inventory = []
+
+            # Add starting items
+            character.inventory.extend(starting_items)
+
+            logger.info(f"Added {len(starting_items)} starting items for {base_class}")
+        except Exception as e:
+            logger.warning(f"Could not add starting inventory: {e}")
+            # Continue without inventory - not critical
 
     # ========================================================================
     # TOWN HUB SYSTEM

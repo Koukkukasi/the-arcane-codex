@@ -11,14 +11,25 @@ Requires MCP configuration (see MCP_SETUP.md)
 from flask import Flask, render_template, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import secrets
 import random
 import string
 import os
 from arcane_codex_server import ArcaneCodexGame, SEVEN_GODS, GameState, Character, NPCCompanion
+from skills_manager import SkillsManager
+from database import ArcaneDatabase
+from divine_council import VotingSystem, ConsequenceEngine, GOD_PERSONALITIES
 from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict, field
 import json
+from datetime import datetime
+import logging
+from logging.handlers import RotatingFileHandler
+import traceback
+import time
 
 # MCP Client for dynamic scenario generation (REQUIRED - NO MOCK FALLBACK)
 try:
@@ -58,6 +69,57 @@ app.config['WTF_CSRF_TIME_LIMIT'] = None  # No expiration for long game sessions
 print("[OK] CSRF protection enabled")
 
 # ============================================================================
+# RATE LIMITING - PHASE E.2: DOS Attack Prevention
+# ============================================================================
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+print("[OK] Rate limiting initialized (default: 200/day, 50/hour)")
+
+# ============================================================================
+# SOCKETIO INITIALIZATION - PHASE H: Real-Time Multiplayer
+# ============================================================================
+
+# Configure comprehensive logging with rotation
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        RotatingFileHandler(
+            'game.log',
+            maxBytes=10485760,  # 10MB
+            backupCount=5       # Keep 5 backup files
+        ),
+        logging.StreamHandler()  # Also print to console
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+# Initialize SocketIO
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='eventlet',
+    logger=True,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25,
+    manage_session=False  # Use Flask sessions instead
+)
+
+# Track connected clients: socket_id -> {player_id, game_code, connected_at}
+connected_clients = {}
+
+# Track player presence: game_code -> set of player_ids
+player_presence = {}
+
+print("[OK] SocketIO initialized with eventlet async mode")
+
+# ============================================================================
 # DEVELOPMENT: Cache Prevention Configuration
 # ============================================================================
 
@@ -67,34 +129,66 @@ if app.debug:
     print("[DEV MODE] Static file caching DISABLED for development")
 
 @app.after_request
-def prevent_dev_caching(response):
+def handle_caching(response):
     """
-    Prevent aggressive browser caching during development
+    Handle caching based on environment and resource type
 
-    ISSUE: Browsers cache static/rpg_game.html aggressively
-    - User edits file
-    - Server restarts
-    - Browser shows old version (HTTP 304 Not Modified)
-    - Playwright with fresh context shows correct version
-
-    SOLUTION:
-    - Disable all caching in debug mode
+    DEVELOPMENT MODE:
+    - Disable all caching (no-cache, no-store)
     - Remove ETags (prevents 304 responses)
     - Force revalidation on every request
 
-    PRODUCTION: This only runs in debug mode (production unaffected)
+    PRODUCTION MODE:
+    - Static assets (CSS, JS): Cache for 1 year (immutable)
+    - HTML files: Cache for 5 minutes (revalidate)
+    - API responses: No caching
     """
     if app.debug:
-        # Prevent caching
+        # Development: Prevent all caching
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
-
-        # Remove ETags that cause 304 Not Modified responses
         response.headers.pop('ETag', None)
         response.headers.pop('Last-Modified', None)
+    else:
+        # Production: Aggressive caching for static assets
+        if request.path.startswith('/static/'):
+            # Check if it's a CSS or JS file
+            if request.path.endswith(('.css', '.js')):
+                # Cache CSS/JS for 1 year (immutable - use versioning for updates)
+                response.cache_control.max_age = 31536000  # 1 year
+                response.cache_control.public = True
+                response.cache_control.immutable = True
+            elif request.path.endswith(('.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf')):
+                # Cache images and fonts for 1 month
+                response.cache_control.max_age = 2592000  # 30 days
+                response.cache_control.public = True
+            elif request.path.endswith('.html'):
+                # Cache HTML for 5 minutes, must revalidate
+                response.cache_control.max_age = 300  # 5 minutes
+                response.cache_control.public = True
+                response.cache_control.must_revalidate = True
+        elif request.path.startswith('/api/'):
+            # Never cache API responses
+            response.cache_control.no_cache = True
+            response.cache_control.no_store = True
+            response.cache_control.must_revalidate = True
 
     return response
+
+# ============================================================================
+# RATE LIMIT ERROR HANDLER
+# ============================================================================
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded errors"""
+    remote_addr = get_remote_address()
+    logger.warning(f"Rate limit exceeded for IP: {remote_addr}")
+    return jsonify({
+        'error': 'Rate limit exceeded',
+        'message': 'Too many requests. Please try again later.'
+    }), 429
 
 # ============================================================================
 # DATA STRUCTURES
@@ -228,6 +322,211 @@ def get_mock_interrogation_question(question_number: int, previous_answers: list
 
 # Active game sessions
 game_sessions: Dict[str, GameSession] = {}
+
+# Initialize database and divine council systems
+db = ArcaneDatabase(db_path="arcane_codex.db")
+voting_system = VotingSystem(db, GOD_PERSONALITIES)
+consequence_engine = ConsequenceEngine(db)
+
+print("[OK] Database and Divine Council systems initialized")
+
+# ============================================================================
+# SOCKETIO EVENT HANDLERS - PHASE H: Real-Time Multiplayer
+# ============================================================================
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle new client connection"""
+    player_id = session.get('player_id')
+    game_code = session.get('game_code')
+
+    if not player_id:
+        logger.warning(f"[SocketIO] Connection rejected - no player_id: {request.sid}")
+        return False  # Reject connection
+
+    # Store connection info
+    connected_clients[request.sid] = {
+        'player_id': player_id,
+        'game_code': game_code,
+        'connected_at': datetime.now().isoformat()
+    }
+
+    logger.info(f"[SocketIO] Client connected: {request.sid} (player: {player_id[:8]}...)")
+
+    # If player is in a game, join the room and announce presence
+    if game_code and game_code in game_sessions:
+        join_room(game_code)
+
+        # Track presence
+        if game_code not in player_presence:
+            player_presence[game_code] = set()
+        player_presence[game_code].add(player_id)
+
+        # Get player info
+        game_session = game_sessions[game_code]
+        player_name = game_session.players.get(player_id, 'Unknown')
+
+        logger.info(f"[SocketIO] Player {player_name} joined room {game_code}")
+
+        # Notify others in the room
+        emit('player_connected', {
+            'player_id': player_id,
+            'player_name': player_name,
+            'timestamp': datetime.now().isoformat()
+        }, room=game_code, skip_sid=request.sid)
+
+        # Send presence list to the connecting player
+        emit('presence_update', {
+            'online_players': list(player_presence[game_code]),
+            'total_players': len(game_session.players)
+        })
+
+    return True
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    if request.sid not in connected_clients:
+        return
+
+    client_info = connected_clients[request.sid]
+    player_id = client_info['player_id']
+    game_code = client_info['game_code']
+
+    logger.info(f"[SocketIO] Client disconnected: {request.sid} (player: {player_id[:8]}...)")
+
+    # Update presence
+    if game_code and game_code in player_presence:
+        player_presence[game_code].discard(player_id)
+
+        # Notify others in the room
+        if game_code in game_sessions:
+            game_session = game_sessions[game_code]
+            player_name = game_session.players.get(player_id, 'Unknown')
+
+            emit('player_disconnected', {
+                'player_id': player_id,
+                'player_name': player_name,
+                'timestamp': datetime.now().isoformat()
+            }, room=game_code)
+
+            # Send updated presence to room
+            emit('presence_update', {
+                'online_players': list(player_presence[game_code]),
+                'total_players': len(game_session.players)
+            }, room=game_code)
+
+    # Clean up
+    del connected_clients[request.sid]
+
+
+@socketio.on('join_game_room')
+def handle_join_game_room(data):
+    """Join a game room (called after joining via HTTP API)"""
+    player_id = session.get('player_id')
+    if not player_id:
+        emit('error', {'message': 'Authentication required', 'code': 'AUTH_REQUIRED'})
+        return
+
+    game_code = data.get('game_code', '').upper()
+
+    if not game_code or game_code not in game_sessions:
+        emit('error', {'message': 'Invalid game code', 'code': 'INVALID_GAME'})
+        return
+
+    game_session = game_sessions[game_code]
+
+    # Verify player is actually in this game
+    if player_id not in game_session.players:
+        emit('error', {'message': 'Not authorized for this game', 'code': 'NOT_IN_GAME'})
+        return
+
+    # Join the room
+    join_room(game_code)
+
+    # Update presence
+    if game_code not in player_presence:
+        player_presence[game_code] = set()
+    player_presence[game_code].add(player_id)
+
+    # Update connection tracking
+    if request.sid in connected_clients:
+        connected_clients[request.sid]['game_code'] = game_code
+
+    player_name = game_session.players[player_id]
+
+    logger.info(f"[SocketIO] {player_name} joined room {game_code}")
+
+    # Notify room
+    emit('player_joined', {
+        'player_id': player_id,
+        'player_name': player_name,
+        'player_count': len(game_session.players),
+        'timestamp': datetime.now().isoformat()
+    }, room=game_code)
+
+    # Send presence update
+    emit('presence_update', {
+        'online_players': list(player_presence[game_code]),
+        'total_players': len(game_session.players)
+    }, room=game_code)
+
+
+@socketio.on('player_chose')
+def handle_player_chose(data):
+    """Broadcast when a player submits their choice"""
+    player_id = session.get('player_id')
+    game_code = session.get('game_code')
+
+    if not player_id or not game_code:
+        return
+
+    game_session = game_sessions.get(game_code)
+    if not game_session or not game_session.current_scenario:
+        return
+
+    player_name = game_session.players.get(player_id, 'Unknown')
+
+    # Broadcast to room
+    emit('player_chose', {
+        'player_id': player_id,
+        'player_name': player_name,
+        'choices_submitted': len(game_session.current_scenario.choices_submitted),
+        'total_players': len(game_session.players),
+        'all_submitted': game_session.all_choices_submitted(),
+        'waiting_for': game_session.get_waiting_players(),
+        'timestamp': datetime.now().isoformat()
+    }, room=game_code)
+
+    logger.info(f"[SocketIO] {player_name} submitted choice in {game_code}")
+
+
+@socketio.on('request_presence')
+def handle_request_presence():
+    """Request current presence information"""
+    player_id = session.get('player_id')
+    game_code = session.get('game_code')
+
+    if not player_id or not game_code:
+        return
+
+    if game_code in game_sessions:
+        game_session = game_sessions[game_code]
+        online_players = list(player_presence.get(game_code, set()))
+
+        emit('presence_update', {
+            'online_players': online_players,
+            'total_players': len(game_session.players),
+            'players': [
+                {
+                    'player_id': pid,
+                    'player_name': pname,
+                    'online': pid in online_players
+                }
+                for pid, pname in game_session.players.items()
+            ]
+        })
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -384,12 +683,18 @@ def get_username():
 # ============================================================================
 
 @app.route('/api/create_game', methods=['POST'])
+@limiter.limit("10 per hour")  # Prevent game spam
 def create_game():
     """Create new multiplayer game session"""
     try:
         # Get username from session (required)
         username = session.get('username')
+        player_id = get_player_id()
+
+        logger.info(f"[CREATE_GAME] Player {player_id[:8]}... attempting to create new game as {username}")
+
         if not username:
+            logger.warning(f"[CREATE_GAME] Username required but not found in session. Player: {player_id[:8]}...")
             return jsonify({'status': 'error', 'message': 'Username required. Please set username first.'}), 400
 
         # Get JSON data (may be None if no body sent)
@@ -403,13 +708,15 @@ def create_game():
         # Generate game code
         code = generate_game_code()
 
-        # Get or create player ID
-        player_id = get_player_id()
+        logger.info(f"[CREATE_GAME] Generated game code {code} for player {player_name}")
 
         # Create new game
-        print(f"[DEBUG] Creating ArcaneCodexGame instance for code {code}")
-        game = ArcaneCodexGame()
-        print(f"[DEBUG] Game instance created successfully")
+        try:
+            game = ArcaneCodexGame()
+            logger.debug(f"[CREATE_GAME] ArcaneCodexGame instance created successfully")
+        except Exception as game_error:
+            logger.error(f"[CREATE_GAME] Failed to create ArcaneCodexGame: {str(game_error)}", exc_info=True)
+            raise
 
         game_session = GameSession(
             code=code,
@@ -423,7 +730,14 @@ def create_game():
         # Store game code in session
         session['game_code'] = code
 
-        print(f"[DEBUG] Game {code} created successfully for player {player_name}")
+        logger.info(f"[CREATE_GAME] Game {code} created successfully. Players: 1/4 | Creator: {player_name}")
+
+        # PHASE H: Emit SocketIO event for game creation
+        socketio.emit('game_created', {
+            'game_code': code,
+            'player_name': player_name,
+            'timestamp': datetime.now().isoformat()
+        }, room=code)
 
         return jsonify({
             'status': 'success',
@@ -434,66 +748,92 @@ def create_game():
         })
 
     except Exception as e:
-        print(f"[ERROR] Failed to create game: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"[CREATE_GAME] Failed to create game: {str(e)}", exc_info=True)
         return jsonify({
             'status': 'error',
             'message': f'Failed to create game: {str(e)}'
         }), 500
 
 @app.route('/api/join_game', methods=['POST'])
+@limiter.limit("20 per hour")  # Prevent join spam
 def join_game():
     """Join existing game session"""
-    # Get username from session (required)
-    username = session.get('username')
-    if not username:
-        return jsonify({'status': 'error', 'message': 'Username required. Please set username first.'}), 400
+    try:
+        # Get username from session (required)
+        username = session.get('username')
+        player_id = get_player_id()
 
-    data = request.json
-    game_code = data.get('game_code', '').upper()
-    player_name = username  # Use session username
+        logger.info(f"[JOIN_GAME] Player {player_id[:8]}... ({username}) attempting to join game")
 
-    if not game_code:
-        return jsonify({'status': 'error', 'message': 'Game code required'}), 400
+        if not username:
+            logger.warning(f"[JOIN_GAME] Username required but not found. Player: {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Username required. Please set username first.'}), 400
 
-    game_session = get_game_session(game_code)
+        data = request.json or {}
+        game_code = data.get('game_code', '').upper()
+        player_name = username  # Use session username
 
-    if not game_session:
-        return jsonify({'status': 'error', 'message': 'Game not found'}), 404
+        if not game_code:
+            logger.warning(f"[JOIN_GAME] Game code required. Player: {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Game code required'}), 400
 
-    if game_session.is_full():
-        return jsonify({'status': 'error', 'message': 'Game is full (4 players max)'}), 400
+        logger.info(f"[JOIN_GAME] Player {player_name} attempting to join game {game_code}")
 
-    if game_session.game_started:
-        return jsonify({'status': 'error', 'message': 'Game already started'}), 400
+        game_session = get_game_session(game_code)
 
-    # Get or create player ID
-    player_id = get_player_id()
+        if not game_session:
+            logger.warning(f"[JOIN_GAME] Game {game_code} not found. Player: {player_name}")
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
 
-    # Check if player already in game
-    if player_id in game_session.players:
+        if game_session.is_full():
+            logger.warning(f"[JOIN_GAME] Game {game_code} is full. Player: {player_name} denied")
+            return jsonify({'status': 'error', 'message': 'Game is full (4 players max)'}), 400
+
+        if game_session.game_started:
+            logger.warning(f"[JOIN_GAME] Game {game_code} already started. Player: {player_name} denied")
+            return jsonify({'status': 'error', 'message': 'Game already started'}), 400
+
+        # Check if player already in game
+        if player_id in game_session.players:
+            logger.info(f"[JOIN_GAME] Player {player_name} already in game {game_code}")
+            return jsonify({
+                'status': 'success',
+                'game_code': game_code,
+                'player_id': player_id,
+                'message': 'Already in this game',
+                'players': list(game_session.players.values())
+            })
+
+        # Add player to game
+        game_session.players[player_id] = player_name
+        session['game_code'] = game_code
+
+        logger.info(f"[JOIN_GAME] Player {player_name} joined game {game_code}. Players: {len(game_session.players)}/4")
+
+        # PHASE H: Emit SocketIO event for player joining
+        socketio.emit('player_joined', {
+            'player_id': player_id,
+            'player_name': player_name,
+            'player_count': len(game_session.players),
+            'timestamp': datetime.now().isoformat()
+        }, room=game_code)
+
         return jsonify({
             'status': 'success',
             'game_code': game_code,
             'player_id': player_id,
-            'message': 'Already in this game',
-            'players': list(game_session.players.values())
+            'player_name': player_name,
+            'message': f'Joined game {game_code}!',
+            'players': list(game_session.players.values()),
+            'player_count': len(game_session.players)
         })
 
-    # Add player to game
-    game_session.players[player_id] = player_name
-    session['game_code'] = game_code
-
-    return jsonify({
-        'status': 'success',
-        'game_code': game_code,
-        'player_id': player_id,
-        'player_name': player_name,
-        'message': f'Joined game {game_code}!',
-        'players': list(game_session.players.values()),
-        'player_count': len(game_session.players)
-    })
+    except Exception as e:
+        logger.error(f"[JOIN_GAME] Error joining game: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Error joining game: {str(e)}'
+        }), 500
 
 @app.route('/api/session_info', methods=['GET'])
 def session_info():
@@ -541,6 +881,7 @@ def session_info():
 # ============================================================================
 
 @app.route('/api/generate_scenario', methods=['POST'])
+@limiter.limit("5 per minute")  # Expensive MCP call
 def generate_scenario():
     """
     Generate new scenario using MCP → Claude Desktop
@@ -550,36 +891,63 @@ def generate_scenario():
     Requires MCP configured (see MCP_SETUP.md)
     Uses your €200 Claude Max plan for unlimited unique scenarios
     """
-    game_code = session.get('game_code')
-
-    if not game_code:
-        return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
-
-    game_session = get_game_session(game_code)
-
-    if not game_session:
-        return jsonify({'status': 'error', 'message': 'Game not found'}), 404
-
-    if not game_session.all_players_ready():
-        return jsonify({'status': 'error', 'message': 'Not all players ready'}), 400
-
-    # Generate scenario via MCP (100% dynamic, NO mock scenarios)
     try:
-        scenario = generate_scenario_via_mcp(game_session)
-    except RuntimeError as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        game_code = session.get('game_code')
 
-    # Store scenario
-    game_session.current_scenario = scenario
-    game_session.scenario_history.append(scenario.theme)
+        logger.info(f"[GENERATE_SCENARIO] Generating scenario for game {game_code}")
 
-    return jsonify({
-        'status': 'success',
-        'scenario_id': scenario.scenario_id,
-        'theme': scenario.theme,
-        'turn_number': scenario.turn_number,
-        'message': 'Scenario generated! View with /api/current_scenario'
-    })
+        if not game_code:
+            logger.warning(f"[GENERATE_SCENARIO] No game code in session")
+            return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
+
+        game_session = get_game_session(game_code)
+
+        if not game_session:
+            logger.warning(f"[GENERATE_SCENARIO] Game {game_code} not found")
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
+
+        if not game_session.all_players_ready():
+            logger.warning(f"[GENERATE_SCENARIO] Not all players ready in game {game_code}")
+            return jsonify({'status': 'error', 'message': 'Not all players ready'}), 400
+
+        # Generate scenario via MCP (100% dynamic, NO mock scenarios)
+        try:
+            logger.info(f"[GENERATE_SCENARIO] Calling MCP for game {game_code}. Players: {len(game_session.players)}")
+            scenario = generate_scenario_via_mcp(game_session)
+            logger.info(f"[GENERATE_SCENARIO] Successfully generated scenario {scenario.scenario_id} with theme '{scenario.theme}'")
+        except RuntimeError as e:
+            logger.error(f"[GENERATE_SCENARIO] MCP generation failed for game {game_code}: {str(e)}", exc_info=True)
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
+        # Store scenario
+        game_session.current_scenario = scenario
+        game_session.scenario_history.append(scenario.theme)
+
+        logger.info(f"[GENERATE_SCENARIO] Scenario stored. Turn number: {scenario.turn_number}")
+
+        # PHASE H: Emit SocketIO event for new scenario
+        socketio.emit('new_scenario', {
+            'scenario_id': scenario.scenario_id,
+            'theme': scenario.theme,
+            'turn_number': scenario.turn_number,
+            'timestamp': datetime.now().isoformat(),
+            'message': 'New scenario available! Check your whisper.'
+        }, room=game_code)
+
+        return jsonify({
+            'status': 'success',
+            'scenario_id': scenario.scenario_id,
+            'theme': scenario.theme,
+            'turn_number': scenario.turn_number,
+            'message': 'Scenario generated! View with /api/current_scenario'
+        })
+
+    except Exception as e:
+        logger.error(f"[GENERATE_SCENARIO] Unexpected error: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Error generating scenario: {str(e)}'
+        }), 500
 
 # ============================================================================
 # SCENARIO DISPLAY
@@ -646,67 +1014,103 @@ def my_whisper():
 # ============================================================================
 
 @app.route('/api/make_choice', methods=['POST'])
+@limiter.limit("30 per minute")  # Reasonable gameplay rate
 def make_choice():
     """Submit player's choice for current turn"""
-    game_code = session.get('game_code')
-    player_id = get_player_id()
+    try:
+        game_code = session.get('game_code')
+        player_id = get_player_id()
 
-    if not game_code:
-        return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
+        logger.info(f"[MAKE_CHOICE] Player {player_id[:8]}... making choice in game {game_code}")
 
-    game_session = get_game_session(game_code)
+        if not game_code:
+            logger.warning(f"[MAKE_CHOICE] Player {player_id[:8]}... not in a game")
+            return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
 
-    if not game_session:
-        return jsonify({'status': 'error', 'message': 'Game not found'}), 404
+        game_session = get_game_session(game_code)
 
-    # FIXED: Verify player is actually in this game (prevents hijacking)
-    if player_id not in game_session.players:
-        return jsonify({'status': 'error', 'message': 'You are not in this game'}), 403
+        if not game_session:
+            logger.warning(f"[MAKE_CHOICE] Game {game_code} not found for player {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
 
-    if not game_session.current_scenario:
-        return jsonify({'status': 'error', 'message': 'No active scenario'}), 404
+        # FIXED: Verify player is actually in this game (prevents hijacking)
+        if player_id not in game_session.players:
+            logger.error(f"[MAKE_CHOICE] Unauthorized: Player {player_id[:8]}... not in game {game_code}")
+            return jsonify({'status': 'error', 'message': 'You are not in this game'}), 403
 
-    if game_session.current_scenario.resolved:
-        return jsonify({'status': 'error', 'message': 'Scenario already resolved'}), 400
+        if not game_session.current_scenario:
+            logger.warning(f"[MAKE_CHOICE] No active scenario in game {game_code}")
+            return jsonify({'status': 'error', 'message': 'No active scenario'}), 404
 
-    # FIXED: Prevent duplicate submissions
-    if player_id in game_session.current_scenario.choices_submitted:
-        return jsonify({'status': 'error', 'message': 'You have already submitted your choice'}), 400
+        if game_session.current_scenario.resolved:
+            logger.warning(f"[MAKE_CHOICE] Scenario already resolved in game {game_code}")
+            return jsonify({'status': 'error', 'message': 'Scenario already resolved'}), 400
 
-    data = request.json
-    choice = data.get('choice', '').strip()
+        # FIXED: Prevent duplicate submissions
+        if player_id in game_session.current_scenario.choices_submitted:
+            logger.warning(f"[MAKE_CHOICE] Duplicate submission from player {player_id[:8]}... in game {game_code}")
+            return jsonify({'status': 'error', 'message': 'You have already submitted your choice'}), 400
 
-    if not choice:
-        return jsonify({'status': 'error', 'message': 'Choice required'}), 400
+        data = request.json or {}
+        choice = data.get('choice', '').strip()
 
-    # FIXED: Validate choice length (prevent DOS attacks)
-    if len(choice) > 1000:
-        return jsonify({'status': 'error', 'message': 'Choice too long (max 1000 characters)'}), 400
+        if not choice:
+            logger.warning(f"[MAKE_CHOICE] Empty choice from player {player_id[:8]}... in game {game_code}")
+            return jsonify({'status': 'error', 'message': 'Choice required'}), 400
 
-    # FIXED: Sanitize HTML to prevent XSS
-    import html
-    choice = html.escape(choice)
+        # FIXED: Validate choice length (prevent DOS attacks)
+        if len(choice) > 1000:
+            logger.warning(f"[MAKE_CHOICE] Choice too long ({len(choice)} chars) from player {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Choice too long (max 1000 characters)'}), 400
 
-    # Record choice
-    import time
-    player_choice = PlayerChoice(
-        player_id=player_id,
-        choice=choice,
-        timestamp=time.time()
-    )
+        # FIXED: Sanitize HTML to prevent XSS
+        import html
+        choice = html.escape(choice)
 
-    game_session.current_scenario.choices_submitted[player_id] = player_choice
+        # Record choice
+        player_choice = PlayerChoice(
+            player_id=player_id,
+            choice=choice,
+            timestamp=time.time()
+        )
 
-    all_submitted = game_session.all_choices_submitted()
+        game_session.current_scenario.choices_submitted[player_id] = player_choice
 
-    return jsonify({
-        'status': 'success',
-        'message': 'Choice submitted!',
-        'choices_submitted': len(game_session.current_scenario.choices_submitted),
-        'total_players': len(game_session.players),
-        'all_submitted': all_submitted,
-        'waiting_for': game_session.get_waiting_players()
-    })
+        all_submitted = game_session.all_choices_submitted()
+
+        player_name = game_session.players.get(player_id, 'Unknown')
+
+        logger.info(f"[MAKE_CHOICE] Player {player_name} submitted choice in game {game_code}. Submissions: {len(game_session.current_scenario.choices_submitted)}/{len(game_session.players)}")
+
+        # PHASE H: Emit SocketIO event for choice submission
+        socketio.emit('player_chose', {
+            'player_id': player_id,
+            'player_name': player_name,
+            'choices_submitted': len(game_session.current_scenario.choices_submitted),
+            'total_players': len(game_session.players),
+            'all_submitted': all_submitted,
+            'waiting_for': game_session.get_waiting_players(),
+            'timestamp': datetime.now().isoformat()
+        }, room=game_code)
+
+        if all_submitted:
+            logger.info(f"[MAKE_CHOICE] All players submitted choices in game {game_code}. Turn ready for resolution.")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Choice submitted!',
+            'choices_submitted': len(game_session.current_scenario.choices_submitted),
+            'total_players': len(game_session.players),
+            'all_submitted': all_submitted,
+            'waiting_for': game_session.get_waiting_players()
+        })
+
+    except Exception as e:
+        logger.error(f"[MAKE_CHOICE] Error: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Error submitting choice: {str(e)}'
+        }), 500
 
 @app.route('/api/waiting_for', methods=['GET'])
 def waiting_for():
@@ -851,230 +1255,297 @@ def game():
     return render_template('game.html')
 
 @app.route('/api/start_interrogation', methods=['POST'])
+@limiter.limit("3 per hour")  # Prevent interrogation spam
 def start_interrogation():
     """Start Divine Interrogation for a player - AI GENERATED ONLY!"""
-    game_code = session.get('game_code')
-    player_id = get_player_id()
-
-    if not game_code:
-        return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
-
-    game_session = get_game_session(game_code)
-
-    if not game_session:
-        return jsonify({'status': 'error', 'message': 'Game not found'}), 404
-
-    # Initialize interrogation progress if not exists
-    if player_id not in game_session.game.divine_interrogation_progress:
-        game_session.game.divine_interrogation_progress[player_id] = {
-            "answers": [],
-            "current_question": 0,
-            "divine_favor": {god: 0 for god in SEVEN_GODS},
-            "questions": []  # Store AI-generated questions
-        }
-
-    # Generate first question via MCP (or mock in test mode)
-    if not MCP_AVAILABLE and not TEST_MODE:
-        raise RuntimeError(
-            "❌ MCP client not available!\n\n"
-            "Divine Interrogation requires MCP for 100% unique questions per player.\n"
-            "NO static questions are used.\n\n"
-            "See MCP_SETUP.md for configuration.\n"
-            "For testing, set ARCANE_TEST_MODE=1 environment variable."
-        )
-
     try:
-        if TEST_MODE and not MCP_AVAILABLE:
-            # Use mock questions for testing
-            print(f"⚠️  TEST MODE: Using mock interrogation question for player {player_id[:8]}")
-            question_data = get_mock_interrogation_question(
-                question_number=1,
-                previous_answers=[]
-            )
-        else:
-            # Production: Use MCP for AI-generated questions
-            mcp_client = SyncMCPClient()
-            question_data = mcp_client.generate_interrogation_question(
-                player_id=player_id,
-                question_number=1,
-                previous_answers=[]
-            )
+        game_code = session.get('game_code')
+        player_id = get_player_id()
 
-        # Store generated question
-        game_session.game.divine_interrogation_progress[player_id]["questions"].append(question_data)
+        logger.info(f"[START_INTERROGATION] Player {player_id[:8]}... starting Divine Interrogation in game {game_code}")
 
-        return jsonify({
-            'status': 'success',
-            'message': '🌩️ The Seven Gods await your truth...',
-            'question': question_data
-        })
-    except Exception as e:
-        raise RuntimeError(
-            f"❌ MCP interrogation question generation failed!\n\n"
-            f"Error: {e}\n\n"
-            f"See MCP_SETUP.md for troubleshooting."
-        )
+        if not game_code:
+            logger.warning(f"[START_INTERROGATION] No game code in session")
+            return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
 
-@app.route('/api/answer_question', methods=['POST'])
-def answer_question():
-    """Answer a Divine Interrogation question - AI GENERATED ONLY!"""
-    game_code = session.get('game_code')
-    player_id = get_player_id()
+        game_session = get_game_session(game_code)
 
-    if not game_code:
-        return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
+        if not game_session:
+            logger.warning(f"[START_INTERROGATION] Game {game_code} not found")
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
 
-    game_session = get_game_session(game_code)
+        # Initialize interrogation progress if not exists
+        if player_id not in game_session.game.divine_interrogation_progress:
+            game_session.game.divine_interrogation_progress[player_id] = {
+                "answers": [],
+                "current_question": 0,
+                "divine_favor": {god: 0 for god in SEVEN_GODS},
+                "questions": []  # Store AI-generated questions
+            }
 
-    if not game_session:
-        return jsonify({'status': 'error', 'message': 'Game not found'}), 404
-
-    data = request.json
-    answer_id = data.get('answer_id')
-
-    progress = game_session.game.divine_interrogation_progress.get(player_id)
-    if not progress:
-        return jsonify({'status': 'error', 'message': 'Interrogation not started'}), 400
-
-    # Get current question from stored AI-generated questions
-    current_index = progress["current_question"]
-    if current_index >= len(progress["questions"]):
-        return jsonify({'status': 'error', 'message': 'Invalid question index'}), 400
-
-    current_question = progress["questions"][current_index]
-
-    # Find selected option and update divine favor
-    selected_option = None
-    for option in current_question.get("options", []):
-        if option["id"] == answer_id:
-            selected_option = option
-            break
-
-    if not selected_option:
-        return jsonify({'status': 'error', 'message': 'Invalid answer ID'}), 400
-
-    # Update divine favor based on selected option
-    for god, favor_change in selected_option.get("favor", {}).items():
-        progress["divine_favor"][god] = progress["divine_favor"].get(god, 0) + favor_change
-
-    # Record answer
-    progress["answers"].append({
-        "question_number": current_question.get("question_number", current_index + 1),
-        "answer_id": answer_id,
-        "answer_text": selected_option["text"]
-    })
-
-    # Move to next question
-    progress["current_question"] += 1
-
-    # Check if interrogation complete (10 questions)
-    if progress["current_question"] >= 10:
-        # INTERROGATION COMPLETE - Determine character class from divine favor
-        divine_favor = progress["divine_favor"]
-
-        # Find god with highest favor
-        max_favor = max(divine_favor.values())
-        top_god = [god for god, favor in divine_favor.items() if favor == max_favor][0]
-
-        # Map god to character class (simplified)
-        god_to_class = {
-            "VALDRIS": "Fighter",
-            "KAITHA": "Thief",
-            "MORVANE": "Cleric",
-            "SYLARA": "Mage",
-            "KORVAN": "Fighter",
-            "ATHENA": "Mage",
-            "MERCUS": "Thief"
-        }
-        character_class = god_to_class.get(top_god, "Fighter")
-
-        # Get player name from session
-        player_name = game_session.players[player_id]
-
-        # Create character with determined class
-        character = game_session.game.create_character(player_id, player_name)
-        character.character_class = character_class  # Override with AI-determined class
-
-        # Store character class
-        game_session.player_classes[player_id] = character.character_class
-
-        # Mark interrogation as complete for this player
-        game_session.interrogation_complete.add(player_id)
-
-        # Check if all players ready to start
-        all_ready = game_session.all_players_ready()
-
-        # Initialize game state if all ready
-        if all_ready and not game_session.game_started:
-            # Create characters list
-            characters = []
-            for pid in game_session.players.keys():
-                pname = game_session.players[pid]
-                char = game_session.game.create_character(pid, pname)
-                characters.append(char)
-
-            # Create NPCs
-            npcs = game_session.game.create_default_npcs()
-
-            # Initialize game state
-            game_session.game.game_state = GameState(
-                party_id=game_code,
-                player_characters=characters,
-                npc_companions=npcs,
-                party_trust=50,
-                party_leader=list(game_session.players.keys())[0],
-                current_location="valdria_town"
+        # Generate first question via MCP (or mock in test mode)
+        if not MCP_AVAILABLE and not TEST_MODE:
+            logger.error(f"[START_INTERROGATION] MCP not available and not in TEST_MODE")
+            raise RuntimeError(
+                "❌ MCP client not available!\n\n"
+                "Divine Interrogation requires MCP for 100% unique questions per player.\n"
+                "NO static questions are used.\n\n"
+                "See MCP_SETUP.md for configuration.\n"
+                "For testing, set ARCANE_TEST_MODE=1 environment variable."
             )
 
-            game_session.game_started = True
-
-        return jsonify({
-            'status': 'complete',
-            'assigned_class': character_class,
-            'character_class': character_class,
-            'divine_favor': divine_favor,
-            'character': {
-                'name': character.name,
-                'class': character.character_class,
-                'hp': character.hp,
-                'mana': character.mana
-            },
-            'all_ready': all_ready,
-            'game_started': game_session.game_started
-        })
-
-    else:
-        # CONTINUE - Generate next question via MCP (or mock in test mode)
         try:
             if TEST_MODE and not MCP_AVAILABLE:
                 # Use mock questions for testing
-                print(f"⚠️  TEST MODE: Using mock interrogation question {progress['current_question'] + 1} for player {player_id[:8]}")
-                next_question = get_mock_interrogation_question(
-                    question_number=progress["current_question"] + 1,
-                    previous_answers=progress["answers"]
+                logger.info(f"[START_INTERROGATION] TEST MODE: Using mock interrogation question for player {player_id[:8]}...")
+                question_data = get_mock_interrogation_question(
+                    question_number=1,
+                    previous_answers=[]
                 )
             else:
                 # Production: Use MCP for AI-generated questions
+                logger.info(f"[START_INTERROGATION] Generating question via MCP for player {player_id[:8]}...")
                 mcp_client = SyncMCPClient()
-                next_question = mcp_client.generate_interrogation_question(
+                question_data = mcp_client.generate_interrogation_question(
                     player_id=player_id,
-                    question_number=progress["current_question"] + 1,
-                    previous_answers=progress["answers"]
+                    question_number=1,
+                    previous_answers=[]
                 )
 
             # Store generated question
-            progress["questions"].append(next_question)
+            game_session.game.divine_interrogation_progress[player_id]["questions"].append(question_data)
+
+            logger.info(f"[START_INTERROGATION] Question generated for player {player_id[:8]}... Question: {question_data.get('question_number', 1)}")
 
             return jsonify({
-                'status': 'continue',
-                'next_question': next_question
+                'status': 'success',
+                'message': '🌩️ The Seven Gods await your truth...',
+                'question': question_data
             })
         except Exception as e:
+            logger.error(f"[START_INTERROGATION] Failed to generate question: {str(e)}", exc_info=True)
             raise RuntimeError(
                 f"❌ MCP interrogation question generation failed!\n\n"
                 f"Error: {e}\n\n"
                 f"See MCP_SETUP.md for troubleshooting."
             )
+    except Exception as e:
+        logger.error(f"[START_INTERROGATION] Unexpected error: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/answer_question', methods=['POST'])
+@limiter.limit("20 per minute")  # Normal gameplay rate
+def answer_question():
+    """Answer a Divine Interrogation question - AI GENERATED ONLY!"""
+    try:
+        game_code = session.get('game_code')
+        player_id = get_player_id()
+
+        if not game_code:
+            logger.warning(f"[ANSWER_QUESTION] No game code in session")
+            return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
+
+        game_session = get_game_session(game_code)
+
+        if not game_session:
+            logger.warning(f"[ANSWER_QUESTION] Game {game_code} not found")
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
+
+        data = request.json or {}
+        answer_id = data.get('answer_id')
+
+        logger.info(f"[ANSWER_QUESTION] Player {player_id[:8]}... answering with answer_id: {answer_id}")
+
+        progress = game_session.game.divine_interrogation_progress.get(player_id)
+        if not progress:
+            logger.warning(f"[ANSWER_QUESTION] Interrogation not started for player {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Interrogation not started'}), 400
+
+        # Get current question from stored AI-generated questions
+        current_index = progress["current_question"]
+        if current_index >= len(progress["questions"]):
+            logger.error(f"[ANSWER_QUESTION] Invalid question index {current_index} for player {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Invalid question index'}), 400
+
+        current_question = progress["questions"][current_index]
+
+        # Find selected option and update divine favor
+        selected_option = None
+        for option in current_question.get("options", []):
+            if option["id"] == answer_id:
+                selected_option = option
+                break
+
+        if not selected_option:
+            logger.warning(f"[ANSWER_QUESTION] Invalid answer ID {answer_id} for player {player_id[:8]}...")
+            return jsonify({'status': 'error', 'message': 'Invalid answer ID'}), 400
+
+        # Update divine favor based on selected option
+        for god, favor_change in selected_option.get("favor", {}).items():
+            progress["divine_favor"][god] = progress["divine_favor"].get(god, 0) + favor_change
+
+        # Record answer
+        progress["answers"].append({
+            "question_number": current_question.get("question_number", current_index + 1),
+            "answer_id": answer_id,
+            "answer_text": selected_option["text"]
+        })
+
+        logger.info(f"[ANSWER_QUESTION] Player {player_id[:8]}... answered question {current_question.get('question_number', current_index + 1)}")
+
+        # Move to next question
+        progress["current_question"] += 1
+
+        # Check if interrogation complete (10 questions)
+        if progress["current_question"] >= 10:
+            # INTERROGATION COMPLETE - Determine character class from divine favor
+            divine_favor = progress["divine_favor"]
+
+            # Find god with highest favor
+            max_favor = max(divine_favor.values())
+            top_god = [god for god, favor in divine_favor.items() if favor == max_favor][0]
+
+            # Map god to character class (simplified)
+            god_to_class = {
+                "VALDRIS": "Fighter",
+                "KAITHA": "Thief",
+                "MORVANE": "Cleric",
+                "SYLARA": "Mage",
+                "KORVAN": "Fighter",
+                "ATHENA": "Mage",
+                "MERCUS": "Thief"
+            }
+            character_class = god_to_class.get(top_god, "Fighter")
+
+            # Get player name from session
+            player_name = game_session.players[player_id]
+
+            # Create character with determined class
+            character = game_session.game.create_character(player_id, player_name)
+            character.character_class = character_class  # Override with AI-determined class
+
+            # Store character class
+            game_session.player_classes[player_id] = character.character_class
+
+            # Mark interrogation as complete for this player
+            game_session.interrogation_complete.add(player_id)
+
+            logger.info(f"[ANSWER_QUESTION] Interrogation COMPLETE for {player_name}. Assigned class: {character_class} (highest favor: {top_god})")
+
+            # Check if all players ready to start
+            all_ready = game_session.all_players_ready()
+
+            # Initialize game state if all ready
+            if all_ready and not game_session.game_started:
+                # Create characters list
+                characters = []
+                for pid in game_session.players.keys():
+                    pname = game_session.players[pid]
+                    char = game_session.game.create_character(pid, pname)
+                    characters.append(char)
+
+                # Create NPCs
+                npcs = game_session.game.create_default_npcs()
+
+                # Initialize game state
+                game_session.game.game_state = GameState(
+                    party_id=game_code,
+                    player_characters=characters,
+                    npc_companions=npcs,
+                    party_trust=50,
+                    party_leader=list(game_session.players.keys())[0],
+                    current_location="valdria_town"
+                )
+
+                game_session.game_started = True
+                logger.info(f"[ANSWER_QUESTION] All players ready! Game {game_code} STARTED")
+
+            return jsonify({
+                'status': 'complete',
+                'assigned_class': character_class,
+                'character_class': character_class,
+                'divine_favor': divine_favor,
+                'character': {
+                    'name': character.name,
+                    'class': character.character_class,
+                    'hp': character.hp,
+                    'mana': character.mana
+                },
+                'all_ready': all_ready,
+                'game_started': game_session.game_started
+            })
+
+        else:
+            # CONTINUE - Generate next question via MCP (or mock in test mode)
+            try:
+                if TEST_MODE and not MCP_AVAILABLE:
+                    # Use mock questions for testing
+                    logger.info(f"[ANSWER_QUESTION] TEST MODE: Generating mock question {progress['current_question'] + 1}")
+                    next_question = get_mock_interrogation_question(
+                        question_number=progress["current_question"] + 1,
+                        previous_answers=progress["answers"]
+                    )
+                else:
+                    # Production: Use MCP for AI-generated questions
+                    logger.info(f"[ANSWER_QUESTION] Generating next question via MCP (question {progress['current_question'] + 1})")
+                    mcp_client = SyncMCPClient()
+                    next_question = mcp_client.generate_interrogation_question(
+                        player_id=player_id,
+                        question_number=progress["current_question"] + 1,
+                        previous_answers=progress["answers"]
+                    )
+
+                # Store generated question
+                progress["questions"].append(next_question)
+
+                return jsonify({
+                    'status': 'continue',
+                    'next_question': next_question
+                })
+            except Exception as e:
+                logger.error(f"[ANSWER_QUESTION] Failed to generate next question: {str(e)}", exc_info=True)
+                raise RuntimeError(
+                    f"❌ MCP interrogation question generation failed!\n\n"
+                    f"Error: {e}\n\n"
+                    f"See MCP_SETUP.md for troubleshooting."
+                )
+
+    except Exception as e:
+        logger.error(f"[ANSWER_QUESTION] Unexpected error: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+# ============================================================================
+# CLIENT ERROR LOGGING
+# ============================================================================
+
+@app.route('/api/log_client_error', methods=['POST'])
+def log_client_error():
+    """Log client-side errors for debugging and monitoring"""
+    try:
+        data = request.json or {}
+        error_message = data.get('error', 'Unknown error')
+        error_stack = data.get('stack', '')
+        context = data.get('context', 'Unknown context')
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        username = session.get('username', 'Unknown')
+        game_code = session.get('game_code', 'None')
+
+        logger.error(f"[CLIENT_ERROR] {error_message} | Context: {context} | User: {username} | Game: {game_code} | Time: {timestamp}")
+
+        if error_stack:
+            logger.debug(f"[CLIENT_ERROR_STACK] {error_stack}")
+
+        return jsonify({'status': 'logged'}), 200
+
+    except Exception as e:
+        logger.error(f"[LOG_CLIENT_ERROR] Failed to log client error: {str(e)}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/game_state', methods=['GET'])
 def get_game_state():
@@ -1300,6 +1771,363 @@ def get_inventory():
         return jsonify({'error': str(e)}), 500
 
 
+
+
+@app.route('/api/inventory/equip', methods=['POST'])
+@limiter.limit("30 per minute")
+def equip_item():
+    """Equip item to slot"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        slot = data.get('slot')
+
+        if not item_id or not slot:
+            return jsonify({'error': 'Missing item_id or slot'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Import inventory manager
+        from inventory_manager import InventoryManager
+
+        inv_manager = InventoryManager(character)
+        result = inv_manager.equip_item(item_id, slot)
+
+        if result['success']:
+            # Emit SocketIO event to all players in the game
+            socketio.emit('item_equipped', {
+                'username': username,
+                'item': result.get('equipped'),
+                'slot': slot
+            }, room=game_code)
+
+            logger.info(f"{username} equipped {item_id} to {slot}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error equipping item: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/inventory/unequip', methods=['POST'])
+@limiter.limit("30 per minute")
+def unequip_item():
+    """Unequip item"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+
+        if not item_id:
+            return jsonify({'error': 'Missing item_id'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Import inventory manager
+        from inventory_manager import InventoryManager
+
+        inv_manager = InventoryManager(character)
+        result = inv_manager.unequip_item(item_id)
+
+        if result['success']:
+            # Emit SocketIO event
+            socketio.emit('item_unequipped', {
+                'username': username,
+                'item': result.get('item')
+            }, room=game_code)
+
+            logger.info(f"{username} unequipped {item_id}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error unequipping item: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/inventory/use', methods=['POST'])
+@limiter.limit("30 per minute")
+def use_item():
+    """Use consumable item"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+
+        if not item_id:
+            return jsonify({'error': 'Missing item_id'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Import inventory manager
+        from inventory_manager import InventoryManager
+
+        inv_manager = InventoryManager(character)
+        result = inv_manager.use_item(item_id)
+
+        if result['success']:
+            # Emit SocketIO event
+            socketio.emit('item_used', {
+                'username': username,
+                'item_id': item_id,
+                'effect': result.get('effect'),
+                'value': result.get('value'),
+                'message': result.get('message')
+            }, room=game_code)
+
+            logger.info(f"{username} used {item_id}: {result.get('message')}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error using item: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/inventory/drop', methods=['POST'])
+@limiter.limit("30 per minute")
+def drop_item():
+    """Drop item from inventory"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        quantity = data.get('quantity', 1)
+
+        if not item_id:
+            return jsonify({'error': 'Missing item_id'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Import inventory manager
+        from inventory_manager import InventoryManager
+
+        inv_manager = InventoryManager(character)
+        success = inv_manager.remove_item(item_id, quantity)
+
+        if success:
+            # Emit SocketIO event
+            socketio.emit('item_dropped', {
+                'username': username,
+                'item_id': item_id,
+                'quantity': quantity
+            }, room=game_code)
+
+            logger.info(f"{username} dropped {quantity}x {item_id}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Dropped {quantity} item(s)'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to drop item'
+            })
+
+    except Exception as e:
+        logger.error(f"Error dropping item: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/inventory/move', methods=['POST'])
+@limiter.limit("60 per minute")
+def move_item():
+    """Move item between inventory slots"""
+    try:
+        data = request.json
+        from_index = data.get('from_index')
+        to_index = data.get('to_index')
+
+        if from_index is None or to_index is None:
+            return jsonify({'error': 'Missing from_index or to_index'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Validate indices
+        if from_index < 0 or to_index < 0:
+            return jsonify({'error': 'Invalid indices'}), 400
+
+        if from_index >= len(character.inventory) or to_index >= len(character.inventory):
+            return jsonify({'error': 'Index out of range'}), 400
+
+        # Swap items
+        character.inventory[from_index], character.inventory[to_index] =             character.inventory[to_index], character.inventory[from_index]
+
+        logger.info(f"{username} moved item from slot {from_index} to {to_index}")
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logger.error(f"Error moving item: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/inventory/add', methods=['POST'])
+@limiter.limit("30 per minute")
+def add_item():
+    """Add item to inventory (for loot/rewards)"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        quantity = data.get('quantity', 1)
+
+        if not item_id:
+            return jsonify({'error': 'Missing item_id'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Import inventory manager and item database
+        from inventory_manager import InventoryManager
+        from inventory_system import ItemDatabase
+
+        inv_manager = InventoryManager(character)
+        item_db = ItemDatabase()
+
+        # Get item from database
+        db_item = item_db.get_item(item_id)
+        if not db_item:
+            return jsonify({'error': 'Item not found in database'}), 404
+
+        # Convert to dict
+        item_dict = {
+            'id': db_item.id,
+            'name': db_item.name,
+            'type': db_item.type.value if hasattr(db_item.type, 'value') else str(db_item.type),
+            'description': db_item.description,
+            'quantity': quantity,
+            'weight': 1.0,
+            'value': db_item.value,
+            'rarity': db_item.rarity.value if hasattr(db_item.rarity, 'value') else str(db_item.rarity),
+            'icon': db_item.icon,
+            'stackable': db_item.stackable,
+            'stats': {}
+        }
+
+        # Add stats if equipment
+        if hasattr(db_item, 'stats') and db_item.stats:
+            item_dict['stats'] = {
+                'attack': db_item.stats.attack,
+                'defense': db_item.stats.defense,
+                'magic': db_item.stats.magic,
+                'speed': db_item.stats.speed
+            }
+
+        # Add consumable properties
+        if hasattr(db_item, 'effect_type'):
+            item_dict['effect_type'] = db_item.effect_type
+            item_dict['effect_value'] = db_item.effect_value
+
+        success = inv_manager.add_item(item_dict, quantity)
+
+        if success:
+            # Emit SocketIO event
+            socketio.emit('item_added', {
+                'username': username,
+                'item': item_dict,
+                'quantity': quantity
+            }, room=game_code)
+
+            logger.info(f"Added {quantity}x {item_id} to {username}'s inventory")
+
+            return jsonify({
+                'success': True,
+                'message': f'Added {quantity}x {db_item.name}',
+                'item': item_dict
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Inventory full or overweight'
+            })
+
+    except Exception as e:
+        logger.error(f"Error adding item: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/quests/active', methods=['GET'])
 def get_active_quests():
     """Get character's active quests"""
@@ -1405,6 +2233,515 @@ def get_current_location():
         return jsonify({'error': str(e)}), 500
 
 
+# ============================================================================
+# DIVINE COUNCIL ENDPOINTS - PHASE F
+# ============================================================================
+
+@app.route('/api/divine_council/convene', methods=['POST'])
+@limiter.limit("10 per hour")  # Expensive operation
+def convene_divine_council():
+    """
+    Trigger a divine council vote on a player action
+
+    Request: {
+        "action": "Player broke oath to village elder",
+        "context": {
+            "involves_oath": true,
+            "breaks_law": false
+        }
+    }
+
+    Response: {
+        "votes": [...],
+        "outcome": {...},
+        "consequences": {...}
+    }
+    """
+    try:
+        data = request.json
+        player_id = get_player_id()
+        game_code = session.get('game_code')
+
+        logger.info(f"[DIVINE_COUNCIL] Convening council for player {player_id[:8]}... in game {game_code}")
+
+        if not player_id or not game_code:
+            return jsonify({'success': False, 'error': 'Not in game'}), 401
+
+        game_session = get_game_session(game_code)
+        if not game_session:
+            return jsonify({'success': False, 'error': 'Game not found'}), 404
+
+        action = data.get('action')
+        context = data.get('context', {})
+
+        if not action:
+            return jsonify({'success': False, 'error': 'Action required'}), 400
+
+        # Get game database ID for tracking
+        game_db = db.get_game_by_code(game_code)
+        if not game_db:
+            return jsonify({'success': False, 'error': 'Game database not found'}), 404
+
+        game_id = game_db['id']
+
+        # 1. Convene council and get votes
+        vote_result = voting_system.convene_council(player_id, game_id, action, context)
+
+        # 2. Apply consequences
+        consequences = consequence_engine.apply_consequences(
+            player_id,
+            game_id,
+            vote_result['outcome'].outcome,
+            {v.god_name: v.position for v in vote_result['votes']}
+        )
+
+        # 3. Save vote to database
+        db.save_divine_council_vote(
+            game_id,
+            game_db['turn'],
+            player_id,
+            action,
+            {v.god_name: {'position': v.position, 'weight': v.weight, 'reasoning': v.reasoning}
+             for v in vote_result['votes']},
+            vote_result['outcome'].outcome,
+            vote_result['outcome'].weighted_score,
+            consequences
+        )
+
+        logger.info(f"[DIVINE_COUNCIL] Council complete. Outcome: {vote_result['outcome'].outcome}")
+
+        # 4. Emit SocketIO event for real-time update
+        socketio.emit('divine_council_result', {
+            'player_id': player_id,
+            'outcome': vote_result['outcome'].outcome,
+            'timestamp': datetime.now().isoformat()
+        }, room=game_code)
+
+        # 5. Return result for UI
+        return jsonify({
+            'success': True,
+            'votes': [
+                {
+                    'god_name': v.god_name,
+                    'position': v.position,
+                    'weight': v.weight,
+                    'reasoning': v.reasoning,
+                    'favor_before': v.favor_before
+                }
+                for v in vote_result['votes']
+            ],
+            'outcome': {
+                'type': vote_result['outcome'].outcome,
+                'raw_count': vote_result['outcome'].raw_count,
+                'weighted_score': vote_result['outcome'].weighted_score,
+                'decisive_gods': vote_result['outcome'].decisive_gods,
+                'swing_gods': vote_result['outcome'].swing_gods
+            },
+            'consequences': consequences
+        })
+
+    except Exception as e:
+        logger.error(f"[DIVINE_COUNCIL] Error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/divine_council/history', methods=['GET'])
+def divine_council_history():
+    """Get past divine council votes for the current game"""
+    try:
+        game_code = session.get('game_code')
+
+        if not game_code:
+            return jsonify({'success': False, 'error': 'Not in game'}), 400
+
+        game_db = db.get_game_by_code(game_code)
+        if not game_db:
+            return jsonify({'success': False, 'error': 'Game not found'}), 404
+
+        history = db.get_council_history(game_db['id'], limit=20)
+
+        return jsonify({
+            'success': True,
+            'history': history
+        })
+
+    except Exception as e:
+        logger.error(f"[DIVINE_COUNCIL] History error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/divine_favor/all', methods=['GET'])
+def get_all_divine_favor():
+    """Get player's favor with all 7 gods"""
+    try:
+        player_id = get_player_id()
+
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+
+        favor = db.get_all_favor(player_id)
+
+        return jsonify({
+            'success': True,
+            'favor': favor
+        })
+
+    except Exception as e:
+        logger.error(f"[DIVINE_FAVOR] Error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/divine_effects/active', methods=['GET'])
+def get_active_divine_effects():
+    """Get all active divine effects for a player"""
+    try:
+        player_id = get_player_id()
+        game_code = session.get('game_code')
+
+        if not player_id or not game_code:
+            return jsonify({'success': False, 'error': 'Not in game'}), 400
+
+        game_db = db.get_game_by_code(game_code)
+        if not game_db:
+            return jsonify({'success': False, 'error': 'Game not found'}), 404
+
+        effects = db.get_active_effects(player_id, game_db['id'])
+
+        return jsonify({
+            'success': True,
+            'effects': effects
+        })
+
+    except Exception as e:
+        logger.error(f"[DIVINE_EFFECTS] Error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================================
+# SKILLS & ABILITIES ENDPOINTS - PHASE J
+# ============================================================================
+
+@app.route('/api/skills/tree', methods=['GET'])
+@limiter.limit("100 per minute")
+def get_skill_tree():
+    """Get complete skill tree for character class"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Get skill tree data
+        tree_data = character.skills_manager.get_skill_tree_data()
+
+        return jsonify({
+            'success': True,
+            'skill_tree': tree_data
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting skill tree: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/skills/unlock', methods=['POST'])
+@limiter.limit("30 per minute")
+def unlock_skill():
+    """Unlock an ability"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        data = request.json
+        ability_id = data.get('ability_id')
+
+        if not ability_id:
+            return jsonify({'error': 'Missing ability_id'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Unlock ability
+        result = character.skills_manager.unlock_ability(ability_id)
+
+        if result['success']:
+            logger.info(f"{username} unlocked ability {ability_id}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error unlocking skill: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/skills/rankup', methods=['POST'])
+@limiter.limit("30 per minute")
+def rank_up_skill():
+    """Increase ability rank"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        data = request.json
+        ability_id = data.get('ability_id')
+
+        if not ability_id:
+            return jsonify({'error': 'Missing ability_id'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Rank up ability
+        result = character.skills_manager.rank_up_ability(ability_id)
+
+        if result['success']:
+            logger.info(f"{username} ranked up ability {ability_id}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error ranking up skill: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/skills/assign_hotkey', methods=['POST'])
+@limiter.limit("30 per minute")
+def assign_hotkey():
+    """Assign ability to hotkey 1-8"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        data = request.json
+        ability_id = data.get('ability_id')
+        hotkey = data.get('hotkey')
+
+        if not ability_id or hotkey is None:
+            return jsonify({'error': 'Missing ability_id or hotkey'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Assign to hotkey
+        result = character.skills_manager.assign_to_hotkey(ability_id, int(hotkey))
+
+        if result['success']:
+            logger.info(f"{username} assigned {ability_id} to hotkey {hotkey}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error assigning hotkey: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/skills/use', methods=['POST'])
+@limiter.limit("60 per minute")
+def use_skill():
+    """Use an active ability"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        data = request.json
+        ability_id = data.get('ability_id')
+        target = data.get('target')  # Optional target
+
+        if not ability_id:
+            return jsonify({'error': 'Missing ability_id'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Use ability
+        result = character.skills_manager.use_ability(ability_id, target)
+
+        if result['success']:
+            logger.info(f"{username} used ability {ability_id}")
+
+            # Broadcast to all players in game (real-time update)
+            socketio.emit('ability_used', {
+                'username': username,
+                'ability': result['ability']['name'],
+                'result': result['result']
+            }, room=game_code)
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error using skill: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/skills/cooldowns', methods=['GET'])
+@limiter.limit("100 per minute")
+def get_cooldowns():
+    """Get current cooldown timers"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Update cooldowns (remove expired)
+        character.skills_manager.update_cooldowns()
+
+        # Get active cooldowns
+        cooldowns = character.skills_manager.get_active_cooldowns()
+
+        return jsonify({
+            'success': True,
+            'cooldowns': cooldowns
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting cooldowns: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/character/level_up', methods=['POST'])
+@limiter.limit("10 per minute")
+def level_up_character():
+    """Level up character (grants skill points and stats)"""
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Level up
+        character.level += 1
+
+        # Grant skill points (2 per level)
+        character.skill_points += 2
+
+        # Increase base stats
+        character.hp_max += 10
+        character.hp = character.hp_max  # Full heal on level up
+        character.mana_max += 5
+        character.mana = character.mana_max
+        character.mp = character.mana  # Keep mp synced with mana
+
+        logger.info(f"{username} leveled up to {character.level}, gained 2 skill points (total: {character.skill_points})")
+
+        # Broadcast to all players in game
+        socketio.emit('level_up', {
+            'username': username,
+            'new_level': character.level,
+            'skill_points_gained': 2,
+            'total_skill_points': character.skill_points
+        }, room=game_code)
+
+        return jsonify({
+            'success': True,
+            'level': character.level,
+            'skill_points': character.skill_points,
+            'hp_max': character.hp_max,
+            'mana_max': character.mana_max
+        })
+
+    except Exception as e:
+        logger.error(f"Error leveling up: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     print("""
 ===============================================================
@@ -1460,4 +2797,5 @@ Game State:
 """)
 
     # Disable auto-reload to prevent game sessions from being wiped
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+    # PHASE H: Use socketio.run() instead of app.run() for real-time support
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)

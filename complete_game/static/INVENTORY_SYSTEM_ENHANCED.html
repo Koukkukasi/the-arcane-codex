@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Enhanced Inventory System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Yrsa:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           CORE VARIABLES & RESET
+           ======================================== */
+        :root {
+            /* Color Palette */
+            --gold-bright: #FFD700;
+            --gold-medium: #D4AF37;
+            --gold-dark: #B8860B;
+            --bronze-light: #8B7355;
+            --bronze-medium: #5C4A3A;
+            --bronze-dark: #3E342A;
+            --bg-dark: #0A0908;
+            --bg-panel: rgba(42, 36, 30, 0.98);
+            --bg-panel-secondary: rgba(26, 22, 18, 0.98);
+
+            /* Rarity Colors */
+            --rarity-common: #9CA3AF;
+            --rarity-uncommon: #10B981;
+            --rarity-rare: #3B82F6;
+            --rarity-epic: #8B5CF6;
+            --rarity-legendary: #F59E0B;
+            --rarity-divine: #EF4444;
+
+            /* Animations */
+            --transition-fast: 0.15s;
+            --transition-normal: 0.3s;
+            --transition-slow: 0.5s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Yrsa', serif;
+            background: linear-gradient(180deg, #0A0812 0%, #1A1425 100%);
+            color: var(--gold-medium);
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+
+        /* ========================================
+           INVENTORY OVERLAY BASE
+           ======================================== */
+        #inventory-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #inventory-overlay.active {
+            display: flex;
+            animation: fadeIn var(--transition-normal) ease-out;
+        }
+
+        .overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            animation: fadeIn var(--transition-normal) ease-out;
+        }
+
+        .inventory-panel {
+            position: relative;
+            z-index: 2001;
+            background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-secondary) 100%);
+            border: 4px solid;
+            border-image: linear-gradient(135deg, var(--bronze-medium), var(--bronze-light), var(--gold-medium), var(--bronze-light), var(--bronze-medium)) 1;
+            border-radius: 12px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.95),
+                inset 0 0 30px rgba(0, 0, 0, 0.7),
+                0 0 100px rgba(212, 175, 55, 0.2);
+            width: 95vw;
+            max-width: 1400px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideIn var(--transition-normal) ease-out;
+        }
+
+        /* ========================================
+           HEADER SECTION
+           ======================================== */
+        .inventory-header {
+            background: linear-gradient(90deg, var(--bronze-light), var(--gold-medium), var(--bronze-light));
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--bronze-medium);
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .inventory-title {
+            font-family: 'Cinzel', serif;
+            font-size: 32px;
+            font-weight: 900;
+            color: #2A1810;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .stat-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-family: 'Cinzel', serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: #2A1810;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2A1810;
+        }
+
+        .gold-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 215, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #2A1810;
+        }
+
+        .gold-icon {
+            font-size: 20px;
+        }
+
+        .weight-bar {
+            width: 150px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #2A1810;
+        }
+
+        .weight-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444);
+            transition: width var(--transition-normal) ease-out;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .close-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #2A1810;
+            border-radius: 50%;
+            font-size: 24px;
+            color: #2A1810;
+            cursor: pointer;
+            transition: all var(--transition-normal) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .close-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: #EF4444;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        /* ========================================
+           FILTER SYSTEM
+           ======================================== */
+        .inventory-filters {
+            display: flex;
+            gap: 12px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 2px solid var(--bronze-light);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.8) 0%, rgba(26, 22, 18, 0.8) 100%);
+            border: 2px solid var(--bronze-light);
+            border-radius: 8px;
+            color: var(--gold-medium);
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast) ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.3), transparent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width var(--transition-normal) ease, height var(--transition-normal) ease;
+        }
+
+        .filter-btn:hover::before {
+            width: 200%;
+            height: 200%;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--gold-medium);
+            color: var(--gold-bright);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .filter-btn.active {
+            border-color: var(--gold-bright);
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(139, 115, 85, 0.4) 100%);
+            color: var(--gold-bright);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
+        .filter-count {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--bronze-light);
+            border-radius: 8px;
+            color: var(--gold-medium);
+            font-family: 'Yrsa', serif;
+            font-size: 14px;
+            outline: none;
+            transition: all var(--transition-fast) ease;
+        }
+
+        .search-box:focus {
+            border-color: var(--gold-medium);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .search-box::placeholder {
+            color: var(--bronze-light);
+        }
+
+        .sort-dropdown {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.8) 0%, rgba(26, 22, 18, 0.8) 100%);
+            border: 2px solid var(--bronze-light);
+            border-radius: 8px;
+            color: var(--gold-medium);
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all var(--transition-fast) ease;
+        }
+
+        .sort-dropdown:hover {
+            border-color: var(--gold-medium);
+        }
+
+        /* ========================================
+           MAIN CONTENT LAYOUT
+           ======================================== */
+        .inventory-content {
+            display: flex;
+            gap: 25px;
+            padding: 25px;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* ========================================
+           EQUIPMENT SECTION
+           ======================================== */
+        .equipment-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 300px;
+            max-width: 300px;
+        }
+
+        .section-header {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold-bright);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--bronze-light);
+            text-align: center;
+        }
+
+        .equipment-slots {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .equipment-slot {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .slot-label {
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            color: var(--bronze-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .slot-item {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.9) 0%, rgba(26, 22, 18, 0.9) 100%);
+            border: 3px solid var(--bronze-light);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            transition: all var(--transition-fast) ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slot-item::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1), transparent 70%);
+            opacity: 0;
+            transition: opacity var(--transition-normal) ease;
+        }
+
+        .slot-item:hover::before {
+            opacity: 1;
+        }
+
+        .slot-item.equipped {
+            border-color: var(--gold-medium);
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(139, 115, 85, 0.15) 100%);
+            box-shadow:
+                0 0 20px rgba(212, 175, 55, 0.4),
+                inset 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+
+        .slot-item:hover {
+            border-color: var(--gold-medium);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .slot-item.drop-target {
+            border-color: var(--gold-bright);
+            border-style: dashed;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(212, 175, 55, 0.2) 100%);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .slot-item.empty {
+            opacity: 0.6;
+        }
+
+        .slot-item.empty:hover {
+            opacity: 1;
+        }
+
+        .item-icon {
+            font-size: 36px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        .item-rarity-glow {
+            position: absolute;
+            inset: -3px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: opacity var(--transition-normal) ease;
+            pointer-events: none;
+        }
+
+        .slot-item:hover .item-rarity-glow {
+            opacity: 1;
+        }
+
+        /* Equipment Stats Summary */
+        .equipment-stats {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--bronze-light);
+            border-radius: 8px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-name {
+            color: var(--bronze-light);
+            font-weight: 600;
+        }
+
+        .stat-bonus {
+            color: var(--gold-bright);
+            font-weight: 700;
+        }
+
+        .stat-bonus.positive {
+            color: #10B981;
+        }
+
+        .stat-bonus.negative {
+            color: #EF4444;
+        }
+
+        /* ========================================
+           INVENTORY GRID SECTION
+           ======================================== */
+        .grid-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 12px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .inventory-slot {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.85) 0%, rgba(26, 22, 18, 0.85) 100%);
+            border: 2px solid var(--bronze-light);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast) ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inventory-slot::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1), transparent 70%);
+            opacity: 0;
+            transition: opacity var(--transition-normal) ease;
+        }
+
+        .inventory-slot:hover::before {
+            opacity: 1;
+        }
+
+        .inventory-slot:hover {
+            border-color: var(--gold-medium);
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+            z-index: 10;
+        }
+
+        .inventory-slot.drop-target {
+            border-color: var(--gold-bright);
+            border-style: dashed;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(212, 175, 55, 0.2) 100%);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .inventory-slot.hidden {
+            display: none;
+        }
+
+        .grid-item {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: grab;
+        }
+
+        .grid-item.dragging {
+            cursor: grabbing;
+            opacity: 0.5;
+        }
+
+        .grid-item .item-icon {
+            font-size: 32px;
+        }
+
+        .item-quantity {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(212, 175, 55, 0.95);
+            color: #2A1810;
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .item-rarity-border {
+            position: absolute;
+            inset: -2px;
+            border-radius: 8px;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* Rarity Border Colors */
+        .rarity-common { border: 2px solid var(--rarity-common); }
+        .rarity-uncommon { border: 2px solid var(--rarity-uncommon); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .rarity-rare { border: 2px solid var(--rarity-rare); box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+        .rarity-epic { border: 2px solid var(--rarity-epic); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+        .rarity-legendary { border: 2px solid var(--rarity-legendary); box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); animation: legendary-glow 2s ease-in-out infinite; }
+        .rarity-divine { border: 2px solid var(--rarity-divine); box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); animation: divine-glow 1.5s ease-in-out infinite; }
+
+        /* ========================================
+           ITEM TOOLTIP
+           ======================================== */
+        .item-tooltip {
+            position: fixed;
+            display: none;
+            z-index: 3000;
+            pointer-events: none;
+            max-width: 320px;
+            background: linear-gradient(135deg, rgba(10, 8, 8, 0.98), rgba(26, 20, 18, 0.98));
+            border: 3px solid var(--gold-medium);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+            animation: tooltipFadeIn 0.2s ease-out;
+        }
+
+        .item-tooltip.visible {
+            display: block;
+        }
+
+        .tooltip-header {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--bronze-light);
+        }
+
+        .tooltip-name {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-type {
+            font-size: 12px;
+            color: var(--bronze-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tooltip-rarity {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .tooltip-stats {
+            margin: 12px 0;
+        }
+
+        .tooltip-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        .tooltip-description {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(139, 115, 85, 0.3);
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--gold-medium);
+            font-style: italic;
+        }
+
+        .tooltip-requirements {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(139, 115, 85, 0.3);
+            font-size: 12px;
+            color: var(--bronze-light);
+        }
+
+        .requirement-met {
+            color: #10B981;
+        }
+
+        .requirement-not-met {
+            color: #EF4444;
+        }
+
+        .tooltip-actions {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(139, 115, 85, 0.3);
+            font-size: 11px;
+            color: var(--bronze-light);
+            text-align: center;
+        }
+
+        /* ========================================
+           CONTEXT MENU
+           ======================================== */
+        .context-menu {
+            position: fixed;
+            display: none;
+            z-index: 3001;
+            background: linear-gradient(135deg, rgba(10, 8, 8, 0.98), rgba(26, 20, 18, 0.98));
+            border: 2px solid var(--gold-medium);
+            border-radius: 8px;
+            padding: 8px 0;
+            min-width: 180px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+            animation: contextMenuFadeIn 0.15s ease-out;
+        }
+
+        .context-menu.visible {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 10px 16px;
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            color: var(--gold-medium);
+            cursor: pointer;
+            transition: all var(--transition-fast) ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .context-menu-item:hover {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--gold-bright);
+        }
+
+        .context-menu-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .context-menu-item.disabled:hover {
+            background: transparent;
+            color: var(--gold-medium);
+        }
+
+        .context-menu-icon {
+            font-size: 16px;
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: var(--bronze-light);
+            margin: 4px 0;
+        }
+
+        /* ========================================
+           ITEM DETAILS PANEL
+           ======================================== */
+        .item-details {
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 2px solid var(--bronze-light);
+            padding: 20px 25px;
+            min-height: 120px;
+            flex-shrink: 0;
+            transition: all var(--transition-normal) ease;
+        }
+
+        .details-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gold-bright);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .details-content {
+            font-size: 14px;
+            color: var(--gold-medium);
+            line-height: 1.8;
+        }
+
+        .details-placeholder {
+            color: var(--bronze-light);
+            font-style: italic;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .details-item-name {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .details-item-description {
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .details-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        /* ========================================
+           DRAG PREVIEW
+           ======================================== */
+        .drag-preview {
+            position: fixed;
+            pointer-events: none;
+            z-index: 4000;
+            opacity: 0.8;
+            transform: scale(1.1);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+        }
+
+        /* ========================================
+           SCROLLBAR STYLING
+           ======================================== */
+        .inventory-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .inventory-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+        }
+
+        .inventory-content::-webkit-scrollbar-thumb {
+            background: var(--bronze-light);
+            border-radius: 5px;
+            transition: background var(--transition-fast) ease;
+        }
+
+        .inventory-content::-webkit-scrollbar-thumb:hover {
+            background: var(--gold-medium);
+        }
+
+        /* ========================================
+           ANIMATIONS
+           ======================================== */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes legendary-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.8); }
+        }
+
+        @keyframes divine-glow {
+            0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+            50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.9); }
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes contextMenuFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ========================================
+           RESPONSIVE DESIGN
+           ======================================== */
+        @media (max-width: 1200px) {
+            .inventory-panel {
+                width: 98vw;
+            }
+
+            .equipment-section {
+                min-width: 250px;
+                max-width: 250px;
+            }
+
+            .inventory-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .inventory-header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px 20px;
+            }
+
+            .header-stats {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .inventory-filters {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-box,
+            .sort-dropdown {
+                width: 100%;
+                max-width: none;
+            }
+
+            .inventory-content {
+                flex-direction: column;
+                padding: 15px;
+            }
+
+            .equipment-section {
+                max-width: none;
+            }
+
+            .inventory-grid {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            }
+
+            .item-tooltip {
+                max-width: 90vw;
+            }
+        }
+
+        /* ========================================
+           DEMO CONTROLS
+           ======================================== */
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1999;
+            display: flex;
+            gap: 10px;
+        }
+
+        .demo-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.95) 0%, rgba(26, 22, 18, 0.95) 100%);
+            border: 2px solid var(--gold-medium);
+            border-radius: 8px;
+            color: var(--gold-bright);
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal) ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .demo-btn:hover {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(139, 115, 85, 0.3) 100%);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* ========================================
+           LOADING STATES
+           ======================================== */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-normal) ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(212, 175, 55, 0.2);
+            border-top: 4px solid var(--gold-bright);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+        <button class="demo-btn" onclick="toggleInventory()">Open Inventory (I)</button>
+        <button class="demo-btn" onclick="populateTestItems()">Add Test Items</button>
+    </div>
+
+    <!-- Inventory Overlay -->
+    <div id="inventory-overlay">
+        <div class="overlay-backdrop"></div>
+        <div class="inventory-panel">
+            <!-- Header -->
+            <div class="inventory-header">
+                <div class="header-left">
+                    <div class="inventory-title">Inventory</div>
+                </div>
+                <div class="header-stats">
+                    <div class="gold-display">
+                        <span class="gold-icon">💰</span>
+                        <div class="stat-display">
+                            <span class="stat-label">Gold</span>
+                            <span class="stat-value" id="gold-amount">1,245</span>
+                        </div>
+                    </div>
+                    <div class="stat-display">
+                        <span class="stat-label">Weight</span>
+                        <div class="weight-bar">
+                            <div class="weight-fill" id="weight-fill" style="width: 45%"></div>
+                        </div>
+                        <span class="stat-value" id="weight-amount">45 / 100</span>
+                    </div>
+                    <div class="stat-display">
+                        <span class="stat-label">Slots</span>
+                        <span class="stat-value" id="slot-count">12 / 48</span>
+                    </div>
+                </div>
+                <button class="close-btn" onclick="toggleInventory()">×</button>
+            </div>
+
+            <!-- Filters -->
+            <div class="inventory-filters">
+                <button class="filter-btn active" data-filter="all">
+                    All Items <span class="filter-count">12</span>
+                </button>
+                <button class="filter-btn" data-filter="weapons">
+                    Weapons <span class="filter-count">3</span>
+                </button>
+                <button class="filter-btn" data-filter="armor">
+                    Armor <span class="filter-count">4</span>
+                </button>
+                <button class="filter-btn" data-filter="consumables">
+                    Consumables <span class="filter-count">5</span>
+                </button>
+                <button class="filter-btn" data-filter="quest">
+                    Quest Items <span class="filter-count">0</span>
+                </button>
+                <input type="text" class="search-box" placeholder="Search items..." id="search-box">
+                <select class="sort-dropdown" id="sort-dropdown">
+                    <option value="name">Sort: Name</option>
+                    <option value="rarity">Sort: Rarity</option>
+                    <option value="type">Sort: Type</option>
+                    <option value="value">Sort: Value</option>
+                </select>
+            </div>
+
+            <!-- Main Content -->
+            <div class="inventory-content">
+                <!-- Equipment Section -->
+                <div class="equipment-section">
+                    <div class="section-header">Equipped Items</div>
+                    <div class="equipment-slots" id="equipment-slots">
+                        <!-- Main Hand -->
+                        <div class="equipment-slot" data-slot="main-hand">
+                            <div class="slot-label">Main Hand</div>
+                            <div class="slot-item equipped" data-slot-type="main-hand">
+                                <div class="item-icon">⚔️</div>
+                                <div class="item-rarity-border rarity-rare"></div>
+                            </div>
+                        </div>
+
+                        <!-- Off-Hand -->
+                        <div class="equipment-slot" data-slot="off-hand">
+                            <div class="slot-label">Off-Hand</div>
+                            <div class="slot-item equipped" data-slot-type="off-hand">
+                                <div class="item-icon">🛡️</div>
+                                <div class="item-rarity-border rarity-uncommon"></div>
+                            </div>
+                        </div>
+
+                        <!-- Helmet -->
+                        <div class="equipment-slot" data-slot="helmet">
+                            <div class="slot-label">Helmet</div>
+                            <div class="slot-item equipped" data-slot-type="helmet">
+                                <div class="item-icon">⛑️</div>
+                                <div class="item-rarity-border rarity-uncommon"></div>
+                            </div>
+                        </div>
+
+                        <!-- Armor -->
+                        <div class="equipment-slot" data-slot="armor">
+                            <div class="slot-label">Armor</div>
+                            <div class="slot-item equipped" data-slot-type="armor">
+                                <div class="item-icon">🎽</div>
+                                <div class="item-rarity-border rarity-rare"></div>
+                            </div>
+                        </div>
+
+                        <!-- Gloves -->
+                        <div class="equipment-slot" data-slot="gloves">
+                            <div class="slot-label">Gloves</div>
+                            <div class="slot-item empty" data-slot-type="gloves">
+                                <div class="item-icon" style="opacity: 0.3;">🧤</div>
+                            </div>
+                        </div>
+
+                        <!-- Boots -->
+                        <div class="equipment-slot" data-slot="boots">
+                            <div class="slot-label">Boots</div>
+                            <div class="slot-item empty" data-slot-type="boots">
+                                <div class="item-icon" style="opacity: 0.3;">👢</div>
+                            </div>
+                        </div>
+
+                        <!-- Accessory 1 -->
+                        <div class="equipment-slot" data-slot="accessory-1">
+                            <div class="slot-label">Amulet</div>
+                            <div class="slot-item equipped" data-slot-type="accessory">
+                                <div class="item-icon">📿</div>
+                                <div class="item-rarity-border rarity-epic"></div>
+                            </div>
+                        </div>
+
+                        <!-- Accessory 2 -->
+                        <div class="equipment-slot" data-slot="accessory-2">
+                            <div class="slot-label">Ring</div>
+                            <div class="slot-item empty" data-slot-type="accessory">
+                                <div class="item-icon" style="opacity: 0.3;">💍</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Stats -->
+                    <div class="equipment-stats">
+                        <div class="section-header" style="font-size: 14px; margin-bottom: 10px;">Total Stats</div>
+                        <div class="stat-row">
+                            <span class="stat-name">⚔️ Attack</span>
+                            <span class="stat-bonus positive">+12</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-name">🛡️ Defense</span>
+                            <span class="stat-bonus positive">+18</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-name">✨ Magic</span>
+                            <span class="stat-bonus positive">+8</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-name">⚡ Speed</span>
+                            <span class="stat-bonus positive">+5</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-name">❤️ HP Bonus</span>
+                            <span class="stat-bonus positive">+25</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Grid Section -->
+                <div class="grid-section">
+                    <div class="section-header">Inventory Grid (8 × 6)</div>
+                    <div class="inventory-grid" id="inventory-grid">
+                        <!-- Items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item Details Panel -->
+            <div class="item-details">
+                <div class="details-title">Item Details</div>
+                <div class="details-content">
+                    <p class="details-placeholder">Hover over an item to view details</p>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Tooltip -->
+    <div class="item-tooltip" id="item-tooltip">
+        <div class="tooltip-header">
+            <div class="tooltip-name">Iron Longsword</div>
+            <div class="tooltip-type">Weapon • Sword</div>
+            <div class="tooltip-rarity" style="background: var(--rarity-rare); color: white;">Rare</div>
+        </div>
+        <div class="tooltip-stats">
+            <div class="tooltip-stat">
+                <span>⚔️ Damage:</span>
+                <span style="color: var(--gold-bright);">15-22</span>
+            </div>
+            <div class="tooltip-stat">
+                <span>⚡ Speed:</span>
+                <span style="color: var(--gold-bright);">+2</span>
+            </div>
+            <div class="tooltip-stat">
+                <span>💎 Value:</span>
+                <span style="color: var(--gold-bright);">150 Gold</span>
+            </div>
+        </div>
+        <div class="tooltip-description">
+            A well-crafted blade forged from refined iron. Its balanced design makes it deadly in skilled hands.
+        </div>
+        <div class="tooltip-requirements">
+            <div class="requirement-met">✓ Level 5 Required</div>
+            <div class="requirement-not-met">✗ Warrior Class Required</div>
+        </div>
+        <div class="tooltip-actions">
+            Right-click for options • Double-click to equip • Drag to move
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item" data-action="equip">
+            <span class="context-menu-icon">⚔️</span>
+            <span>Equip</span>
+        </div>
+        <div class="context-menu-item" data-action="use">
+            <span class="context-menu-icon">🧪</span>
+            <span>Use</span>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="examine">
+            <span class="context-menu-icon">🔍</span>
+            <span>Examine</span>
+        </div>
+        <div class="context-menu-item" data-action="split">
+            <span class="context-menu-icon">📦</span>
+            <span>Split Stack</span>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="drop">
+            <span class="context-menu-icon">🗑️</span>
+            <span>Drop</span>
+        </div>
+        <div class="context-menu-item" data-action="destroy">
+            <span class="context-menu-icon">💥</span>
+            <span>Destroy</span>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // INVENTORY SYSTEM - ENHANCED UX
+        // ========================================
+
+        // Sample item data
+        const SAMPLE_ITEMS = [
+            { id: 1, icon: '🧪', name: 'Health Potion', type: 'consumable', rarity: 'common', quantity: 5, value: 25 },
+            { id: 2, icon: '💙', name: 'Mana Potion', type: 'consumable', rarity: 'common', quantity: 3, value: 20 },
+            { id: 3, icon: '⚔️', name: 'Iron Sword', type: 'weapon', rarity: 'uncommon', quantity: 1, value: 150 },
+            { id: 4, icon: '🛡️', name: 'Wooden Shield', type: 'armor', rarity: 'common', quantity: 1, value: 80 },
+            { id: 5, icon: '🗝️', name: 'Ancient Key', type: 'quest', rarity: 'rare', quantity: 1, value: 0 },
+            { id: 6, icon: '📜', name: 'Scroll of Fireball', type: 'consumable', rarity: 'rare', quantity: 1, value: 200 },
+            { id: 7, icon: '💍', name: 'Silver Ring', type: 'accessory', rarity: 'uncommon', quantity: 1, value: 100 },
+            { id: 8, icon: '🔨', name: 'Blessed Mace', type: 'weapon', rarity: 'epic', quantity: 1, value: 500 },
+            { id: 9, icon: '⛏️', name: 'Iron Ore', type: 'material', rarity: 'common', quantity: 15, value: 5 },
+            { id: 10, icon: '💪', name: 'Strength Elixir', type: 'consumable', rarity: 'uncommon', quantity: 2, value: 50 },
+            { id: 11, icon: '🍀', name: 'Lucky Charm', type: 'accessory', rarity: 'legendary', quantity: 1, value: 1000 },
+            { id: 12, icon: '🔥', name: 'Phoenix Feather', type: 'material', rarity: 'divine', quantity: 1, value: 5000 },
+        ];
+
+        let inventoryItems = [];
+        let draggedItem = null;
+        let draggedSlot = null;
+
+        // DOM Elements
+        const inventoryOverlay = document.getElementById('inventory-overlay');
+        const inventoryGrid = document.getElementById('inventory-grid');
+        const itemTooltip = document.getElementById('item-tooltip');
+        const contextMenu = document.getElementById('context-menu');
+        const searchBox = document.getElementById('search-box');
+        const sortDropdown = document.getElementById('sort-dropdown');
+
+        // ========================================
+        // INITIALIZATION
+        // ========================================
+
+        function initInventory() {
+            createInventorySlots();
+            populateTestItems();
+            attachEventListeners();
+            console.log('✓ Inventory system initialized');
+        }
+
+        function createInventorySlots() {
+            inventoryGrid.innerHTML = '';
+            for (let i = 0; i < 48; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                slot.dataset.slotId = i;
+                inventoryGrid.appendChild(slot);
+            }
+        }
+
+        function populateTestItems() {
+            inventoryItems = [...SAMPLE_ITEMS];
+            renderInventory();
+            updateStats();
+        }
+
+        // ========================================
+        // RENDERING
+        // ========================================
+
+        function renderInventory() {
+            const slots = inventoryGrid.querySelectorAll('.inventory-slot');
+
+            inventoryItems.forEach((item, index) => {
+                if (slots[index]) {
+                    const slot = slots[index];
+                    slot.innerHTML = `
+                        <div class="grid-item"
+                             draggable="true"
+                             data-item-id="${item.id}"
+                             data-slot-index="${index}">
+                            <div class="item-icon">${item.icon}</div>
+                            ${item.quantity > 1 ? `<div class="item-quantity">${item.quantity}</div>` : ''}
+                            <div class="item-rarity-border rarity-${item.rarity}"></div>
+                        </div>
+                    `;
+
+                    const gridItem = slot.querySelector('.grid-item');
+                    attachItemListeners(gridItem, item);
+                }
+            });
+
+            // Clear remaining slots
+            for (let i = inventoryItems.length; i < slots.length; i++) {
+                slots[i].innerHTML = '';
+            }
+        }
+
+        // ========================================
+        // EVENT LISTENERS
+        // ========================================
+
+        function attachEventListeners() {
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', handleFilterClick);
+            });
+
+            // Search box
+            searchBox.addEventListener('input', handleSearch);
+
+            // Sort dropdown
+            sortDropdown.addEventListener('change', handleSort);
+
+            // Close on backdrop
+            document.querySelector('.overlay-backdrop').addEventListener('click', toggleInventory);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboard);
+
+            // Close context menu on outside click
+            document.addEventListener('click', () => {
+                contextMenu.classList.remove('visible');
+            });
+
+            // Equipment slots
+            document.querySelectorAll('.slot-item').forEach(slot => {
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleEquipmentDrop);
+                slot.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function attachItemListeners(element, item) {
+            // Hover for tooltip
+            element.addEventListener('mouseenter', (e) => showTooltip(e, item));
+            element.addEventListener('mouseleave', hideTooltip);
+
+            // Drag and drop
+            element.addEventListener('dragstart', handleDragStart);
+            element.addEventListener('dragend', handleDragEnd);
+
+            // Right-click context menu
+            element.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e, item);
+            });
+
+            // Double-click to use/equip
+            element.addEventListener('dblclick', () => handleDoubleClick(item));
+
+            // Click for details panel
+            element.addEventListener('click', (e) => {
+                if (e.button === 0) { // Left click
+                    showItemDetails(item);
+                }
+            });
+        }
+
+        // ========================================
+        // DRAG AND DROP
+        // ========================================
+
+        function handleDragStart(e) {
+            const item = getItemById(parseInt(e.target.dataset.itemId));
+            const slotIndex = parseInt(e.target.dataset.slotIndex);
+
+            draggedItem = item;
+            draggedSlot = slotIndex;
+
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+
+            // Highlight valid drop zones
+            highlightDropZones(item);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            clearDropZones();
+            draggedItem = null;
+            draggedSlot = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            if (!e.currentTarget.classList.contains('drop-target')) {
+                e.currentTarget.classList.add('drop-target');
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drop-target');
+        }
+
+        function handleEquipmentDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drop-target');
+
+            if (draggedItem) {
+                equipItem(draggedItem, draggedSlot);
+            }
+        }
+
+        function highlightDropZones(item) {
+            const validSlots = document.querySelectorAll(`[data-slot-type="${getEquipmentSlot(item.type)}"]`);
+            validSlots.forEach(slot => slot.classList.add('drop-target'));
+        }
+
+        function clearDropZones() {
+            document.querySelectorAll('.drop-target').forEach(slot => {
+                slot.classList.remove('drop-target');
+            });
+        }
+
+        function getEquipmentSlot(itemType) {
+            const slotMap = {
+                'weapon': 'main-hand',
+                'armor': 'armor',
+                'accessory': 'accessory'
+            };
+            return slotMap[itemType] || null;
+        }
+
+        // ========================================
+        // TOOLTIP
+        // ========================================
+
+        function showTooltip(e, item) {
+            const tooltip = itemTooltip;
+
+            // Update tooltip content
+            tooltip.querySelector('.tooltip-name').textContent = item.name;
+            tooltip.querySelector('.tooltip-type').textContent = `${item.type} • ${item.rarity}`;
+
+            const rarityBadge = tooltip.querySelector('.tooltip-rarity');
+            rarityBadge.textContent = item.rarity.toUpperCase();
+            rarityBadge.style.background = `var(--rarity-${item.rarity})`;
+            rarityBadge.style.color = 'white';
+
+            // Position tooltip
+            const rect = e.target.getBoundingClientRect();
+            tooltip.style.left = `${rect.right + 10}px`;
+            tooltip.style.top = `${rect.top}px`;
+
+            // Adjust if off-screen
+            setTimeout(() => {
+                const tooltipRect = tooltip.getBoundingClientRect();
+                if (tooltipRect.right > window.innerWidth) {
+                    tooltip.style.left = `${rect.left - tooltipRect.width - 10}px`;
+                }
+                if (tooltipRect.bottom > window.innerHeight) {
+                    tooltip.style.top = `${window.innerHeight - tooltipRect.height - 10}px`;
+                }
+            }, 0);
+
+            tooltip.classList.add('visible');
+        }
+
+        function hideTooltip() {
+            itemTooltip.classList.remove('visible');
+        }
+
+        // ========================================
+        // CONTEXT MENU
+        // ========================================
+
+        function showContextMenu(e, item) {
+            const menu = contextMenu;
+
+            // Position menu
+            menu.style.left = `${e.pageX}px`;
+            menu.style.top = `${e.pageY}px`;
+
+            // Update menu items based on item type
+            const equipAction = menu.querySelector('[data-action="equip"]');
+            const useAction = menu.querySelector('[data-action="use"]');
+
+            if (item.type === 'consumable') {
+                equipAction.classList.add('disabled');
+                useAction.classList.remove('disabled');
+            } else if (item.type === 'weapon' || item.type === 'armor' || item.type === 'accessory') {
+                equipAction.classList.remove('disabled');
+                useAction.classList.add('disabled');
+            } else {
+                equipAction.classList.add('disabled');
+                useAction.classList.add('disabled');
+            }
+
+            menu.classList.add('visible');
+
+            // Attach click handlers
+            menu.querySelectorAll('.context-menu-item:not(.disabled)').forEach(menuItem => {
+                menuItem.onclick = (e) => {
+                    e.stopPropagation();
+                    handleContextAction(menuItem.dataset.action, item);
+                    menu.classList.remove('visible');
+                };
+            });
+        }
+
+        function handleContextAction(action, item) {
+            console.log(`Context action: ${action} on ${item.name}`);
+
+            switch (action) {
+                case 'equip':
+                    equipItem(item);
+                    break;
+                case 'use':
+                    useItem(item);
+                    break;
+                case 'examine':
+                    examineItem(item);
+                    break;
+                case 'drop':
+                    dropItem(item);
+                    break;
+                case 'destroy':
+                    destroyItem(item);
+                    break;
+            }
+        }
+
+        // ========================================
+        // ITEM ACTIONS
+        // ========================================
+
+        function handleDoubleClick(item) {
+            if (item.type === 'consumable') {
+                useItem(item);
+            } else if (item.type === 'weapon' || item.type === 'armor' || item.type === 'accessory') {
+                equipItem(item);
+            }
+        }
+
+        function equipItem(item, fromSlot) {
+            console.log(`Equipping: ${item.name}`);
+            // Animation feedback
+            showNotification(`Equipped ${item.name}`, 'success');
+            playEquipSound();
+        }
+
+        function useItem(item) {
+            console.log(`Using: ${item.name}`);
+            showNotification(`Used ${item.name}`, 'success');
+
+            // Decrease quantity
+            if (item.quantity > 1) {
+                item.quantity--;
+            } else {
+                removeItem(item.id);
+            }
+
+            renderInventory();
+            updateStats();
+        }
+
+        function examineItem(item) {
+            showNotification(`Examining ${item.name}...`, 'info');
+        }
+
+        function dropItem(item) {
+            if (confirm(`Drop ${item.name}?`)) {
+                removeItem(item.id);
+                showNotification(`Dropped ${item.name}`, 'warning');
+                renderInventory();
+                updateStats();
+            }
+        }
+
+        function destroyItem(item) {
+            if (confirm(`Permanently destroy ${item.name}? This cannot be undone.`)) {
+                removeItem(item.id);
+                showNotification(`Destroyed ${item.name}`, 'error');
+                renderInventory();
+                updateStats();
+            }
+        }
+
+        // ========================================
+        // FILTERING AND SORTING
+        // ========================================
+
+        function handleFilterClick(e) {
+            const filter = e.currentTarget.dataset.filter;
+
+            // Update active state
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            e.currentTarget.classList.add('active');
+
+            // Filter items
+            const slots = inventoryGrid.querySelectorAll('.inventory-slot');
+            slots.forEach((slot, index) => {
+                if (filter === 'all') {
+                    slot.classList.remove('hidden');
+                } else {
+                    const item = inventoryItems[index];
+                    if (item && item.type === filter) {
+                        slot.classList.remove('hidden');
+                    } else {
+                        slot.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function handleSearch(e) {
+            const query = e.target.value.toLowerCase();
+            const slots = inventoryGrid.querySelectorAll('.inventory-slot');
+
+            slots.forEach((slot, index) => {
+                const item = inventoryItems[index];
+                if (item) {
+                    if (item.name.toLowerCase().includes(query)) {
+                        slot.classList.remove('hidden');
+                    } else {
+                        slot.classList.add('hidden');
+                    }
+                } else {
+                    slot.classList.add('hidden');
+                }
+            });
+        }
+
+        function handleSort(e) {
+            const sortBy = e.target.value;
+
+            inventoryItems.sort((a, b) => {
+                switch (sortBy) {
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    case 'rarity':
+                        const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, divine: 5 };
+                        return rarityOrder[b.rarity] - rarityOrder[a.rarity];
+                    case 'type':
+                        return a.type.localeCompare(b.type);
+                    case 'value':
+                        return b.value - a.value;
+                    default:
+                        return 0;
+                }
+            });
+
+            renderInventory();
+        }
+
+        // ========================================
+        // UTILITY FUNCTIONS
+        // ========================================
+
+        function showItemDetails(item) {
+            const detailsContent = document.querySelector('.details-content');
+            detailsContent.innerHTML = `
+                <div class="details-item-name">${item.icon} ${item.name}</div>
+                <div class="tooltip-rarity" style="background: var(--rarity-${item.rarity}); color: white; display: inline-block; padding: 4px 10px; border-radius: 4px; margin: 8px 0;">${item.rarity.toUpperCase()}</div>
+                <div class="details-item-description">Type: ${item.type} | Value: ${item.value} gold</div>
+                ${item.quantity > 1 ? `<div style="margin-top: 8px;">Quantity: ${item.quantity}</div>` : ''}
+                <div class="details-stats-grid" style="margin-top: 12px;">
+                    <div class="stat-row"><span class="stat-name">💰 Value</span> <span class="stat-bonus">${item.value}</span></div>
+                    <div class="stat-row"><span class="stat-name">📦 Stack</span> <span class="stat-bonus">${item.quantity}</span></div>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            document.getElementById('slot-count').textContent = `${inventoryItems.length} / 48`;
+
+            const totalValue = inventoryItems.reduce((sum, item) => sum + (item.value * item.quantity), 0);
+            const weight = inventoryItems.length * 5; // Simplified weight
+            const maxWeight = 100;
+            const weightPercent = (weight / maxWeight) * 100;
+
+            document.getElementById('weight-amount').textContent = `${weight} / ${maxWeight}`;
+            document.getElementById('weight-fill').style.width = `${weightPercent}%`;
+
+            // Update filter counts
+            const typeCounts = inventoryItems.reduce((acc, item) => {
+                acc[item.type] = (acc[item.type] || 0) + 1;
+                return acc;
+            }, {});
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const filter = btn.dataset.filter;
+                const count = filter === 'all' ? inventoryItems.length : (typeCounts[filter] || 0);
+                const countSpan = btn.querySelector('.filter-count');
+                if (countSpan) countSpan.textContent = count;
+            });
+        }
+
+        function getItemById(id) {
+            return inventoryItems.find(item => item.id === id);
+        }
+
+        function removeItem(id) {
+            inventoryItems = inventoryItems.filter(item => item.id !== id);
+        }
+
+        function showNotification(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            // You can implement a toast notification system here
+        }
+
+        function playEquipSound() {
+            // Implement sound effect
+        }
+
+        function handleKeyboard(e) {
+            // I key to toggle inventory
+            if (e.key.toLowerCase() === 'i' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                toggleInventory();
+            }
+
+            // ESC to close
+            if (e.key === 'Escape') {
+                if (inventoryOverlay.classList.contains('active')) {
+                    toggleInventory();
+                }
+            }
+        }
+
+        function toggleInventory() {
+            inventoryOverlay.classList.toggle('active');
+        }
+
+        // ========================================
+        // INITIALIZE ON LOAD
+        // ========================================
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initInventory();
+            console.log('✓ Inventory system ready - Press I to open');
+        });
+
+        // Make functions globally accessible
+        window.toggleInventory = toggleInventory;
+        window.populateTestItems = populateTestItems;
+    </script>
+</body>
+</html>

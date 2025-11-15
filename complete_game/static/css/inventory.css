@@ -1,0 +1,937 @@
+/* ========================================
+   INVENTORY SYSTEM STYLES
+   ======================================== */
+
+/* ========================================
+   VARIABLES
+   ======================================== */
+:root {
+    /* Rarity Colors */
+    --rarity-common: #9CA3AF;
+    --rarity-uncommon: #10B981;
+    --rarity-rare: #3B82F6;
+    --rarity-epic: #8B5CF6;
+    --rarity-legendary: #F59E0B;
+    --rarity-divine: #EF4444;
+}
+
+/* ========================================
+   INVENTORY OVERLAY BASE
+   ======================================== */
+#inventory-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+#inventory-overlay.active {
+    display: flex;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.inventory-panel {
+    position: relative;
+    z-index: 2001;
+    background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-secondary) 100%);
+    border: 4px solid;
+    border-image: linear-gradient(135deg, var(--bronze-medium), var(--bronze-light), var(--gold-medium), var(--bronze-light), var(--bronze-medium)) 1;
+    border-radius: 12px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.95),
+        inset 0 0 30px rgba(0, 0, 0, 0.7),
+        0 0 100px rgba(212, 175, 55, 0.2);
+    width: 95vw;
+    max-width: 1400px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+.inventory-header {
+    background: linear-gradient(90deg, var(--bronze-light), var(--gold-medium), var(--bronze-light));
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--bronze-medium);
+    flex-shrink: 0;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.inventory-title {
+    font-family: 'Cinzel', serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #2A1810;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.header-stats {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.stat-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-label {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2A1810;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2A1810;
+}
+
+.gold-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 215, 0, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid #2A1810;
+}
+
+.gold-icon {
+    font-size: 20px;
+}
+
+.weight-bar {
+    width: 150px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #2A1810;
+}
+
+.weight-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444);
+    transition: width 0.3s ease-out;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.close-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #2A1810;
+    border-radius: 50%;
+    font-size: 24px;
+    color: #2A1810;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.close-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #EF4444;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+/* ========================================
+   FILTER SYSTEM
+   ======================================== */
+.inventory-filters {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 2px solid var(--bronze-light);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(42, 36, 30, 0.8) 0%, rgba(26, 22, 18, 0.8) 100%);
+    border: 2px solid var(--bronze-light);
+    border-radius: 8px;
+    color: var(--gold-medium);
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.3), transparent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.filter-btn:hover::before {
+    width: 200%;
+    height: 200%;
+}
+
+.filter-btn:hover {
+    border-color: var(--gold-medium);
+    color: var(--gold-bright);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.filter-btn.active {
+    border-color: var(--gold-bright);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(139, 115, 85, 0.4) 100%);
+    color: var(--gold-bright);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.filter-count {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 6px;
+    background: rgba(255, 215, 0, 0.2);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--bronze-light);
+    border-radius: 8px;
+    color: var(--gold-medium);
+    font-family: 'Yrsa', serif;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.search-box:focus {
+    border-color: var(--gold-medium);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.search-box::placeholder {
+    color: var(--bronze-light);
+}
+
+.sort-dropdown {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, rgba(42, 36, 30, 0.8) 0%, rgba(26, 22, 18, 0.8) 100%);
+    border: 2px solid var(--bronze-light);
+    border-radius: 8px;
+    color: var(--gold-medium);
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.sort-dropdown:hover {
+    border-color: var(--gold-medium);
+}
+
+/* ========================================
+   MAIN CONTENT LAYOUT
+   ======================================== */
+.inventory-content {
+    display: flex;
+    gap: 25px;
+    padding: 25px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ========================================
+   EQUIPMENT SECTION
+   ======================================== */
+.equipment-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 300px;
+    max-width: 300px;
+}
+
+.section-header {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--bronze-light);
+    text-align: center;
+}
+
+.equipment-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.equipment-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.slot-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--bronze-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.slot-item {
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, rgba(42, 36, 30, 0.9) 0%, rgba(26, 22, 18, 0.9) 100%);
+    border: 3px solid var(--bronze-light);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.slot-item::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.1), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.slot-item:hover::before {
+    opacity: 1;
+}
+
+.slot-item.equipped {
+    border-color: var(--gold-medium);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(139, 115, 85, 0.15) 100%);
+    box-shadow:
+        0 0 20px rgba(212, 175, 55, 0.4),
+        inset 0 0 15px rgba(212, 175, 55, 0.1);
+}
+
+.slot-item:hover {
+    border-color: var(--gold-medium);
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.slot-item.drop-target {
+    border-color: var(--gold-bright);
+    border-style: dashed;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(212, 175, 55, 0.2) 100%);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.slot-item.empty {
+    opacity: 0.6;
+}
+
+.slot-item.empty:hover {
+    opacity: 1;
+}
+
+.item-icon {
+    font-size: 36px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.item-rarity-glow {
+    position: absolute;
+    inset: -3px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.slot-item:hover .item-rarity-glow {
+    opacity: 1;
+}
+
+/* Equipment Stats Summary */
+.equipment-stats {
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--bronze-light);
+    border-radius: 8px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-name {
+    color: var(--bronze-light);
+    font-weight: 600;
+}
+
+.stat-bonus {
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+
+.stat-bonus.positive {
+    color: #10B981;
+}
+
+.stat-bonus.negative {
+    color: #EF4444;
+}
+
+/* ========================================
+   INVENTORY GRID SECTION
+   ======================================== */
+.grid-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex: 1;
+    min-width: 0;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 12px;
+    flex: 1;
+    align-content: start;
+}
+
+.inventory-slot {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, rgba(42, 36, 30, 0.85) 0%, rgba(26, 22, 18, 0.85) 100%);
+    border: 2px solid var(--bronze-light);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-slot::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.1), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.inventory-slot:hover::before {
+    opacity: 1;
+}
+
+.inventory-slot:hover {
+    border-color: var(--gold-medium);
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+    z-index: 10;
+}
+
+.inventory-slot.drop-target {
+    border-color: var(--gold-bright);
+    border-style: dashed;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(212, 175, 55, 0.2) 100%);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.inventory-slot.hidden {
+    display: none;
+}
+
+.grid-item {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: grab;
+}
+
+.grid-item.dragging {
+    cursor: grabbing;
+    opacity: 0.5;
+}
+
+.grid-item .item-icon {
+    font-size: 32px;
+}
+
+.item-quantity {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(212, 175, 55, 0.95);
+    color: #2A1810;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.item-rarity-border {
+    position: absolute;
+    inset: -2px;
+    border-radius: 8px;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Rarity Border Colors */
+.rarity-common {
+    border: 2px solid var(--rarity-common);
+}
+
+.rarity-uncommon {
+    border: 2px solid var(--rarity-uncommon);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.rarity-rare {
+    border: 2px solid var(--rarity-rare);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.rarity-epic {
+    border: 2px solid var(--rarity-epic);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+.rarity-legendary {
+    border: 2px solid var(--rarity-legendary);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    animation: legendary-glow 2s ease-in-out infinite;
+}
+
+.rarity-divine {
+    border: 2px solid var(--rarity-divine);
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.6);
+    animation: divine-glow 1.5s ease-in-out infinite;
+}
+
+/* ========================================
+   ITEM TOOLTIP
+   ======================================== */
+.item-tooltip {
+    position: fixed;
+    display: none;
+    z-index: 3000;
+    pointer-events: none;
+    max-width: 320px;
+    background: linear-gradient(135deg, rgba(10, 8, 8, 0.98), rgba(26, 20, 18, 0.98));
+    border: 3px solid var(--gold-medium);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.item-tooltip.visible {
+    display: block;
+}
+
+.tooltip-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--bronze-light);
+}
+
+.tooltip-name {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.tooltip-type {
+    font-size: 12px;
+    color: var(--bronze-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tooltip-rarity {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.tooltip-stats {
+    margin: 12px 0;
+}
+
+.tooltip-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+.tooltip-description {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(139, 115, 85, 0.3);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--gold-medium);
+    font-style: italic;
+}
+
+.tooltip-requirements {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(139, 115, 85, 0.3);
+    font-size: 12px;
+    color: var(--bronze-light);
+}
+
+.requirement-met {
+    color: #10B981;
+}
+
+.requirement-not-met {
+    color: #EF4444;
+}
+
+.tooltip-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(139, 115, 85, 0.3);
+    font-size: 11px;
+    color: var(--bronze-light);
+    text-align: center;
+}
+
+/* ========================================
+   CONTEXT MENU
+   ======================================== */
+.context-menu {
+    position: fixed;
+    display: none;
+    z-index: 3001;
+    background: linear-gradient(135deg, rgba(10, 8, 8, 0.98), rgba(26, 20, 18, 0.98));
+    border: 2px solid var(--gold-medium);
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+    animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+.context-menu.visible {
+    display: block;
+}
+
+.context-menu-item {
+    padding: 10px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--gold-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.context-menu-item:hover {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--gold-bright);
+}
+
+.context-menu-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+    background: transparent;
+    color: var(--gold-medium);
+}
+
+.context-menu-icon {
+    font-size: 16px;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: var(--bronze-light);
+    margin: 4px 0;
+}
+
+/* ========================================
+   ITEM DETAILS PANEL
+   ======================================== */
+.item-details {
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 2px solid var(--bronze-light);
+    padding: 20px 25px;
+    min-height: 120px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.details-title {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.details-content {
+    font-size: 14px;
+    color: var(--gold-medium);
+    line-height: 1.8;
+}
+
+.details-placeholder {
+    color: var(--bronze-light);
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.details-item-name {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.details-item-description {
+    margin-bottom: 12px;
+    font-style: italic;
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+.inventory-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.inventory-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+}
+
+.inventory-content::-webkit-scrollbar-thumb {
+    background: var(--bronze-light);
+    border-radius: 5px;
+    transition: background 0.15s ease;
+}
+
+.inventory-content::-webkit-scrollbar-thumb:hover {
+    background: var(--gold-medium);
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes legendary-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.8); }
+}
+
+@keyframes divine-glow {
+    0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+    50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.9); }
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes contextMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 1200px) {
+    .inventory-panel {
+        width: 98vw;
+    }
+
+    .equipment-section {
+        min-width: 250px;
+        max-width: 250px;
+    }
+
+    .inventory-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .inventory-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px 20px;
+    }
+
+    .header-stats {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .inventory-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-box,
+    .sort-dropdown {
+        width: 100%;
+        max-width: none;
+    }
+
+    .inventory-content {
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .equipment-section {
+        max-width: none;
+    }
+
+    .inventory-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    }
+
+    .item-tooltip {
+        max-width: 90vw;
+    }
+}

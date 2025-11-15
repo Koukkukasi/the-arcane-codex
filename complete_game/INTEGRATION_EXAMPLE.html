@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Map Integration Example</title>
+
+    <!-- Existing stylesheets -->
+    <link rel="stylesheet" href="/static/css/design-system.css">
+    <link rel="stylesheet" href="/static/css/ux_enhancements.css">
+
+    <!-- ADD THESE TWO LINES FOR MAP SYSTEM -->
+    <link rel="stylesheet" href="/static/css/world_map.css">
+
+    <!-- Google Fonts for Fantasy Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Demo Page Styling */
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .demo-header h1 {
+            font-family: 'Cinzel', serif;
+            color: #FFD700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .demo-btn {
+            background: linear-gradient(135deg, #D4AF37, #C9A22E);
+            border: 2px solid #FFD700;
+            color: #1A1612;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-btn:hover {
+            background: linear-gradient(135deg, #FFD700, #D4AF37);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+        }
+
+        .demo-btn.secondary {
+            background: rgba(139, 115, 85, 0.6);
+            border-color: #8B7355;
+            color: #FFD700;
+        }
+
+        .demo-section {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #8B7355;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-section h2 {
+            font-family: 'Cinzel', serif;
+            color: #FFD700;
+            margin-top: 0;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #0f0;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "⚔️";
+            position: absolute;
+            left: 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-badge.ready {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .log-output {
+            background: #000;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #0f0;
+        }
+
+        .log-entry {
+            margin-bottom: 0.25rem;
+        }
+
+        .log-entry.info { color: #0ff; }
+        .log-entry.success { color: #0f0; }
+        .log-entry.warning { color: #ff0; }
+        .log-entry.error { color: #f00; }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <!-- Header -->
+        <div class="demo-header">
+            <h1>⚔️ World Map System Demo</h1>
+            <p>Interactive demonstration of The Arcane Codex map system</p>
+            <span class="status-badge ready">✓ READY</span>
+        </div>
+
+        <!-- Quick Start Controls -->
+        <div class="demo-controls">
+            <button class="demo-btn" onclick="openMap()">
+                🗺️ Open Map (M)
+            </button>
+            <button class="demo-btn secondary" onclick="discoverLocation()">
+                🔍 Discover Location
+            </button>
+            <button class="demo-btn secondary" onclick="centerOnQuest()">
+                ⚔️ Show Quest
+            </button>
+            <button class="demo-btn secondary" onclick="testZoom()">
+                🔍 Test Zoom
+            </button>
+            <button class="demo-btn secondary" onclick="showMinimap()">
+                📍 Toggle Minimap
+            </button>
+        </div>
+
+        <!-- Features Section -->
+        <div class="demo-section">
+            <h2>Features Implemented</h2>
+            <ul class="feature-list">
+                <li>Hand-drawn fantasy world map with parchment aesthetic</li>
+                <li>Fog of war system (unexplored, discovered, current)</li>
+                <li>7 types of interactive POIs (shops, temples, quests, NPCs, etc.)</li>
+                <li>Zoom controls (0.5x - 3.0x) with mouse wheel</li>
+                <li>Pan with click and drag</li>
+                <li>Fast travel system (costs gold)</li>
+                <li>Real-time minimap in corner</li>
+                <li>Quest integration with pulsing markers</li>
+                <li>Mobile-responsive design</li>
+                <li>LocalStorage persistence</li>
+            </ul>
+        </div>
+
+        <!-- Integration Code -->
+        <div class="demo-section">
+            <h2>Integration Code</h2>
+            <p>Add these lines to your game template:</p>
+            <div class="code-block">
+&lt;!-- In &lt;head&gt; section --&gt;
+&lt;link rel="stylesheet" href="/static/css/world_map.css"&gt;
+
+&lt;!-- Before &lt;/body&gt; tag --&gt;
+&lt;script src="/static/js/world_map_system.js" defer&gt;&lt;/script&gt;
+&lt;script src="/static/js/map_integration.js" defer&gt;&lt;/script&gt;
+
+&lt;script&gt;
+// Initialize when game is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Assuming you have a game instance
+    window.mapIntegration = new MapIntegration(window.game);
+
+    console.log('Map system ready!');
+});
+&lt;/script&gt;
+            </div>
+        </div>
+
+        <!-- Usage Examples -->
+        <div class="demo-section">
+            <h2>Usage Examples</h2>
+            <div class="code-block">
+// Open/close map
+mapIntegration.openMap();
+mapIntegration.closeMap();
+
+// Discover locations
+mapIntegration.discoverLocation('druid_grove');
+mapIntegration.discoverRegion('elderwood');
+
+// Quest integration
+mapIntegration.centerOnQuest('elderwood_mystery');
+
+// Check if can fast travel
+const canTravel = mapIntegration.canFastTravelTo('valdria_temple');
+
+// Get discovered locations
+const discovered = mapIntegration.getDiscoveredLocations();
+            </div>
+        </div>
+
+        <!-- Event Log -->
+        <div class="demo-section">
+            <h2>Event Log</h2>
+            <div class="log-output" id="event-log">
+                <div class="log-entry info">[INFO] Map system loaded</div>
+                <div class="log-entry info">[INFO] Press 'M' to toggle map</div>
+                <div class="log-entry info">[INFO] Click buttons above to test features</div>
+            </div>
+        </div>
+
+        <!-- Files Created -->
+        <div class="demo-section">
+            <h2>Files Created</h2>
+            <ul>
+                <li><strong>world_map_system.js</strong> - Core map renderer (23KB)</li>
+                <li><strong>map_integration.js</strong> - Game integration (10KB)</li>
+                <li><strong>world_map.css</strong> - Complete styling (12KB)</li>
+                <li><strong>MAP_SYSTEM_DOCUMENTATION.md</strong> - Full documentation (25KB)</li>
+                <li><strong>VISUAL_DESIGN_MOCKUP.md</strong> - Design specs (15KB)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ADD THESE SCRIPTS FOR MAP SYSTEM -->
+    <script src="/static/js/world_map_system.js"></script>
+    <script src="/static/js/map_integration.js"></script>
+
+    <!-- Demo Scripts -->
+    <script>
+        // Mock game object for demo
+        window.game = {
+            playerId: 'demo-player',
+            playerName: 'Demo Hero',
+            gold: 500,
+            visitedLocations: ['valdria_market'],
+
+            getPlayerGold() {
+                return this.gold;
+            },
+
+            fastTravel(destination) {
+                return new Promise((resolve) => {
+                    logEvent('success', `Fast traveling to ${destination}...`);
+                    setTimeout(() => {
+                        this.gold -= 50;
+                        logEvent('success', `Arrived! (50g spent, ${this.gold}g remaining)`);
+                        resolve({ success: true });
+                    }, 1000);
+                });
+            },
+
+            onPOISelected(poi) {
+                logEvent('info', `POI selected: ${poi.name} (${poi.type})`);
+            }
+        };
+
+        // Initialize map integration
+        let mapIntegration;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for map system to load
+            setTimeout(() => {
+                if (typeof MapIntegration !== 'undefined') {
+                    mapIntegration = new MapIntegration(window.game);
+                    logEvent('success', 'Map integration initialized!');
+                    logEvent('info', 'Press M key to open map');
+
+                    // Discover starting locations
+                    mapIntegration.discoverRegion('valdria_city');
+                } else {
+                    logEvent('error', 'MapIntegration not found. Check if scripts loaded.');
+                }
+            }, 500);
+        });
+
+        // Demo Functions
+        function openMap() {
+            if (mapIntegration) {
+                mapIntegration.openMap();
+                logEvent('info', 'Map opened');
+            } else {
+                logEvent('error', 'Map integration not ready');
+            }
+        }
+
+        function discoverLocation() {
+            if (mapIntegration) {
+                const locations = ['druid_grove', 'bandit_camp', 'forest_shrine'];
+                const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+
+                mapIntegration.discoverLocation(randomLocation);
+                logEvent('success', `Discovered: ${randomLocation}`);
+
+                // Also discover the region
+                mapIntegration.discoverRegion('elderwood');
+            } else {
+                logEvent('error', 'Map integration not ready');
+            }
+        }
+
+        function centerOnQuest() {
+            if (mapIntegration) {
+                // First discover the quest location
+                mapIntegration.discoverLocation('forest_shrine');
+                mapIntegration.discoverRegion('elderwood');
+
+                // Then center on it
+                mapIntegration.openMap();
+                setTimeout(() => {
+                    mapIntegration.centerOnQuest('elderwood_mystery');
+                    logEvent('info', 'Centered on quest: elderwood_mystery');
+                }, 300);
+            } else {
+                logEvent('error', 'Map integration not ready');
+            }
+        }
+
+        function testZoom() {
+            if (mapIntegration) {
+                mapIntegration.openMap();
+                logEvent('info', 'Testing zoom controls...');
+
+                setTimeout(() => {
+                    mapIntegration.zoomIn();
+                    logEvent('info', 'Zoomed in');
+                }, 500);
+
+                setTimeout(() => {
+                    mapIntegration.zoomOut();
+                    logEvent('info', 'Zoomed out');
+                }, 1500);
+
+                setTimeout(() => {
+                    mapIntegration.resetView();
+                    logEvent('info', 'View reset');
+                }, 2500);
+            } else {
+                logEvent('error', 'Map integration not ready');
+            }
+        }
+
+        function showMinimap() {
+            const minimap = document.getElementById('minimap-container');
+            if (minimap) {
+                minimap.style.display = minimap.style.display === 'none' ? 'block' : 'none';
+                logEvent('info', 'Toggled minimap');
+            } else {
+                logEvent('warning', 'Minimap not available (requires game page)');
+            }
+        }
+
+        // Event logging
+        function logEvent(type, message) {
+            const log = document.getElementById('event-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Listen for map events
+        document.addEventListener('poiSelected', (e) => {
+            logEvent('info', `POI clicked: ${e.detail.name}`);
+        });
+
+        document.addEventListener('fastTravel', (e) => {
+            logEvent('info', `Fast travel initiated to ${e.detail.poi.name}`);
+        });
+
+        // Keyboard shortcuts info
+        logEvent('info', 'Keyboard shortcuts: M (toggle map), +/- (zoom), Esc (close)');
+
+        // Check if files exist
+        fetch('/static/js/world_map_system.js')
+            .then(response => {
+                if (response.ok) {
+                    logEvent('success', 'world_map_system.js loaded');
+                } else {
+                    logEvent('error', 'world_map_system.js not found');
+                }
+            })
+            .catch(() => {
+                logEvent('warning', 'Could not verify world_map_system.js');
+            });
+
+        fetch('/static/css/world_map.css')
+            .then(response => {
+                if (response.ok) {
+                    logEvent('success', 'world_map.css loaded');
+                } else {
+                    logEvent('error', 'world_map.css not found');
+                }
+            })
+            .catch(() => {
+                logEvent('warning', 'Could not verify world_map.css');
+            });
+    </script>
+</body>
+</html>

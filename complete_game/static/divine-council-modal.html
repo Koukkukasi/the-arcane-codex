@@ -1,0 +1,115 @@
+<!--
+  THE ARCANE CODEX - Divine Council Voting Modal
+  Phase G: SVG Graphics Integration
+
+  This file contains the complete HTML structure for the Divine Council
+  voting visualization modal. Include this before the closing </body> tag
+  in your main game template.
+
+  Dependencies:
+  - /static/css/svg-integration.css
+  - /static/js/divine-council.js
+  - SVG god icons in /static/images/
+-->
+
+<div id="council-voting-modal" class="divine-council-modal">
+  <!-- Mystical Backdrop -->
+  <div class="modal-backdrop mystical-backdrop"></div>
+
+  <!-- Modal Content -->
+  <div class="modal-content council-content">
+
+    <!-- Header with Runes -->
+    <div class="council-header">
+      <img src="/static/images/rune_symbol_2.svg" class="header-rune" alt="" aria-hidden="true">
+      <h2>The Divine Council Convenes</h2>
+      <img src="/static/images/rune_symbol_2.svg" class="header-rune" alt="" aria-hidden="true">
+    </div>
+
+    <!-- Divider -->
+    <img src="/static/images/divider_line.svg" class="divider" alt="" aria-hidden="true">
+
+    <!-- Context Text -->
+    <div class="council-context">
+      <p>Your choice to <strong id="choice-text">make this decision</strong> has drawn the attention of the gods...</p>
+    </div>
+
+    <!-- God Voting Arena -->
+    <div class="god-voting-arena" role="region" aria-label="Divine votes">
+
+      <!-- Approve Side (Left) -->
+      <div class="vote-column approve-column">
+        <div class="vote-label approve-label">Approve</div>
+        <div class="god-votes-list" id="approve-gods" role="list">
+          <!-- Gods who approve will be inserted here by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Center Divider with Rune -->
+      <div class="vote-divider" aria-hidden="true">
+        <div class="divider-line"></div>
+        <img src="/static/images/rune_symbol_3.svg" class="center-rune" alt="">
+      </div>
+
+      <!-- Condemn Side (Right) -->
+      <div class="vote-column condemn-column">
+        <div class="vote-label condemn-label">Condemn</div>
+        <div class="god-votes-list" id="condemn-gods" role="list">
+          <!-- Gods who condemn will be inserted here by JavaScript -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Divider -->
+    <img src="/static/images/divider_line.svg" class="divider" alt="" aria-hidden="true">
+
+    <!-- Judgment Result -->
+    <div class="council-judgment" role="alert">
+      <div class="judgment-header">Divine Judgment</div>
+      <div class="judgment-result" id="judgment-text">
+        The Council deliberates upon your choice...
+      </div>
+    </div>
+
+    <!-- Continue Button -->
+    <button class="btn-primary council-continue" type="button">
+      Continue Your Journey
+    </button>
+
+  </div>
+</div>
+
+<!--
+  INTEGRATION INSTRUCTIONS:
+  ========================
+
+  1. Add CSS link to your <head>:
+     <link rel="stylesheet" href="/static/css/svg-integration.css">
+
+  2. Add JavaScript before closing </body>:
+     <script src="/static/js/divine-council.js"></script>
+
+  3. Include this modal HTML before closing </body>
+
+  4. Use JavaScript to trigger voting:
+
+     // Show voting modal
+     window.DivineCouncil.showVoting({
+       approve: ['valdris', 'sylara'],
+       condemn: ['kaitha', 'korvan'],
+       reasons: {
+         valdris: "Justice was served.",
+         sylara: "Life was preserved.",
+         kaitha: "Freedom was denied!",
+         korvan: "Weakness was shown."
+       },
+       judgment: "The Council is divided 2-2.",
+       choice: "spare the merchant"
+     });
+
+     // Set callback for continue button
+     window.DivineCouncil.setContinueCallback(() => {
+       console.log('Continuing story...');
+     });
+-->

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills System Integration Guide</title>
+
+    <!-- Design System Tokens (Required) -->
+    <link rel="stylesheet" href="/static/css/design-system/00-tokens.css">
+    <link rel="stylesheet" href="/static/css/design-system/03-animations.css">
+
+    <!-- Skills System CSS -->
+    <link rel="stylesheet" href="/static/css/skills.css">
+
+    <!-- Skills System JS -->
+    <script src="/static/js/api-client.js" defer></script>
+    <script src="/static/js/error_handler.js" defer></script>
+    <script src="/static/js/skills.js" defer></script>
+</head>
+<body>
+
+    <!-- ======================================
+         SKILLS INTEGRATION EXAMPLE
+         ====================================== -->
+
+    <div class="game-container">
+
+        <!-- ===================================
+             PART 1: ACTION BAR (Always Visible)
+             =================================== -->
+
+        <div class="action-bar">
+            <div class="action-bar-slots">
+                <!-- Hotkey Slots 1-8 -->
+                <div class="action-slot empty" data-hotkey="1">
+                    <div class="ability-hotkey">1</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="2">
+                    <div class="ability-hotkey">2</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="3">
+                    <div class="ability-hotkey">3</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="4">
+                    <div class="ability-hotkey">4</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="5">
+                    <div class="ability-hotkey">5</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="6">
+                    <div class="ability-hotkey">6</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="7">
+                    <div class="ability-hotkey">7</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+
+                <div class="action-slot empty" data-hotkey="8">
+                    <div class="ability-hotkey">8</div>
+                    <div class="empty-slot-hint">Drag ability here</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================
+             PART 2: OPEN SKILLS BUTTON
+             =================================== -->
+
+        <!-- Add this button to your game HUD -->
+        <button class="btn-open-skills" aria-label="Open Skills Panel">
+            Skills & Abilities (K)
+        </button>
+
+        <!-- ===================================
+             PART 3: SKILLS OVERLAY (Hidden by default)
+             =================================== -->
+
+        <div id="skills-overlay" class="overlay">
+            <div class="overlay-backdrop"></div>
+            <div class="overlay-panel">
+
+                <!-- Header -->
+                <div class="overlay-header">
+                    <div class="overlay-title">
+                        <span class="overlay-icon">⚔️</span>
+                        <h2>Skills & Abilities</h2>
+                    </div>
+                    <button class="btn-close-overlay" aria-label="Close Skills Panel">×</button>
+                </div>
+
+                <!-- Skill Points Banner -->
+                <div class="skill-points-banner">
+                    <div class="skill-points-available">
+                        <div class="skill-points-label">Skill Points Available</div>
+                        <div class="skill-points-value">0</div>
+                    </div>
+                    <div class="skill-points-total">
+                        <div class="skill-points-label">Total Spent</div>
+                        <div class="skill-points-value">0/50</div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="overlay-tabs">
+                    <button class="tab-btn active" data-tab="skill-tree">
+                        <span class="tab-icon">🌳</span>
+                        <span class="tab-label">Skill Tree</span>
+                    </button>
+                    <button class="tab-btn" data-tab="abilities">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-label">All Abilities</span>
+                    </button>
+                    <button class="tab-btn" data-tab="passives">
+                        <span class="tab-icon">✨</span>
+                        <span class="tab-label">Passive Skills</span>
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="overlay-body">
+
+                    <!-- SKILL TREE TAB -->
+                    <div id="tab-skill-tree" class="tab-content active">
+                        <div class="skill-tree-container">
+
+                            <!-- Skill Tree Canvas -->
+                            <div class="skill-tree-canvas">
+                                <svg class="skill-tree-connections" preserveAspectRatio="none">
+                                    <!-- Connection lines drawn dynamically -->
+                                </svg>
+
+                                <!-- Tier 1 -->
+                                <div class="skill-tree-tier" data-tier="1">
+                                    <div class="tier-label">Foundation</div>
+                                    <div class="skill-tree-row">
+                                        <!-- Skill nodes added dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- Tier 2 -->
+                                <div class="skill-tree-tier" data-tier="2">
+                                    <div class="tier-label">Specialization</div>
+                                    <div class="skill-tree-row">
+                                        <!-- Skill nodes added dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- Tier 3 -->
+                                <div class="skill-tree-tier" data-tier="3">
+                                    <div class="tier-label">Advanced</div>
+                                    <div class="skill-tree-row">
+                                        <!-- Skill nodes added dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- Tier 4 -->
+                                <div class="skill-tree-tier" data-tier="4">
+                                    <div class="tier-label">Mastery</div>
+                                    <div class="skill-tree-row">
+                                        <!-- Skill nodes added dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- Tier 5 -->
+                                <div class="skill-tree-tier" data-tier="5">
+                                    <div class="tier-label">Ultimate Abilities</div>
+                                    <div class="skill-tree-row">
+                                        <!-- Skill nodes added dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skill Detail Panel -->
+                            <div class="skill-detail-panel">
+                                <div class="no-skill-selected">
+                                    <div class="placeholder-icon">👆</div>
+                                    <div class="placeholder-text">Click a skill node to view details</div>
+                                </div>
+
+                                <!-- Skill Details (shown when selected) -->
+                                <div class="skill-details" style="display: none;">
+                                    <div class="skill-detail-header">
+                                        <div class="skill-detail-icon">⚔️</div>
+                                        <div class="skill-detail-title">
+                                            <h3>Skill Name</h3>
+                                            <div class="skill-detail-type">Active Ability</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="skill-detail-rank">
+                                        <div class="rank-label">Current Rank: 0/5</div>
+                                        <div class="rank-progress">
+                                            <div class="rank-progress-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="skill-detail-description">
+                                        <h4>Description</h4>
+                                        <p>Skill description here</p>
+                                    </div>
+
+                                    <div class="skill-detail-lore">
+                                        <h4>Lore</h4>
+                                        <p><em>Lore text here</em></p>
+                                    </div>
+
+                                    <div class="skill-detail-stats">
+                                        <h4>Current Effects</h4>
+                                        <!-- Stats populated dynamically -->
+                                    </div>
+
+                                    <div class="skill-detail-actions">
+                                        <button class="btn-invest-point">Invest Point</button>
+                                        <button class="btn-refund-points">Refund All Points</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ALL ABILITIES TAB -->
+                    <div id="tab-abilities" class="tab-content">
+                        <div class="abilities-filter">
+                            <input type="text" class="ability-search" placeholder="Search abilities...">
+                            <div class="ability-filters">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="combat">Combat</button>
+                                <button class="filter-btn" data-filter="magic">Magic</button>
+                                <button class="filter-btn" data-filter="utility">Utility</button>
+                                <button class="filter-btn" data-filter="unlocked">Unlocked Only</button>
+                            </div>
+                        </div>
+
+                        <div class="abilities-grid">
+                            <!-- Ability cards populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- PASSIVE SKILLS TAB -->
+                    <div id="tab-passives" class="tab-content">
+                        <div class="passives-info">
+                            <p>Passive skills provide permanent bonuses and are always active.</p>
+                        </div>
+
+                        <div class="passives-grid">
+                            <!-- Passive cards populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================
+             PART 4: ABILITY DETAIL MODAL (Optional)
+             =================================== -->
+
+        <div id="ability-detail-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Ability Details</h3>
+                    <button class="btn-close-modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Ability details populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================
+             PART 5: SKILL UNLOCK CELEBRATION
+             =================================== -->
+
+        <div id="skill-unlock-celebration" class="celebration-overlay" style="display: none;">
+            <div class="celebration-content">
+                <div class="celebration-icon">⭐</div>
+                <h2 class="celebration-title">Skill Unlocked!</h2>
+                <div class="celebration-skill-name">New Ability</div>
+                <button class="btn-close-celebration">Continue</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ======================================
+         INTEGRATION INSTRUCTIONS
+         ====================================== -->
+
+    <script>
+        /*
+         * SKILLS SYSTEM INTEGRATION GUIDE
+         * ================================
+         *
+         * 1. REQUIRED FILES:
+         *    - /static/css/skills.css
+         *    - /static/js/skills.js
+         *    - /static/js/api-client.js (for apiCall function)
+         *    - /static/js/error_handler.js (for ErrorHandler)
+         *
+         * 2. BACKEND API ENDPOINTS REQUIRED:
+         *    - GET /api/skills/tree - Load skill tree data
+         *    - POST /api/skills/unlock - Unlock/rank up ability
+         *    - POST /api/skills/assign_hotkey - Assign ability to hotkey
+         *    - POST /api/skills/use - Activate ability
+         *    - POST /api/skills/refund - Refund all skill points
+         *
+         * 3. API RESPONSE FORMATS:
+         *
+         *    GET /api/skills/tree:
+         *    {
+         *      "success": true,
+         *      "abilities": [
+         *        {
+         *          "id": "basic-combat",
+         *          "name": "Basic Combat",
+         *          "icon": "⚔️",
+         *          "tier": 1,
+         *          "type": "active",
+         *          "category": "combat",
+         *          "unlocked": true,
+         *          "locked": false,
+         *          "available": false,
+         *          "current_rank": 5,
+         *          "max_rank": 5,
+         *          "description": "Master the fundamentals...",
+         *          "lore": "Every master was once a student...",
+         *          "cooldown": 1.5,
+         *          "cost_type": "stamina",
+         *          "cost_value": 10,
+         *          "prerequisites": [],
+         *          "requirement_text": "Level 1 or higher",
+         *          "effects": [
+         *            { "rank": 1, "stats": { "weaponDamage": 5 } },
+         *            { "rank": 2, "stats": { "weaponDamage": 10 } }
+         *          ]
+         *        }
+         *      ],
+         *      "skill_points": 5,
+         *      "skills_spent": 37,
+         *      "player_level": 12,
+         *      "hotkeys": {
+         *        "1": "basic-combat",
+         *        "2": "fireball"
+         *      }
+         *    }
+         *
+         *    POST /api/skills/unlock:
+         *    {
+         *      "success": true,
+         *      "ability": { "id": "...", "name": "..." },
+         *      "skill_points": 4,
+         *      "skills_spent": 38
+         *    }
+         *
+         *    POST /api/skills/assign_hotkey:
+         *    {
+         *      "success": true,
+         *      "hotkey": 1,
+         *      "ability_id": "fireball"
+         *    }
+         *
+         *    POST /api/skills/use:
+         *    {
+         *      "success": true,
+         *      "ability": { "id": "...", "name": "..." },
+         *      "cooldown": 8.0
+         *    }
+         *
+         * 4. INTEGRATION STEPS:
+         *
+         *    a) Add to your main HTML template:
+         *       - Action bar HTML (copy from above)
+         *       - Skills overlay HTML (copy from above)
+         *       - Button to open skills overlay
+         *
+         *    b) Include CSS and JS files in <head>:
+         *       <link rel="stylesheet" href="/static/css/skills.css">
+         *       <script src="/static/js/skills.js" defer></script>
+         *
+         *    c) System auto-initializes on DOM load
+         *
+         * 5. CUSTOMIZATION:
+         *
+         *    a) Colors can be customized via CSS variables in skills.css
+         *    b) Action bar position can be adjusted (default: fixed bottom)
+         *    c) Keyboard shortcuts: 1-8 for abilities, K to open overlay
+         *
+         * 6. USAGE:
+         *
+         *    - Players use number keys 1-8 to activate abilities
+         *    - Press K to open skills overlay
+         *    - Drag abilities from "All Abilities" tab to action bar
+         *    - Click skill nodes in tree to view details and invest points
+         *
+         * 7. ACCESSIBILITY:
+         *
+         *    - Keyboard navigation supported
+         *    - Reduced motion support
+         *    - High contrast mode support
+         *    - Screen reader friendly labels
+         *
+         * 8. PERFORMANCE:
+         *
+         *    - Cooldowns update at 100ms intervals
+         *    - Skill tree connections use SVG for smooth rendering
+         *    - Animations use CSS transforms for GPU acceleration
+         */
+
+        // Example: Manually trigger skills overlay
+        // document.getElementById('skills-overlay').classList.add('active');
+
+        // Example: Access skills state
+        // console.log(window.SkillsState);
+
+        // Example: Reload skills data
+        // window.SkillsSystem.loadSkillData();
+    </script>
+
+</body>
+</html>

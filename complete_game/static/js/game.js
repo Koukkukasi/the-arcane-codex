@@ -188,18 +188,38 @@ class ArcaneCodexGame {
         }
 
         try {
-            const response = await fetch(`${this.API_BASE}${endpoint}`, options);
+            // Use error handler with automatic retry
+            if (typeof errorHandler !== 'undefined' && errorHandler) {
+                return await errorHandler.apiCallWithRetry(
+                    `${this.API_BASE}${endpoint}`,
+                    options,
+                    3  // 3 retries
+                );
+            } else {
+                // Fallback if error handler not loaded
+                const response = await fetch(`${this.API_BASE}${endpoint}`, options);
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || `API Error: ${response.status}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `API Error: ${response.status}`);
+                }
+
+                return await response.json();
             }
-
-            return await response.json();
         } catch (error) {
             if (!silent) {
                 console.error('API Request failed:', error);
-                this.showError(error.message);
+                if (typeof errorHandler !== 'undefined' && errorHandler) {
+                    errorHandler.logError(`API request to ${endpoint} failed`, {
+                        endpoint,
+                        method,
+                        error: error.message,
+                        status: error.status
+                    });
+                }
+                if (this.showError) {
+                    this.showError(error.message);
+                }
             }
             throw error;
         }
@@ -683,14 +703,39 @@ class ArcaneCodexGame {
         this.showLoading('Submitting choice...');
 
         try {
-            await this.makeChoice(choice);
+            const response = await this.makeChoice(choice);
 
             // Disable input after submission
             choiceInput.disabled = true;
             document.getElementById('submit-choice').disabled = true;
 
-            // Update game state
-            await this.updateGameState();
+            // Check if Divine Council should be summoned
+            if (response && response.divine_council_triggered && window.DivineCouncil) {
+                this.hideLoading();
+
+                console.log('[Game] Divine Council triggered for choice');
+
+                // Show Divine Council voting
+                try {
+                    await window.DivineCouncil.showVotingFromBackend(response.choice_id || choice);
+
+                    // Set callback for after council closes
+                    window.DivineCouncil.setExternalCallback(() => {
+                        console.log('[Game] Divine Council closed, continuing game...');
+                        this.updateGameState();
+                    });
+                } catch (error) {
+                    console.error('[Game] Divine Council error:', error);
+                    // Continue anyway
+                    await this.updateGameState();
+                }
+            } else {
+                // No Divine Council, just update state
+                await this.updateGameState();
+            }
+        } catch (error) {
+            console.error('[Game] Choice submission error:', error);
+            this.showError('Failed to submit choice. Please try again.');
         } finally {
             this.hideLoading();
         }

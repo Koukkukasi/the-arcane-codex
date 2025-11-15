@@ -200,8 +200,8 @@ class ArcaneDatabase:
                 VALUES (?, ?, ?, 'waiting')
             """, (game_id, code, json.dumps(initial_state)))
 
-            # Create default NPCs
-            self.create_default_npcs(game_id)
+        # Create default NPCs (after game insert is committed)
+        self.create_default_npcs(game_id)
 
         return game_id
 
@@ -517,3 +517,175 @@ class ArcaneDatabase:
                 skills[skill] += bonus
 
         return skills
+
+    # ========== Divine Favor & Effects Management ==========
+
+    def get_divine_favor(self, player_id: str, god_name: str) -> int:
+        """Get current favor with a specific god"""
+        with self.get_connection() as conn:
+            # Check if player exists
+            player = conn.execute("""
+                SELECT divine_favor FROM players WHERE id = ?
+            """, (player_id,)).fetchone()
+
+            if player:
+                favor_dict = json.loads(player['divine_favor'])
+                return favor_dict.get(god_name, 0)
+
+            return 0
+
+    def get_all_favor(self, player_id: str) -> Dict[str, int]:
+        """Get favor with all gods"""
+        with self.get_connection() as conn:
+            player = conn.execute("""
+                SELECT divine_favor FROM players WHERE id = ?
+            """, (player_id,)).fetchone()
+
+            if player:
+                favor_dict = json.loads(player['divine_favor'])
+            else:
+                favor_dict = {}
+
+            # Ensure all 7 gods are represented
+            for god in ['VALDRIS', 'KAITHA', 'MORVANE', 'SYLARA', 'KORVAN', 'ATHENA', 'MERCUS']:
+                if god not in favor_dict:
+                    favor_dict[god] = 0
+
+            return favor_dict
+
+    def update_divine_favor(self, player_id: str, game_id: str, god_name: str, change: int) -> int:
+        """Update favor with a god (clamped to -100/+100)"""
+        with self.get_connection() as conn:
+            # Get current favor
+            current_favor = self.get_divine_favor(player_id, god_name)
+
+            # Calculate new favor (clamped)
+            new_favor = max(-100, min(100, current_favor + change))
+
+            # Get current favor dict
+            player = conn.execute("""
+                SELECT divine_favor FROM players WHERE id = ?
+            """, (player_id,)).fetchone()
+
+            if player:
+                favor_dict = json.loads(player['divine_favor'])
+                favor_dict[god_name] = new_favor
+
+                conn.execute("""
+                    UPDATE players
+                    SET divine_favor = ?
+                    WHERE id = ?
+                """, (json.dumps(favor_dict), player_id))
+
+            return new_favor
+
+    def apply_divine_effect(self, player_id: str, game_id: str, effect_data: Dict) -> int:
+        """
+        Apply a divine blessing or curse
+
+        Note: Since we don't have a divine_effects table, we'll store effects
+        in the game_history table for now. A proper implementation would add
+        a divine_effects table as described in the design docs.
+        """
+        with self.get_connection() as conn:
+            # Get current game turn
+            game = conn.execute("""
+                SELECT turn FROM games WHERE id = ?
+            """, (game_id,)).fetchone()
+
+            turn = game['turn'] if game else 0
+
+            # Store effect in history
+            conn.execute("""
+                INSERT INTO game_history (game_id, turn, event_type, data)
+                VALUES (?, ?, 'divine_effect', ?)
+            """, (game_id, turn, json.dumps({
+                'player_id': player_id,
+                'effect_name': effect_data['effect_name'],
+                'effect_type': effect_data['effect_type'],
+                'effect_description': effect_data['effect_description'],
+                'mechanical_effects': effect_data['mechanical_effects'],
+                'duration_turns': effect_data['duration_turns']
+            })))
+
+            return conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    def get_active_effects(self, player_id: str, game_id: str) -> List[Dict]:
+        """
+        Get all active divine effects for a player
+
+        Returns effects from history that are still active based on turn count
+        """
+        with self.get_connection() as conn:
+            # Get current turn
+            game = conn.execute("""
+                SELECT turn FROM games WHERE id = ?
+            """, (game_id,)).fetchone()
+
+            current_turn = game['turn'] if game else 0
+
+            # Get divine effects from history
+            results = conn.execute("""
+                SELECT * FROM game_history
+                WHERE game_id = ? AND event_type = 'divine_effect'
+                ORDER BY turn DESC
+            """, (game_id,)).fetchall()
+
+            active_effects = []
+            for row in results:
+                data = json.loads(row['data'])
+                if data.get('player_id') == player_id:
+                    effect_turn = row['turn']
+                    duration = data.get('duration_turns', 0)
+
+                    # Check if effect is still active
+                    if duration == -1 or (current_turn - effect_turn) < duration:
+                        active_effects.append({
+                            'id': row['id'],
+                            'name': data['effect_name'],
+                            'type': data['effect_type'],
+                            'description': data['effect_description'],
+                            'mechanical_effects': data['mechanical_effects'],
+                            'turns_remaining': duration - (current_turn - effect_turn) if duration != -1 else -1
+                        })
+
+            return active_effects
+
+    def save_divine_council_vote(self, game_id: str, turn: int, player_id: str,
+                                 action: str, votes: Dict, outcome: str,
+                                 weighted_score: float, impact: Dict):
+        """Save a divine council vote to history"""
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO divine_councils
+                (game_id, turn, action_judged, votes, testimonies, outcome, impact)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                game_id,
+                turn,
+                action,
+                json.dumps(votes),
+                json.dumps({}),  # testimonies (future feature)
+                outcome,
+                json.dumps(impact)
+            ))
+
+    def get_council_history(self, game_id: str, limit: int = 10) -> List[Dict]:
+        """Get past divine council votes for a game"""
+        with self.get_connection() as conn:
+            results = conn.execute("""
+                SELECT * FROM divine_councils
+                WHERE game_id = ?
+                ORDER BY turn DESC
+                LIMIT ?
+            """, (game_id, limit)).fetchall()
+
+            history = []
+            for row in results:
+                vote = dict(row)
+                vote['votes'] = json.loads(vote['votes'])
+                vote['testimonies'] = json.loads(vote['testimonies'])
+                vote['impact'] = json.loads(vote['impact'])
+                history.append(vote)
+
+            return history

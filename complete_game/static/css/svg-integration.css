@@ -1,0 +1,1311 @@
+/**
+ * The Arcane Codex - SVG Integration Styles
+ * Phase G: Complete Visual Asset Integration
+ *
+ * This file contains all styles for SVG graphics integration
+ * including god icons, logo, decorative elements, and the
+ * Divine Council voting modal.
+ */
+
+/* ==========================================
+   LANDING PAGE - HERO SECTION
+   ========================================== */
+
+.landing-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%),
+    url('/static/images/mystical_background.svg') repeat;
+  background-size: auto, 300px;
+}
+
+.logo-container {
+  position: relative;
+  margin-bottom: var(--space-8);
+  filter: drop-shadow(0 0 40px rgba(139, 31, 255, 0.6));
+}
+
+.logo-main {
+  animation: logoFloat 4s ease-in-out infinite,
+             logoGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes logoGlow {
+  0% { filter: drop-shadow(0 0 20px rgba(139, 31, 255, 0.4)); }
+  100% { filter: drop-shadow(0 0 40px rgba(139, 31, 255, 0.8)); }
+}
+
+/* Corner Flourishes */
+.corner-decoration {
+  position: fixed;
+  width: 80px;
+  height: 80px;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: var(--z-10);
+  animation: cornerFadeIn 1s ease-out;
+}
+
+.corner-tl { top: 20px; left: 20px; }
+.corner-tr { top: 20px; right: 20px; transform: scaleX(-1); }
+.corner-bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+.corner-br { bottom: 20px; right: 20px; transform: scale(-1); }
+
+@keyframes cornerFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 0.6; transform: scale(1); }
+}
+
+/* ==========================================
+   TOP NAVIGATION - COMPACT LOGO
+   ========================================== */
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: transform var(--duration-base) var(--ease-out);
+  cursor: pointer;
+}
+
+.nav-logo:hover {
+  transform: scale(1.05);
+}
+
+.logo-small {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+  animation: subtleGlow 3s ease-in-out infinite;
+}
+
+@keyframes subtleGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4)); }
+  50% { filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.6)); }
+}
+
+.game-title-small {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  color: var(--color-divine-300);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* ==========================================
+   CHARACTER SHEET - DIVINE FAVOR SECTION
+   ========================================== */
+
+.divine-favor-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  color: var(--color-divine-300);
+  margin-bottom: var(--space-6);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+}
+
+.divine-favor-header .section-icon {
+  width: 24px;
+  height: 24px;
+  opacity: 0.7;
+  animation: runeRotate 8s linear infinite;
+}
+
+@keyframes runeRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* God Entry Layout */
+.divine-god {
+  display: grid;
+  grid-template-columns: 48px 1fr 120px;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.divine-god:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(212, 175, 55, 0.3);
+  transform: translateX(4px);
+}
+
+/* God Icon Container */
+.god-icon-container {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.2), transparent);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  position: relative;
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.divine-god:hover .god-icon-container {
+  border-color: rgba(212, 175, 55, 0.8);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  transform: scale(1.1);
+}
+
+.god-icon {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.3));
+  transition: filter var(--duration-base) var(--ease-out);
+}
+
+.divine-god:hover .god-icon {
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+}
+
+/* God Info */
+.divine-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.divine-name {
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.divine-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* God-specific colors */
+.valdris-name { color: var(--god-valdris); }
+.kaitha-name { color: var(--god-kaitha); }
+.morvane-name { color: var(--god-morvane); }
+.sylara-name { color: var(--god-sylara); }
+.korvan-name { color: var(--god-korvan); }
+.athena-name { color: var(--god-athena); }
+.mercus-name { color: var(--god-mercus); }
+
+/* ==========================================
+   DIVINE COUNCIL VOTING MODAL
+   ========================================== */
+
+.divine-council-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--z-modal);
+  animation: modalFadeIn 0.4s ease-out;
+}
+
+.divine-council-modal.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mystical-backdrop {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(180deg, rgba(139, 31, 255, 0.2) 0%, rgba(0, 0, 0, 0.9) 100%),
+    url('/static/images/mystical_background.svg') repeat;
+  background-size: auto, 200px;
+  backdrop-filter: blur(8px);
+  animation: backdropPulse 4s ease-in-out infinite;
+}
+
+@keyframes backdropPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.council-content {
+  position: relative;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg,
+    rgba(26, 22, 18, 0.98) 0%,
+    rgba(15, 10, 8, 0.98) 100%);
+  border: 3px solid;
+  border-image: linear-gradient(135deg,
+    var(--color-divine-500),
+    var(--color-arcane-500),
+    var(--color-divine-500)) 1;
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow:
+    0 0 60px rgba(139, 31, 255, 0.5),
+    inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Council Header */
+.council-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.council-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-3xl);
+  color: var(--color-divine-300);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.header-rune {
+  width: 32px;
+  height: 32px;
+  animation: runeFloat 3s ease-in-out infinite;
+}
+
+@keyframes runeFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(180deg); }
+}
+
+/* Divider Line */
+.divider {
+  width: 100%;
+  height: 8px;
+  margin: var(--space-6) 0;
+  opacity: 0.6;
+}
+
+/* Council Context */
+.council-context {
+  text-align: center;
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-arcane-500);
+}
+
+.council-context p {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.council-context strong {
+  color: var(--color-divine-300);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Voting Arena Layout */
+.god-voting-arena {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-6);
+  margin: var(--space-8) 0;
+  min-height: 400px;
+}
+
+/* Vote Columns */
+.vote-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vote-label {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  text-shadow: 0 0 10px currentColor;
+}
+
+.approve-label {
+  color: var(--color-success);
+  background: rgba(20, 184, 166, 0.1);
+  border: 2px solid rgba(20, 184, 166, 0.3);
+}
+
+.condemn-label {
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Center Divider */
+.vote-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.divider-line {
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg,
+    transparent,
+    var(--color-divine-500),
+    transparent);
+  box-shadow: 0 0 10px var(--color-divine-500);
+}
+
+.center-rune {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  padding: var(--space-2);
+  background: var(--color-background);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-divine-500);
+  animation: runeRotate 8s linear infinite;
+}
+
+/* God Votes List */
+.god-votes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Individual God Vote Card */
+.god-vote-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  transform: scale(0.8) translateY(-20px);
+  animation: godVoteAppear 0.6s ease-out forwards;
+}
+
+/* Stagger animation delays */
+.god-vote-card:nth-child(1) { animation-delay: 0.1s; }
+.god-vote-card:nth-child(2) { animation-delay: 0.3s; }
+.god-vote-card:nth-child(3) { animation-delay: 0.5s; }
+.god-vote-card:nth-child(4) { animation-delay: 0.7s; }
+
+@keyframes godVoteAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  60% {
+    transform: scale(1.05) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Approve-specific styling */
+.approve-column .god-vote-card {
+  border-left: 4px solid var(--color-success);
+  background: linear-gradient(90deg,
+    rgba(20, 184, 166, 0.2),
+    rgba(0, 0, 0, 0.4));
+}
+
+.approve-column .god-vote-card:hover {
+  border-color: var(--color-success);
+  box-shadow: 0 0 20px rgba(20, 184, 166, 0.3);
+}
+
+/* Condemn-specific styling */
+.condemn-column .god-vote-card {
+  border-right: 4px solid var(--color-danger);
+  background: linear-gradient(270deg,
+    rgba(239, 68, 68, 0.2),
+    rgba(0, 0, 0, 0.4));
+}
+
+.condemn-column .god-vote-card:hover {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* God Icon in Vote Card */
+.god-vote-card .god-icon-large {
+  width: 56px;
+  height: 56px;
+  padding: var(--space-2);
+  background: radial-gradient(circle at center,
+    rgba(212, 175, 55, 0.3),
+    transparent);
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  border-radius: var(--radius-full);
+  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.5));
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.5));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.7));
+  }
+}
+
+.god-vote-info {
+  flex: 1;
+}
+
+.god-vote-name {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
+  margin-bottom: var(--space-1);
+}
+
+.god-vote-reason {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  line-height: var(--line-height-relaxed);
+}
+
+/* Council Judgment */
+.council-judgment {
+  background: linear-gradient(135deg,
+    rgba(212, 175, 55, 0.15),
+    rgba(139, 115, 85, 0.15));
+  border: 2px solid var(--color-divine-500);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  text-align: center;
+  margin: var(--space-6) 0;
+  animation: judgmentReveal 0.8s ease-out 2s both;
+}
+
+@keyframes judgmentReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.judgment-header {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-divine-300);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  margin-bottom: var(--space-4);
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.judgment-result {
+  font-size: var(--font-size-lg);
+  color: var(--color-divine-200);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Continue Button */
+.council-continue {
+  width: 100%;
+  margin-top: var(--space-4);
+  animation: buttonFadeIn 0.6s ease-out 2.5s both;
+}
+
+@keyframes buttonFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ==========================================
+   STORY TEXT DECORATIVE ELEMENTS
+   ========================================== */
+
+.section-divider {
+  width: 80%;
+  height: 6px;
+  margin: var(--space-6) auto;
+  opacity: 0.5;
+  display: block;
+}
+
+.section-divider.animate {
+  animation: dividerSlide 0.8s ease-out;
+}
+
+@keyframes dividerSlide {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 0.5;
+    transform: scaleX(1);
+  }
+}
+
+/* Mystical Lists with Rune Bullets */
+.mystical-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0;
+}
+
+.mystical-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2);
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid var(--color-arcane-500);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.mystical-list li:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-left-color: var(--color-divine-500);
+  transform: translateX(4px);
+}
+
+.list-rune {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.4));
+}
+
+/* ==========================================
+   LOADING SCREEN
+   ========================================== */
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(10,8,18,0.95) 100%),
+    url('/static/images/mystical_background.svg') repeat;
+  background-size: auto, 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.8s ease-out;
+}
+
+.loading-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.loading-logo {
+  animation:
+    logoFloat 3s ease-in-out infinite,
+    logoGlowPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(139, 31, 255, 0.6));
+}
+
+@keyframes logoGlowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 30px rgba(139, 31, 255, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 50px rgba(139, 31, 255, 0.9));
+  }
+}
+
+.loading-text {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  color: var(--color-divine-300);
+  letter-spacing: var(--letter-spacing-wider);
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+  animation: textPulse 2s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.loading-runes {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.loading-rune {
+  width: 32px;
+  height: 32px;
+  animation: runeOrbit 4s ease-in-out infinite;
+  opacity: 0;
+}
+
+.loading-rune:nth-child(1) { animation-delay: 0s; }
+.loading-rune:nth-child(2) { animation-delay: 0.3s; }
+.loading-rune:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes runeOrbit {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(20px) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0px) rotate(180deg);
+  }
+}
+
+.loading-bar {
+  width: 300px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg,
+    var(--color-arcane-500),
+    var(--color-divine-500),
+    var(--color-arcane-500));
+  background-size: 200% 100%;
+  animation: loadingProgress 2s ease-in-out infinite;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 10px var(--color-arcane-500);
+}
+
+@keyframes loadingProgress {
+  0% {
+    width: 0%;
+    background-position: 0% 50%;
+  }
+  50% {
+    width: 70%;
+    background-position: 100% 50%;
+  }
+  100% {
+    width: 100%;
+    background-position: 0% 50%;
+  }
+}
+
+/* ==========================================
+   NOTIFICATION SYSTEM
+   ========================================== */
+
+.notification {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: linear-gradient(90deg,
+    rgba(0, 0, 0, 0.95),
+    rgba(26, 22, 18, 0.95));
+  border: 2px solid var(--color-divine-500);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(212, 175, 55, 0.3);
+  animation: notificationSlideIn 0.6s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes notificationSlideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(212, 175, 55, 0.2),
+    transparent);
+  animation: notificationShimmer 2s ease-in-out infinite;
+}
+
+@keyframes notificationShimmer {
+  to {
+    left: 100%;
+  }
+}
+
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  padding: var(--space-1);
+  background: radial-gradient(circle,
+    rgba(212, 175, 55, 0.2),
+    transparent);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-radius: var(--radius-full);
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-divine-300);
+  margin-bottom: var(--space-1);
+}
+
+.notification-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.notification-rune {
+  width: 24px;
+  height: 24px;
+  opacity: 0.6;
+  animation: runeRotate 8s linear infinite;
+}
+
+/* ==========================================
+   ENHANCED DIVINE COUNCIL ANIMATIONS
+   ========================================== */
+
+/* God vote card entrance animations with bounce */
+@keyframes godCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+  60% {
+    transform: translateY(5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.god-vote-card {
+  animation: godCardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+/* Enhanced stagger delays for sequential reveal */
+.god-vote-card:nth-child(1) { animation-delay: 0.2s; }
+.god-vote-card:nth-child(2) { animation-delay: 0.4s; }
+.god-vote-card:nth-child(3) { animation-delay: 0.6s; }
+.god-vote-card:nth-child(4) { animation-delay: 0.8s; }
+.god-vote-card:nth-child(5) { animation-delay: 1.0s; }
+.god-vote-card:nth-child(6) { animation-delay: 1.2s; }
+.god-vote-card:nth-child(7) { animation-delay: 1.4s; }
+
+/* Outcome reveal with blur effect */
+@keyframes outcomeReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    filter: blur(10px);
+  }
+  50% {
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.divine-judgment {
+  animation: outcomeReveal 0.8s ease-out 2.5s;
+  animation-fill-mode: both;
+}
+
+/* Judgment header glow pulse */
+@keyframes judgmentGlow {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 40px rgba(212, 175, 55, 0.8), 0 0 60px rgba(212, 175, 55, 0.4);
+  }
+}
+
+.judgment-header {
+  animation: judgmentGlow 2s ease-in-out infinite;
+}
+
+/* Vote label pulse on appearance */
+@keyframes voteLabelPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.vote-label {
+  animation: voteLabelPulse 0.5s ease-out 0.1s both;
+}
+
+/* Center rune enhanced rotation with glow */
+@keyframes runeRotateGlow {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    filter: drop-shadow(0 0 8px var(--color-divine-500));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px var(--color-divine-500));
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+    filter: drop-shadow(0 0 8px var(--color-divine-500));
+  }
+}
+
+.center-rune {
+  animation: runeRotateGlow 8s linear infinite;
+}
+
+/* Backdrop mystical shimmer */
+@keyframes backdropShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.mystical-backdrop {
+  background-size: 400% 400%, 200px;
+  animation: backdropPulse 4s ease-in-out infinite, backdropShimmer 10s ease-in-out infinite;
+}
+
+/* God icon enhanced pulse with scale */
+@keyframes iconPulseEnhanced {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.5));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.8));
+  }
+}
+
+.god-vote-card:hover .god-icon-large {
+  animation: iconPulseEnhanced 1.5s ease-in-out infinite;
+}
+
+/* Continue button entrance with pulse */
+@keyframes buttonEntrancePulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.council-continue {
+  animation: buttonEntrancePulse 0.6s ease-out 3s both;
+}
+
+/* Council header slide in */
+@keyframes headerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.council-header {
+  animation: headerSlideIn 0.8s ease-out;
+}
+
+/* Context box fade in */
+@keyframes contextFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.council-context {
+  animation: contextFadeIn 0.6s ease-out 0.3s both;
+}
+
+/* Divider line draw animation */
+@keyframes dividerDraw {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+}
+
+.council-content > .divider {
+  animation: dividerDraw 0.8s ease-out 0.5s both;
+}
+
+/* ==========================================
+   EFFECT NOTIFICATIONS ENHANCED
+   ========================================== */
+
+.effect-notification {
+  position: fixed;
+  top: 80px;
+  right: -400px;
+  max-width: 380px;
+  background: linear-gradient(135deg, rgba(0,0,0,0.98), rgba(26,22,18,0.98));
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+  z-index: 10000;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0;
+  backdrop-filter: blur(8px);
+}
+
+.effect-notification.blessing {
+  border: 2px solid var(--color-success);
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.9),
+    0 0 40px rgba(20, 184, 166, 0.4);
+}
+
+.effect-notification.curse {
+  border: 2px solid var(--color-danger);
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.9),
+    0 0 40px rgba(220, 38, 38, 0.4);
+}
+
+.effect-notification.show {
+  right: 20px;
+  opacity: 1;
+}
+
+/* Effect notification inner glow */
+.effect-notification::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: inherit;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
+  filter: blur(8px);
+}
+
+.effect-icon {
+  font-size: 40px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.2), transparent);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  animation: iconSparkle 2s ease-in-out infinite;
+}
+
+@keyframes iconSparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+    filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6));
+  }
+}
+
+.effect-text {
+  flex: 1;
+}
+
+.effect-text strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-1);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.effect-notification.blessing strong {
+  color: var(--color-success);
+  text-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+}
+
+.effect-notification.curse strong {
+  color: var(--color-danger);
+  text-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+}
+
+.effect-text span {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-1);
+}
+
+.effect-text small {
+  display: block;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+}
+
+/* Stacked notifications */
+.effect-notification:nth-child(2) {
+  top: 160px;
+}
+
+.effect-notification:nth-child(3) {
+  top: 240px;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+/* Mobile: Simplified layout */
+@media (max-width: 767px) {
+  .corner-decoration {
+    display: none;
+  }
+
+  .logo-main {
+    width: 120px;
+    height: 120px;
+  }
+
+  .divine-god {
+    grid-template-columns: 40px 1fr 80px;
+    gap: var(--space-2);
+  }
+
+  .god-icon-container {
+    width: 40px;
+    height: 40px;
+  }
+
+  .god-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .god-voting-arena {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .vote-divider {
+    order: 2;
+    flex-direction: row;
+    width: 100%;
+    height: auto;
+    margin: var(--space-4) 0;
+  }
+
+  .divider-line {
+    width: 100%;
+    height: 2px;
+  }
+
+  .approve-column { order: 1; }
+  .condemn-column { order: 3; }
+
+  .council-content {
+    padding: var(--space-4);
+  }
+
+  .council-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .god-vote-card .god-icon-large {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Tablet: Medium layout */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .corner-decoration {
+    width: 50px;
+    height: 50px;
+  }
+
+  .logo-main {
+    width: 160px;
+    height: 160px;
+  }
+
+  .god-icon-container {
+    width: 44px;
+    height: 44px;
+  }
+
+  .god-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Desktop: Full layout */
+@media (min-width: 1024px) {
+  .logo-main {
+    width: 200px;
+    height: 200px;
+  }
+
+  .god-icon-container {
+    width: 48px;
+    height: 48px;
+  }
+
+  .god-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ==========================================
+   REDUCED MOTION PREFERENCES
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+
+@media print {
+  .corner-decoration,
+  .loading-screen,
+  .notification,
+  .divine-council-modal {
+    display: none !important;
+  }
+}

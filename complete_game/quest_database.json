@@ -1,0 +1,657 @@
+{
+  "quests": [
+    {
+      "quest_id": "save_grimsbys_daughter",
+      "category": "npc_request",
+      "tier": 1,
+      "name": "A Father's Plea",
+      "description": "Grimsby's young daughter lies dying from a rare illness. Only a specific medicine can save her, but it's locked in Duke Aldric's warehouse.",
+      "quest_giver": {
+        "npc_id": "grimsby",
+        "location": "valdria_town_square"
+      },
+      "requirements": {
+        "min_level": 1,
+        "required_quests_completed": [],
+        "location_unlocked": ["valdria"]
+      },
+      "objectives": [
+        {
+          "id": "obj_1",
+          "type": "talk",
+          "target": "grimsby",
+          "description": "Speak to Grimsby about his daughter",
+          "required": true,
+          "hidden": false,
+          "completed": false,
+          "progress": 0,
+          "progress_max": 1
+        },
+        {
+          "id": "obj_2",
+          "type": "choice_branch",
+          "description": "Decide how to obtain the medicine",
+          "required": true,
+          "hidden": false,
+          "completed": false,
+          "branches": [
+            {
+              "branch_id": "steal",
+              "description": "Steal the medicine from Duke's warehouse",
+              "objectives": [
+                {
+                  "id": "obj_2a_1",
+                  "type": "location",
+                  "location": "dukes_warehouse",
+                  "description": "Infiltrate Duke Aldric's warehouse",
+                  "required": true
+                },
+                {
+                  "id": "obj_2a_2",
+                  "type": "obtain",
+                  "item": "rare_medicine",
+                  "quantity": 1,
+                  "description": "Acquire the medicine",
+                  "required": true
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "KAITHA": 10,
+                  "VALDRIS": -10
+                },
+                "npc_approval": {
+                  "grimsby": 15,
+                  "duke_aldric": -20
+                },
+                "party_trust": -5,
+                "reputation": {
+                  "valdria": -10
+                }
+              }
+            },
+            {
+              "branch_id": "negotiate",
+              "description": "Negotiate with the Duke for the medicine",
+              "objectives": [
+                {
+                  "id": "obj_2b_1",
+                  "type": "talk",
+                  "target": "duke_aldric",
+                  "description": "Convince Duke Aldric to release the medicine",
+                  "required": true,
+                  "skill_check": {
+                    "type": "charisma",
+                    "difficulty": 12
+                  }
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "VALDRIS": 10,
+                  "ATHENA": 5
+                },
+                "npc_approval": {
+                  "grimsby": 10,
+                  "duke_aldric": 5
+                },
+                "party_trust": 5,
+                "reputation": {
+                  "valdria": 5
+                }
+              }
+            },
+            {
+              "branch_id": "purchase",
+              "description": "Purchase the medicine from the Duke",
+              "objectives": [
+                {
+                  "id": "obj_2c_1",
+                  "type": "payment",
+                  "target": "duke_aldric",
+                  "description": "Pay Duke Aldric 200 gold for the medicine",
+                  "required": true,
+                  "skill_check": {
+                    "gold_required": 200
+                  }
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "MERCUS": 10,
+                  "MORVANE": 5
+                },
+                "npc_approval": {
+                  "grimsby": 12,
+                  "duke_aldric": 10
+                },
+                "party_trust": 0,
+                "reputation": {
+                  "valdria": 10
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "obj_3",
+          "type": "deliver",
+          "target": "grimsby",
+          "item": "rare_medicine",
+          "description": "Return the medicine to Grimsby",
+          "required": true,
+          "hidden": false,
+          "completed": false
+        },
+        {
+          "id": "obj_4_hidden",
+          "type": "optional",
+          "description": "HIDDEN: Discover the Duke is hoarding medicine to drive up prices",
+          "required": false,
+          "hidden": true,
+          "reveal_condition": {
+            "type": "location_search",
+            "location": "dukes_warehouse",
+            "skill_check": {
+              "type": "intelligence",
+              "difficulty": 10
+            }
+          },
+          "reward_bonus": {
+            "xp": 50,
+            "divine_favor": {
+              "ATHENA": 5,
+              "KAITHA": 5
+            }
+          }
+        }
+      ],
+      "rewards": {
+        "xp": 150,
+        "gold": 75,
+        "items": [
+          {
+            "item_id": "lucky_charm",
+            "quantity": 1
+          }
+        ],
+        "divine_favor": {},
+        "npc_approval": {
+          "grimsby": 25
+        },
+        "reputation": {},
+        "unlocks": ["quest_grimsbys_revenge"]
+      },
+      "time_limit": {
+        "type": "turn_based",
+        "max_turns": 5,
+        "warning_turn": 4
+      },
+      "status": "not_started"
+    },
+    {
+      "quest_id": "codex_awakens",
+      "category": "main_story",
+      "tier": 1,
+      "name": "The Codex Awakens",
+      "description": "You've been chosen by the Seven Gods to wield the Arcane Codex. Prove yourself worthy by retrieving the first fragment from the corrupted shrine.",
+      "quest_giver": {
+        "npc_id": "oracle",
+        "location": "temple_of_seven"
+      },
+      "requirements": {
+        "min_level": 1,
+        "required_quests_completed": []
+      },
+      "objectives": [
+        {
+          "id": "obj_1",
+          "type": "talk",
+          "target": "oracle",
+          "description": "Speak with the Oracle in the Temple of Seven",
+          "required": true,
+          "hidden": false
+        },
+        {
+          "id": "obj_2",
+          "type": "location",
+          "location": "shrine_of_valdris",
+          "description": "Visit the Shrine of Valdris",
+          "required": true,
+          "hidden": false
+        },
+        {
+          "id": "obj_3",
+          "type": "kill",
+          "target": "corrupted_guardian",
+          "quantity": 1,
+          "description": "Defeat the Corrupted Guardian",
+          "required": true,
+          "hidden": false,
+          "progress_max": 1
+        },
+        {
+          "id": "obj_4",
+          "type": "obtain",
+          "item": "codex_fragment_1",
+          "quantity": 1,
+          "description": "Retrieve the first Codex Fragment",
+          "required": true,
+          "hidden": false
+        },
+        {
+          "id": "obj_5",
+          "type": "deliver",
+          "target": "oracle",
+          "item": "codex_fragment_1",
+          "description": "Return the fragment to the Oracle",
+          "required": true,
+          "hidden": false
+        }
+      ],
+      "rewards": {
+        "xp": 200,
+        "gold": 100,
+        "items": [
+          {
+            "item_id": "arcane_codex_level_1",
+            "quantity": 1
+          }
+        ],
+        "divine_favor": {
+          "VALDRIS": 5,
+          "KAITHA": 5,
+          "MORVANE": 5,
+          "SYLARA": 5,
+          "KORVAN": 5,
+          "ATHENA": 5,
+          "MERCUS": 5
+        },
+        "npc_approval": {},
+        "reputation": {},
+        "unlocks": ["save_grimsbys_daughter", "thieves_guild_intro"]
+      },
+      "status": "not_started"
+    },
+    {
+      "quest_id": "valdris_trial_justice",
+      "category": "divine_trial",
+      "tier": 5,
+      "name": "Valdris' Trial of Justice",
+      "description": "Valdris tests your understanding of true justice. A town has sentenced an innocent man to death. The evidence is fabricated, but the law demands execution.",
+      "quest_giver": {
+        "npc_id": "valdris_avatar",
+        "location": "celestial_court"
+      },
+      "requirements": {
+        "min_level": 8,
+        "divine_favor_threshold": {
+          "god": "VALDRIS",
+          "threshold": 50
+        }
+      },
+      "objectives": [
+        {
+          "id": "obj_1",
+          "type": "choice_branch",
+          "description": "Valdris presents you with a moral dilemma",
+          "required": true,
+          "branches": [
+            {
+              "branch_id": "uphold_law",
+              "description": "Uphold the law, even if unjust",
+              "objectives": [
+                {
+                  "id": "obj_1a",
+                  "type": "talk",
+                  "target": "executioner",
+                  "description": "Authorize the execution"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "VALDRIS": 30,
+                  "KORVAN": 10,
+                  "SYLARA": -20,
+                  "KAITHA": -30
+                }
+              }
+            },
+            {
+              "branch_id": "seek_truth",
+              "description": "Investigate and prove his innocence",
+              "objectives": [
+                {
+                  "id": "obj_1b_1",
+                  "type": "obtain",
+                  "item": "fabricated_evidence",
+                  "description": "Find the fabricated evidence"
+                },
+                {
+                  "id": "obj_1b_2",
+                  "type": "talk",
+                  "target": "real_culprit",
+                  "description": "Expose the real culprit"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "VALDRIS": 50,
+                  "ATHENA": 30,
+                  "SYLARA": 10
+                }
+              }
+            },
+            {
+              "branch_id": "break_law",
+              "description": "Free the prisoner by force",
+              "objectives": [
+                {
+                  "id": "obj_1c_1",
+                  "type": "kill",
+                  "target": "town_guard",
+                  "quantity": 5,
+                  "description": "Fight through the guards"
+                },
+                {
+                  "id": "obj_1c_2",
+                  "type": "escort",
+                  "target": "innocent_prisoner",
+                  "description": "Escort the prisoner to safety"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "KAITHA": 40,
+                  "KORVAN": 20,
+                  "VALDRIS": -60
+                },
+                "reputation": {
+                  "law_enforcement": -50
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "obj_2",
+          "type": "talk",
+          "target": "valdris_avatar",
+          "description": "Face Valdris' judgment",
+          "required": true
+        }
+      ],
+      "rewards": {
+        "xp": 3000,
+        "gold": 0,
+        "items": [],
+        "divine_favor": {},
+        "npc_approval": {},
+        "reputation": {},
+        "unlocks": ["divine_champion_valdris"],
+        "skills": ["valdris_verdict"]
+      },
+      "status": "not_started"
+    },
+    {
+      "quest_id": "midnight_auction",
+      "category": "time_limited",
+      "tier": 3,
+      "name": "The Midnight Auction",
+      "description": "A mysterious merchant is holding a secret auction at midnight. Rare artifacts will be sold to the highest bidder. The auction happens tonight only.",
+      "quest_giver": {
+        "npc_id": "mysterious_messenger",
+        "location": "valdria_tavern"
+      },
+      "requirements": {
+        "min_level": 5,
+        "gold_minimum": 500
+      },
+      "objectives": [
+        {
+          "id": "obj_1",
+          "type": "location",
+          "location": "secret_auction_house",
+          "description": "Find the secret auction house before midnight",
+          "required": true
+        },
+        {
+          "id": "obj_2",
+          "type": "choice_branch",
+          "description": "Choose how to participate in the auction",
+          "required": true,
+          "branches": [
+            {
+              "branch_id": "bid",
+              "description": "Bid on items legitimately",
+              "objectives": [
+                {
+                  "id": "obj_2a",
+                  "type": "payment",
+                  "description": "Win the auction bid",
+                  "skill_check": {
+                    "gold_required": 1000
+                  }
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "MERCUS": 15
+                }
+              }
+            },
+            {
+              "branch_id": "steal",
+              "description": "Steal the artifacts during the chaos",
+              "objectives": [
+                {
+                  "id": "obj_2b_1",
+                  "type": "skill_check",
+                  "description": "Steal artifacts without being caught",
+                  "skill_check": {
+                    "type": "dexterity",
+                    "difficulty": 15
+                  }
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "KAITHA": 20,
+                  "VALDRIS": -15
+                },
+                "reputation": {
+                  "black_market": 20
+                }
+              }
+            },
+            {
+              "branch_id": "expose",
+              "description": "Expose the auction as a front for illegal trade",
+              "objectives": [
+                {
+                  "id": "obj_2c_1",
+                  "type": "obtain",
+                  "item": "auction_ledger",
+                  "description": "Obtain evidence of illegal dealings"
+                },
+                {
+                  "id": "obj_2c_2",
+                  "type": "talk",
+                  "target": "town_guard_captain",
+                  "description": "Report to authorities"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "VALDRIS": 25,
+                  "ATHENA": 15
+                },
+                "reputation": {
+                  "valdria": 30,
+                  "black_market": -50
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "xp": 750,
+        "gold": 0,
+        "items": [],
+        "divine_favor": {},
+        "npc_approval": {},
+        "reputation": {},
+        "unlocks": []
+      },
+      "time_limit": {
+        "type": "turn_based",
+        "max_turns": 2,
+        "warning_turn": 1
+      },
+      "status": "not_started"
+    },
+    {
+      "quest_id": "rennas_revenge",
+      "category": "npc_request",
+      "tier": 4,
+      "name": "Blood and Brotherhood",
+      "description": "Renna has revealed the truth: her brother leads the Thieves Guild. She wants your help to confront him, but she's torn between justice and family.",
+      "quest_giver": {
+        "npc_id": "renna",
+        "location": "shady_alley"
+      },
+      "requirements": {
+        "min_level": 6,
+        "npc_approval_threshold": {
+          "npc": "renna",
+          "threshold": 50
+        }
+      },
+      "objectives": [
+        {
+          "id": "obj_1",
+          "type": "talk",
+          "target": "renna",
+          "description": "Discuss the plan with Renna",
+          "required": true
+        },
+        {
+          "id": "obj_2",
+          "type": "location",
+          "location": "thieves_guild_hideout",
+          "description": "Infiltrate the Thieves Guild hideout",
+          "required": true
+        },
+        {
+          "id": "obj_3",
+          "type": "choice_branch",
+          "description": "Confront Renna's brother",
+          "required": true,
+          "branches": [
+            {
+              "branch_id": "kill_brother",
+              "description": "Support Renna in killing her brother",
+              "objectives": [
+                {
+                  "id": "obj_3a",
+                  "type": "kill",
+                  "target": "rennas_brother",
+                  "quantity": 1,
+                  "description": "Defeat Renna's brother"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "KORVAN": 15,
+                  "VALDRIS": 10,
+                  "SYLARA": -10
+                },
+                "npc_approval": {
+                  "renna": -20
+                },
+                "reputation": {
+                  "thieves_guild": -100
+                }
+              }
+            },
+            {
+              "branch_id": "redeem_brother",
+              "description": "Try to redeem him and disband the guild",
+              "objectives": [
+                {
+                  "id": "obj_3b_1",
+                  "type": "skill_check",
+                  "description": "Convince him to surrender",
+                  "skill_check": {
+                    "type": "charisma",
+                    "difficulty": 18
+                  }
+                },
+                {
+                  "id": "obj_3b_2",
+                  "type": "escort",
+                  "target": "rennas_brother",
+                  "description": "Escort him to authorities"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "VALDRIS": 20,
+                  "ATHENA": 15,
+                  "SYLARA": 10
+                },
+                "npc_approval": {
+                  "renna": 40
+                },
+                "reputation": {
+                  "valdria": 40
+                }
+              }
+            },
+            {
+              "branch_id": "join_brother",
+              "description": "Betray Renna and join the Thieves Guild",
+              "objectives": [
+                {
+                  "id": "obj_3c",
+                  "type": "kill",
+                  "target": "renna",
+                  "quantity": 1,
+                  "description": "Betray Renna"
+                }
+              ],
+              "consequences": {
+                "divine_favor": {
+                  "KAITHA": 25,
+                  "MERCUS": 20,
+                  "VALDRIS": -40,
+                  "KORVAN": -30
+                },
+                "npc_approval": {
+                  "renna": -100
+                },
+                "party_trust": -30,
+                "reputation": {
+                  "thieves_guild": 100,
+                  "valdria": -50
+                },
+                "unlocks": ["thieves_guild_questline"]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "xp": 1500,
+        "gold": 500,
+        "items": [],
+        "divine_favor": {},
+        "npc_approval": {},
+        "reputation": {},
+        "unlocks": []
+      },
+      "status": "not_started"
+    }
+  ]
+}
