@@ -1,0 +1,87 @@
+# The Arcane Codex - Python Dependencies
+# Production dependencies for running the game
+
+# ==============================================================================
+# WEB FRAMEWORK & NETWORKING
+# ==============================================================================
+Flask==3.1.2
+flask-cors==6.0.1
+Flask-WTF==1.2.2
+flask-socketio==5.3.5
+python-socketio==5.10.0
+
+# ==============================================================================
+# AI & API
+# ==============================================================================
+anthropic>=0.34.0
+
+# ==============================================================================
+# DISCORD BOT
+# ==============================================================================
+discord.py==2.3.2
+
+# ==============================================================================
+# ENVIRONMENT & CONFIGURATION
+# ==============================================================================
+python-dotenv==1.0.0
+
+# ==============================================================================
+# SYSTEM MONITORING & PERFORMANCE
+# ==============================================================================
+psutil==7.1.3
+
+# ==============================================================================
+# MCP (Model Context Protocol) CLIENT
+# ==============================================================================
+# MCP client for dynamic scenario generation via Claude Desktop
+mcp>=0.9.0
+
+# ==============================================================================
+# ASYNC & NETWORKING SUPPORT
+# ==============================================================================
+# Required for socketio async operations
+eventlet==0.40.3
+# Alternative: gevent==23.9.1
+
+# ==============================================================================
+# STANDARD LIBRARY (No installation needed)
+# ==============================================================================
+# These are included with Python 3.8+ and don't need to be installed:
+# - sqlite3 (database)
+# - json (data serialization)
+# - asyncio (async operations)
+# - datetime (timestamps)
+# - typing (type hints)
+# - logging (logging system)
+# - secrets (secure random generation)
+# - hashlib (hashing)
+# - threading (multi-threading)
+# - contextlib (context managers)
+# - dataclasses (data classes - Python 3.7+)
+# - enum (enumerations)
+# - functools (functional programming tools)
+# - collections (data structures)
+# - random (random generation)
+# - os (operating system interface)
+# - sys (system-specific parameters)
+# - subprocess (subprocess management)
+# - signal (signal handling)
+# - traceback (exception tracing)
+# - time (time access and conversions)
+
+# ==============================================================================
+# NOTES
+# ==============================================================================
+# Python Version Required: 3.8 or higher (for dataclasses, typing features)
+#
+# Critical dependencies that were MISSING from original requirements.txt:
+# - flask-socketio (used extensively in app.py)
+# - psutil (used in performance_monitor.py)
+# - mcp (used for dynamic scenario generation)
+# - eventlet (required for flask-socketio async mode)
+#
+# Installation:
+#   pip install -r requirements.txt
+#
+# For development dependencies, also install:
+#   pip install -r requirements-dev.txt

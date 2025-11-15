@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE ARCANE CODEX - ULTIMATE ASCII REVOLUTION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000000;
+            color: #00ff00;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+            position: relative;
+        }
+
+        /* EPIC ASCII CONTAINER */
+        #ascii-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: radial-gradient(circle at center, #001100 0%, #000000 100%);
+        }
+
+        #ascii-display {
+            white-space: pre;
+            font-size: 24px;  /* DOUBLED for FULL HD! */
+            line-height: 1.2;
+            letter-spacing: 2px;
+            color: #00ff00;
+            text-shadow:
+                0 0 10px #00ff00,
+                0 0 20px #00ff00,
+                0 0 30px #00ff00,
+                0 0 40px #00ff00;
+            animation: megaPulse 0.5s infinite alternate;
+            z-index: 10;
+            position: relative;
+            transform: scale(1);
+            transition: transform 0.3s;
+            font-weight: bold;
+        }
+
+        /* MAXIMUM GLOW EFFECT */
+        @keyframes megaPulse {
+            0% {
+                filter: brightness(1) contrast(1);
+                transform: scale(1);
+            }
+            100% {
+                filter: brightness(1.2) contrast(1.1);
+                transform: scale(1.02);
+            }
+        }
+
+        /* EXTREME SCREEN SHAKE */
+        @keyframes epicShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-5px, -3px) rotate(-0.5deg); }
+            20% { transform: translate(5px, -5px) rotate(0.5deg); }
+            30% { transform: translate(-3px, 5px) rotate(-0.3deg); }
+            40% { transform: translate(3px, -3px) rotate(0.3deg); }
+            50% { transform: translate(-5px, 3px) rotate(-0.5deg); }
+            60% { transform: translate(5px, 3px) rotate(0.5deg); }
+            70% { transform: translate(-3px, -5px) rotate(-0.3deg); }
+            80% { transform: translate(3px, 5px) rotate(0.3deg); }
+            90% { transform: translate(5px, -3px) rotate(0.5deg); }
+        }
+
+        .mega-shake {
+            animation: epicShake 0.3s infinite;
+        }
+
+        /* LIGHTNING EFFECT OVERLAY */
+        .lightning-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .lightning-active {
+            animation: lightning 0.2s;
+        }
+
+        @keyframes lightning {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+
+        /* MULTI-LAYER PARTICLE SYSTEM */
+        .particle-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .mega-particle {
+            position: absolute;
+            font-size: 30px;
+            animation: particleFall 1s linear forwards;
+            text-shadow:
+                0 0 10px currentColor,
+                0 0 20px currentColor;
+        }
+
+        @keyframes particleFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* EPIC CRT EFFECT */
+        #ascii-container::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            ),
+            linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.06),
+                rgba(0, 255, 0, 0.02),
+                rgba(0, 0, 255, 0.06)
+            );
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(10px); }
+        }
+
+        /* RAINBOW EXPLOSION MODE */
+        .rainbow-mode {
+            animation: rainbow 0.5s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { color: #ff0000; }
+            16% { color: #ff8800; }
+            33% { color: #ffff00; }
+            50% { color: #00ff00; }
+            66% { color: #0088ff; }
+            83% { color: #8800ff; }
+            100% { color: #ff0000; }
+        }
+
+        /* EPIC INPUT */
+        #command-input {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: transparent;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: 20px;
+            padding: 15px;
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow:
+                0 0 20px #00ff00,
+                inset 0 0 20px rgba(0, 255, 0, 0.1);
+            outline: none;
+            z-index: 100;
+        }
+
+        #command-input:focus {
+            animation: inputPulse 0.5s infinite alternate;
+        }
+
+        @keyframes inputPulse {
+            0% { box-shadow: 0 0 20px #00ff00; }
+            100% { box-shadow: 0 0 40px #00ff00, 0 0 60px #00ff00; }
+        }
+
+        /* EXPLOSION OVERLAY */
+        .explosion-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 200px;
+            z-index: 999;
+            pointer-events: none;
+            animation: explode 1s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(3) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 255, 0, 0.1);
+            border-bottom: 2px solid #00ff00;
+            padding: 10px;
+            text-align: center;
+            font-size: 16px;
+            z-index: 50;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .alert-text {
+            animation: alertBlink 0.3s infinite;
+        }
+
+        @keyframes alertBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="lightning-flash" id="lightning"></div>
+
+    <div class="status-bar">
+        <span id="status-text" class="alert-text">SYSTEM OVERCLOCKED | FPS: 144+ | PARTICLES: <span id="particle-count">0</span> | BPM: 180</span>
+    </div>
+
+    <div id="ascii-container">
+        <div class="particle-layer" id="particles"></div>
+        <pre id="ascii-display"></pre>
+    </div>
+
+    <input type="text" id="command-input" placeholder="ENTER COMMAND TO CHANGE THE WORLD..." autofocus>
+
+    <script>
+        class UltimateArcaneCodex {
+            constructor() {
+                this.display = document.getElementById('ascii-display');
+                this.input = document.getElementById('command-input');
+                this.particles = document.getElementById('particles');
+                this.lightning = document.getElementById('lightning');
+                this.particleCount = 0;
+                this.fps = 144;  // GAMING MONITOR SPEED!
+                this.bpm = 180;  // EXTREME BPM!
+                this.epicMode = false;
+
+                this.init();
+            }
+
+            init() {
+                this.showEpicTitle();
+                this.startRhythmEngine();
+                this.startParticleStorm();
+                this.bindEvents();
+
+                // IMMEDIATE EPIC ENTRANCE
+                setTimeout(() => this.triggerMegaEffect(), 500);
+            }
+
+            showEpicTitle() {
+                const title = `
+████████╗██╗  ██╗███████╗     █████╗ ██████╗  ██████╗ █████╗ ███╗   ██╗███████╗
+╚══██╔══╝██║  ██║██╔════╝    ██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║██╔════╝
+   ██║   ███████║█████╗      ███████║██████╔╝██║     ███████║██╔██╗ ██║█████╗
+   ██║   ██╔══██║██╔══╝      ██╔══██║██╔══██╗██║     ██╔══██║██║╚██╗██║██╔══╝
+   ██║   ██║  ██║███████╗    ██║  ██║██║  ██║╚██████╗██║  ██║██║ ╚████║███████╗
+   ╚═╝   ╚═╝  ╚═╝╚══════╝    ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝
+
+                    ██████╗ ██████╗ ██████╗ ███████╗██╗  ██╗
+                   ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚██╗██╔╝
+                   ██║     ██║   ██║██║  ██║█████╗   ╚███╔╝
+                   ██║     ██║   ██║██║  ██║██╔══╝   ██╔██╗
+                   ╚██████╗╚██████╔╝██████╔╝███████╗██╔╝ ██╗
+                    ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║          THE GREATEST ADVENTURE EVER CREATED IN ASCII HISTORY!              ║
+║                                                                              ║
+║   🔥 REAL-TIME COMBAT WITH SCREEN-SHAKING IMPACTS                          ║
+║   ⚡ LIGHTNING STRIKES THAT BLIND YOUR ENEMIES                              ║
+║   💥 PARTICLE EXPLOSIONS WITH 1000+ SIMULTANEOUS EFFECTS                   ║
+║   🌈 RAINBOW MODE FOR ULTIMATE POWER                                        ║
+║   🎮 144+ FPS GAMING-GRADE ASCII ANIMATION                                  ║
+║   🎵 180 BPM EXTREME RHYTHM ENGINE - FASTER THAN YOUR HEARTBEAT            ║
+║                                                                              ║
+║                    THIS IS NOT A GAME                                       ║
+║                    THIS IS A REVOLUTION                                     ║
+║                    THIS IS YOUR DESTINY                                     ║
+║                                                                              ║
+║   COMMANDS:                                                                 ║
+║   [1] START ADVENTURE - Begin the greatest journey of your life            ║
+║   [2] EPIC MODE - Activate MAXIMUM OVERDRIVE                               ║
+║   [3] DEMO - Witness the POWER of ASCII                                    ║
+║   [ATTACK] - Unleash devastating strikes                                   ║
+║   [EXPLODE] - Trigger massive particle explosion                           ║
+║   [RAINBOW] - Activate rainbow power mode                                  ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+            PARTICLE STORM ACTIVE | SYSTEM OVERLOAD IMMINENT
+`;
+
+                this.display.textContent = title;
+            }
+
+            startRhythmEngine() {
+                const beatInterval = 60000 / this.bpm;
+
+                setInterval(() => {
+                    // PULSE EVERYTHING
+                    this.display.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        this.display.style.transform = 'scale(1)';
+                    }, 100);
+
+                    // Random mega effects
+                    if (Math.random() > 0.8) {
+                        this.createMegaParticle();
+                    }
+                    if (Math.random() > 0.95) {
+                        this.triggerLightning();
+                    }
+                }, beatInterval);
+            }
+
+            startParticleStorm() {
+                // EXTREME PARTICLE GENERATION FOR 144 FPS!
+                setInterval(() => {
+                    if (this.particleCount < 500) {  // 5X MORE PARTICLES!
+                        this.createMegaParticle();
+                    }
+                }, 7);  // 144 FPS = ~7ms per frame!
+
+                // Update particle counter at 144 FPS
+                setInterval(() => {
+                    document.getElementById('particle-count').textContent = this.particleCount;
+                }, 7);
+            }
+
+            createMegaParticle() {
+                const particles = ['💥', '⚡', '🔥', '✨', '💫', '⭐', '🌟', '💢', '💨', '🌊'];
+                const particle = document.createElement('div');
+                particle.className = 'mega-particle';
+                particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+
+                this.particles.appendChild(particle);
+                this.particleCount++;
+
+                setTimeout(() => {
+                    particle.remove();
+                    this.particleCount--;
+                }, 1000);
+            }
+
+            triggerLightning() {
+                this.lightning.classList.add('lightning-active');
+                this.display.classList.add('mega-shake');
+
+                setTimeout(() => {
+                    this.lightning.classList.remove('lightning-active');
+                    this.display.classList.remove('mega-shake');
+                }, 200);
+            }
+
+            triggerMegaEffect() {
+                // EVERYTHING AT ONCE
+                this.triggerLightning();
+
+                // Create explosion text
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion-overlay';
+                explosion.textContent = '💥';
+                explosion.style.color = '#ffaa00';
+                document.body.appendChild(explosion);
+
+                // Spawn 50 particles instantly
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => this.createMegaParticle(), i * 20);
+                }
+
+                // Screen shake
+                this.display.classList.add('mega-shake');
+                setTimeout(() => {
+                    this.display.classList.remove('mega-shake');
+                    explosion.remove();
+                }, 1000);
+            }
+
+            activateEpicMode() {
+                this.epicMode = true;
+                this.display.classList.add('rainbow-mode');
+
+                // MAXIMUM PARTICLES
+                const particleInterval = setInterval(() => {
+                    for (let i = 0; i < 10; i++) {
+                        this.createMegaParticle();
+                    }
+                }, 100);
+
+                // Lightning storm
+                const lightningInterval = setInterval(() => {
+                    this.triggerLightning();
+                }, 500);
+
+                setTimeout(() => {
+                    clearInterval(particleInterval);
+                    clearInterval(lightningInterval);
+                    this.display.classList.remove('rainbow-mode');
+                    this.epicMode = false;
+                }, 10000);
+
+                this.updateDisplay(`
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           EPIC MODE ACTIVATED!                              ║
+║                                                                              ║
+║                    MAXIMUM POWER OVERWHELMING!                              ║
+║                                                                              ║
+║   RAINBOW MODE: ACTIVE                                                      ║
+║   PARTICLE STORM: MAXIMUM                                                   ║
+║   LIGHTNING: CONTINUOUS                                                     ║
+║   SCREEN SHAKE: EXTREME                                                     ║
+║                                                                              ║
+║              YOU ARE BECOME DEATH, DESTROYER OF WORLDS                      ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+                `);
+            }
+
+            bindEvents() {
+                this.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const command = this.input.value.toUpperCase();
+                        this.handleCommand(command);
+                        this.input.value = '';
+                    }
+                });
+
+                // Number key shortcuts
+                document.addEventListener('keypress', (e) => {
+                    if (e.key === '1') this.startAdventure();
+                    if (e.key === '2') this.activateEpicMode();
+                    if (e.key === '3') this.showDemo();
+                });
+            }
+
+            handleCommand(command) {
+                if (command.includes('ATTACK')) {
+                    this.performAttack();
+                } else if (command.includes('EXPLODE')) {
+                    this.triggerMegaEffect();
+                } else if (command.includes('RAINBOW')) {
+                    this.activateEpicMode();
+                } else if (command.includes('START')) {
+                    this.startAdventure();
+                }
+            }
+
+            performAttack() {
+                this.triggerLightning();
+                this.triggerMegaEffect();
+
+                this.updateDisplay(`
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         DEVASTATING ATTACK LAUNCHED!                        ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║     YOUR BLADE CUTS THROUGH REALITY ITSELF!                                ║
+║                                                                              ║
+║           ⚔️ ───────────────────────────> 💥 CRITICAL HIT!                 ║
+║                                                                              ║
+║     DAMAGE: ∞ (REALITY SHATTERED)                                          ║
+║     EFFECT: SCREEN OBLITERATED                                             ║
+║     COMBO: x999999                                                         ║
+║                                                                              ║
+║              THE ENEMY HAS BEEN ERASED FROM EXISTENCE                       ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+                `);
+            }
+
+            startAdventure() {
+                this.triggerMegaEffect();
+
+                this.updateDisplay(`
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    YOUR ADVENTURE BEGINS NOW!                               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║   You stand at the edge of reality itself.                                 ║
+║   The ASCII realm trembles at your presence.                               ║
+║   Every particle in the universe awaits your command.                      ║
+║                                                                              ║
+║   BEFORE YOU:                                                               ║
+║   [🔥] Path of FIRE - Burn everything                                      ║
+║   [⚡] Path of LIGHTNING - Strike with divine fury                         ║
+║   [💀] Path of DEATH - Embrace the void                                    ║
+║                                                                              ║
+║   YOUR POWER LEVEL: OVER 9000!                                             ║
+║   YOUR DESTINY: WORLD DOMINATION                                           ║
+║                                                                              ║
+║   Type your choice or press 1-3...                                         ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+                `);
+            }
+
+            showDemo() {
+                // ACTIVATE EVERYTHING
+                this.activateEpicMode();
+                setTimeout(() => this.performAttack(), 1000);
+                setTimeout(() => this.triggerMegaEffect(), 2000);
+                setTimeout(() => this.startAdventure(), 3000);
+            }
+
+            updateDisplay(content) {
+                this.display.textContent = content;
+                this.triggerLightning();
+            }
+        }
+
+        // INITIALIZE THE REVOLUTION
+        const game = new UltimateArcaneCodex();
+
+        // Auto-trigger epic entrance
+        setTimeout(() => {
+            game.triggerMegaEffect();
+        }, 1000);
+
+        setTimeout(() => {
+            game.triggerMegaEffect();
+        }, 2500);
+    </script>
+</body>
+</html>

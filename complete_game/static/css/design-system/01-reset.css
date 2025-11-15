@@ -1,0 +1,379 @@
+/**
+ * The Arcane Codex Design System
+ * 01. Reset & Base Styles
+ * ========================
+ * Modern CSS reset with accessible defaults
+ */
+
+/* ==========================================
+   BOX MODEL RESET
+   ========================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================
+   DOCUMENT SETUP
+   ========================================== */
+
+html {
+  /* Smooth scrolling with accessibility consideration */
+  scroll-behavior: smooth;
+
+  /* Prevent font size adjustments on mobile */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+  /* Enable better font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Base font size for rem calculations */
+  font-size: 16px;
+
+  /* Improve text rendering */
+  text-rendering: optimizeLegibility;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+
+  /* Improve text legibility */
+  font-feature-settings: "kern" 1, "liga" 1;
+
+  /* Prevent horizontal overflow */
+  overflow-x: hidden;
+
+  /* iOS bounce scroll fix */
+  position: relative;
+}
+
+/* ==========================================
+   TYPOGRAPHY RESET
+   ========================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-primary);
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  line-height: var(--line-height-normal);
+  text-wrap: pretty;
+}
+
+/* ==========================================
+   LINKS & BUTTONS
+   ========================================== */
+
+a {
+  color: var(--color-arcane-400);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+a:hover {
+  color: var(--color-arcane-300);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-arcane-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-50);
+}
+
+/* ==========================================
+   FORM ELEMENTS
+   ========================================== */
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(139, 31, 255, 0.1);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+/* ==========================================
+   LISTS
+   ========================================== */
+
+ul,
+ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ==========================================
+   MEDIA ELEMENTS
+   ========================================== */
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+img {
+  /* Remove the gap below images */
+  vertical-align: middle;
+
+  /* Smoother image rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+svg {
+  /* Allow SVG to scale properly */
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* ==========================================
+   TABLES
+   ========================================== */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+th {
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ==========================================
+   CODE & PRE
+   ========================================== */
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+pre {
+  overflow-x: auto;
+  white-space: pre;
+  line-height: var(--line-height-relaxed);
+  tab-size: 2;
+}
+
+/* ==========================================
+   DETAILS & SUMMARY
+   ========================================== */
+
+details {
+  display: block;
+}
+
+summary {
+  display: list-item;
+  cursor: pointer;
+  user-select: none;
+}
+
+summary:focus-visible {
+  outline: 2px solid var(--color-arcane-500);
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   DIALOG
+   ========================================== */
+
+dialog {
+  padding: 0;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-xl);
+  max-width: min(90vw, var(--container-md));
+  max-height: min(90vh, 100%);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+/* ==========================================
+   ACCESSIBILITY
+   ========================================== */
+
+/* Hide visually but keep accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to main content link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--color-arcane-600);
+  color: white;
+  padding: var(--space-2) var(--space-4);
+  z-index: var(--z-tooltip);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+/* Focus visible for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-arcane-500);
+  outline-offset: 2px;
+}
+
+/* Remove focus for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================
+   SELECTION STYLES
+   ========================================== */
+
+::selection {
+  background-color: rgba(139, 31, 255, 0.3);
+  color: var(--color-text-primary);
+}
+
+::-moz-selection {
+  background-color: rgba(139, 31, 255, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* ==========================================
+   SCROLLBAR STYLES
+   ========================================== */
+
+/* Webkit browsers */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-shadow-900);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-shadow-700);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-shadow-900);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-shadow-600);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-shadow-700) var(--color-shadow-900);
+}

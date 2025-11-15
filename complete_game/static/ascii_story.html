@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Story Mode</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0f;
+            color: #d4af37;
+            font-family: 'Courier Prime', monospace;
+            font-size: 18px;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #story-container {
+            padding: 40px;
+            animation: fadeIn 2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .title {
+            text-align: center;
+            font-size: 32px;
+            color: #d4af37;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px #d4af37;
+        }
+
+        .scene {
+            background: rgba(212, 175, 55, 0.05);
+            border: 2px solid #d4af37;
+            padding: 30px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .whisper-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .whisper {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid #8B5CF6;
+            padding: 20px;
+            position: relative;
+        }
+
+        .whisper-title {
+            color: #8B5CF6;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .whisper-content {
+            color: #A78BFA;
+            font-style: italic;
+        }
+
+        .public-scene {
+            color: #F3F4F6;
+            font-size: 20px;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .choice-prompt {
+            text-align: center;
+            margin: 40px 0;
+            font-size: 24px;
+            color: #F59E0B;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .trust-bar {
+            width: 100%;
+            height: 30px;
+            background: #1A1A2E;
+            border: 2px solid #d4af37;
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .trust-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #EF4444, #F59E0B, #10B981);
+            width: 50%;
+            transition: width 1s;
+        }
+
+        .story-text {
+            color: #9CA3AF;
+            line-height: 1.8;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div id="story-container">
+        <h1 class="title">THE ARCANE CODEX</h1>
+
+        <div class="scene">
+            <h2>The Core Innovation: Asymmetric Information</h2>
+            <div class="story-text">
+                <p>In The Arcane Codex, you and your companions enter the cursed kingdom of Valdria. The gods have abandoned this realm, but they still watch and judge your every action.</p>
+
+                <p>The revolutionary mechanic: <strong>Each player sees different information about the same situation.</strong></p>
+            </div>
+        </div>
+
+        <div class="scene">
+            <h2>Example Scenario</h2>
+
+            <div class="public-scene">
+                <strong>What Everyone Sees:</strong><br>
+                "You enter an abandoned warehouse at midnight. Grimsby's daughter cries from behind a locked door.
+                The merchant who hired you watches nervously. 'Please,' he begs, 'save her quickly!'"
+            </div>
+
+            <div class="whisper-container">
+                <div class="whisper">
+                    <div class="whisper-title">FIGHTER'S WHISPER</div>
+                    <div class="whisper-content">
+                        "Your combat instincts scream danger. This is an ambush.
+                        You count at least six hidden figures in the shadows."
+                    </div>
+                </div>
+
+                <div class="whisper">
+                    <div class="whisper-title">MAGE'S WHISPER</div>
+                    <div class="whisper-content">
+                        "You sense powerful illusion magic. That's not a child crying -
+                        it's a magical recording. This is a trap."
+                    </div>
+                </div>
+
+                <div class="whisper">
+                    <div class="whisper-title">THIEF'S WHISPER</div>
+                    <div class="whisper-content">
+                        "You recognize Grimsby's tell - he's lying. His 'daughter'
+                        doesn't exist. He's working with bandits."
+                    </div>
+                </div>
+
+                <div class="whisper">
+                    <div class="whisper-title">CLERIC'S WHISPER</div>
+                    <div class="whisper-content">
+                        "Your divine sense detects no innocent soul beyond that door.
+                        Only darkness and malice wait within."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="scene">
+            <h2>The Dilemma</h2>
+            <div class="story-text">
+                <p><strong>Now the real game begins:</strong></p>
+                <ul>
+                    <li>Do you share your whisper with the party?</li>
+                    <li>Do you trust what others claim to know?</li>
+                    <li>What if someone is lying about their whisper?</li>
+                    <li>What if acting on incomplete information gets someone killed?</li>
+                </ul>
+
+                <p>Every choice affects:</p>
+            </div>
+
+            <div class="trust-bar">
+                <div class="trust-fill"></div>
+            </div>
+            <p style="text-align: center; color: #d4af37;">Party Trust: 50/100</p>
+
+            <div class="story-text">
+                <ul>
+                    <li><strong>Party Trust:</strong> Share information honestly = +10. Lie or hide info = -10.</li>
+                    <li><strong>NPC Reactions:</strong> Grimsby might turn hostile if exposed.</li>
+                    <li><strong>Divine Judgment:</strong> The gods judge if you let innocents suffer or betray allies.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="scene">
+            <h2>How It Works</h2>
+            <div class="story-text">
+                <p><strong>1-4 Players:</strong> Each player gets their own unique whisper based on their class.</p>
+                <p><strong>Real-time Discussion:</strong> Players must quickly decide what to share before time runs out.</p>
+                <p><strong>Consequences:</strong> Your choices ripple through the entire adventure.</p>
+
+                <p>The game tracks:</p>
+                <ul>
+                    <li>Who shares information (builds trust)</li>
+                    <li>Who keeps secrets (maintains advantage but loses trust)</li>
+                    <li>Who lies (might win short-term but destroys relationships)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="scene">
+            <h2>The Stakes</h2>
+            <div class="story-text">
+                <p>When trust falls below 30:</p>
+                <ul>
+                    <li>NPCs with IMPULSIVE flaws act without thinking</li>
+                    <li>GREEDY companions steal from the party</li>
+                    <li>COWARDLY allies abandon you in danger</li>
+                    <li>The gods themselves may intervene... harshly</li>
+                </ul>
+
+                <p>This isn't just about winning battles. It's about navigating the complex web of trust,
+                deception, and survival in a world where information is power and no one sees the complete picture.</p>
+            </div>
+        </div>
+
+        <div class="choice-prompt">
+            The adventure begins at http://localhost:5000<br>
+            Will you trust your companions?<br>
+            Or will secrets tear you apart?
+        </div>
+    </div>
+</body>
+</html>

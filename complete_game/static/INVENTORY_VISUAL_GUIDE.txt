@@ -1,0 +1,359 @@
+================================================================================
+                    INVENTORY OVERLAY - VISUAL LAYOUT GUIDE
+================================================================================
+
+OVERALL STRUCTURE
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │ 🎒 Inventory                          Weight: 45 / 100          [×]      │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │ [All Items] [Weapons] [Armor] [Consumables]                            │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │  ┌──────────────────┐  ┌───────────────────────────────────────────┐   │
+    │  │ EQUIPPED ITEMS   │  │ INVENTORY GRID (8x6)                      │   │
+    │  │                  │  │                                           │   │
+    │  │ Main Hand        │  │ [x-3] [x-2] [x-1] [x-1] [x-5] [ ] [ ] [ ]│   │
+    │  │ [x]              │  │                                           │   │
+    │  │                  │  │ [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]          │   │
+    │  │ Off-Hand         │  │                                           │   │
+    │  │ [x]              │  │ [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]          │   │
+    │  │                  │  │                                           │   │
+    │  │ Armor            │  │ [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]          │   │
+    │  │ [x]              │  │                                           │   │
+    │  │                  │  │ [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]          │   │
+    │  │ Helmet           │  │                                           │   │
+    │  │ [x]              │  │ [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]          │   │
+    │  │                  │  │                                           │   │
+    │  │ Gloves           │  │ [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]          │   │
+    │  │ [-]              │  │                                           │   │
+    │  │                  │  │                                           │   │
+    │  │ Boots            │  │ 48 Total Slots                            │   │
+    │  │ [-]              │  │ (8 columns × 6 rows)                      │   │
+    │  │                  │  │                                           │   │
+    │  │ Amulet           │  │                                           │   │
+    │  │ [x]              │  │                                           │   │
+    │  │                  │  │                                           │   │
+    │  │ Ring             │  │                                           │   │
+    │  │ [-]              │  │                                           │   │
+    │  └──────────────────┘  └───────────────────────────────────────────┘   │
+    │                                                                          │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │ Item Details: Hover over an item to view details                       │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+LAYOUT DIMENSIONS
+================================================================================
+
+Overall Panel:
+  Width:  1200px
+  Height: 85vh (max)
+  Responsive: Can scale to fit screen
+
+Header Bar:
+  Height: ~55px
+  Contains: Title | Capacity | Close Button
+
+Filter Bar:
+  Height: ~42px
+  Contains: 4 filter buttons
+
+Content Area:
+  Height: Remaining space - 155px (header + footer)
+  Layout: 2-column flex
+    - Left: Equipment section (250px min-width)
+    - Right: Grid section (600px min-width, flex-1)
+  Scrollable: Yes (overflow-y: auto)
+
+Footer (Item Details):
+  Height: ~100px
+  Dynamic content
+  Non-scrollable
+
+Equipment Section:
+  Grid: 2 columns × 4 rows
+  Total Slots: 8
+  Slot Size: Square (aspect-ratio: 1)
+
+Inventory Grid:
+  Grid: 8 columns × 6 rows
+  Total Slots: 48
+  Slot Size: Square (aspect-ratio: 1, min-height: 60px)
+  Gap: 10px between slots
+
+
+COLOR SCHEME
+================================================================================
+
+Header Bar:
+  Background: Linear gradient (#8B7355 → #D4AF37 → #8B7355)
+  Text: #2A1810 (dark brown/black)
+
+Filter Bar:
+  Background: rgba(0, 0, 0, 0.3) (semi-transparent black)
+  Inactive Button: #D4AF37 (gold text) / #8B7355 (bronze border)
+  Active Button: #FFD700 (bright gold) with glow
+
+Equipment Slots:
+  Empty: #8B7355 border, dark gradient background
+  Equipped: #D4AF37 border with glow effect
+  Hover: Scale up 1.05, gold highlight
+
+Inventory Grid Slots:
+  Empty: #8B7355 border, dark gradient background
+  With Item: Icon + quantity badge
+  Hover: Scale up 1.08, gold border, glow effect
+
+Item Details Panel:
+  Background: rgba(0, 0, 0, 0.3)
+  Text: #D4AF37 (gold)
+  Title: #FFD700 (bright gold)
+
+Tooltips:
+  Background: rgba(0, 0, 0, 0.95) with 2px border
+  Border Color: #8B7355
+  Text Color: #D4AF37
+
+
+INTERACTION STATES
+================================================================================
+
+Button States:
+
+  Filter Button (Inactive):
+    Background: Dark gradient
+    Border: #8B7355 (bronze)
+    Text: #D4AF37 (gold)
+    Cursor: pointer
+
+  Filter Button (Hover):
+    Border: #D4AF37 (bright gold)
+    Background: Gold tinted gradient
+    Text: #FFD700 (bright gold)
+
+  Filter Button (Active):
+    Border: #FFD700 (bright gold)
+    Background: Gold tinted gradient (stronger)
+    Text: #FFD700 (bright gold)
+    Box-shadow: 0 0 20px rgba(212, 175, 55, 0.5) (glow)
+
+  Close Button:
+    Default: Semi-transparent, #2A1810 text
+    Hover: Gold background, rotates 90 degrees
+    Active: Scale down
+
+
+Slot States:
+
+  Equipment Slot (Empty):
+    Border: #8B7355
+    Background: Dark gradient
+    Content: "-" (dash)
+
+  Equipment Slot (Equipped):
+    Border: #D4AF37 (bright gold)
+    Background: Dark gradient
+    Content: Icon emoji
+    Box-shadow: Glow effect + inset highlight
+
+  Equipment Slot (Hover):
+    Border: #D4AF37
+    Background: Gold-tinted gradient
+    Transform: scale(1.05)
+
+  Inventory Slot (Empty):
+    Border: #8B7355
+    Background: Dark gradient
+    Content: Empty
+
+  Inventory Slot (Item):
+    Border: #8B7355
+    Background: Dark gradient
+    Content: Icon + quantity badge
+    Cursor: grab
+
+  Inventory Slot (Hover):
+    Border: #D4AF37
+    Background: Gold-tinted gradient
+    Transform: scale(1.08)
+    Box-shadow: Glow effect
+
+
+ITEM DISPLAY DETAILS
+================================================================================
+
+Equipment Slot Item:
+  ┌────────┐
+  │   x    │ ← Icon (emoji/character)
+  │        │    Size: 32px font
+  │        │
+  └────────┘
+
+Inventory Grid Item:
+  ┌─────┐
+  │  x  │ ← Icon (emoji/character)
+  │  3  │ ← Quantity badge (top-right)
+  │     │
+  └─────┘
+
+Quantity Badge:
+  Position: Bottom-right corner
+  Size: ~16px width (auto-fit)
+  Background: Gold rgba(212, 175, 55, 0.9)
+  Text: #2A1810 (dark)
+  Font: 'Cinzel' 10px bold
+  Padding: 2px 4px
+  Border-radius: 3px
+
+
+TYPOGRAPHY
+================================================================================
+
+Font Family 1: 'Cinzel' (Serif - Display/Headers)
+  - Used for: Titles, labels, quantity badges
+  - Weights: 400, 600, 700, 900
+  - Sizes: 28px (title), 16px (headers), 14px (labels), 10px (badges)
+
+Font Family 2: 'Yrsa' (Serif - Body Text)
+  - Used for: Descriptions, tooltips
+  - Weights: 300, 400, 500, 600, 700
+  - Sizes: 14px (details), 12px (tooltips)
+
+
+SPACING & PADDING
+================================================================================
+
+Overlay Panel:
+  Border-radius: 12px
+  Box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95)
+  Border: 4px gradient
+
+Header:
+  Padding: 15px 25px
+
+Filter Bar:
+  Padding: 15px 20px
+  Gap between buttons: 10px
+
+Content Area:
+  Padding: 20px
+  Gap between sections: 20px
+
+Equipment Section:
+  Gap between slots: 12px
+  Min-width: 250px
+
+Equipment Slots:
+  Grid gap: 12px
+  Grid columns: 2
+  Height: Square (aspect-ratio: 1)
+
+Inventory Grid:
+  Grid gap: 10px
+  Grid columns: 8
+  Grid rows: 6
+
+Item Details:
+  Padding: 15px 20px
+  Title margin-bottom: 10px
+
+
+SCROLLBAR STYLING
+================================================================================
+
+Custom webkit scrollbar for inventory content area:
+
+  Track: rgba(0, 0, 0, 0.5)
+  Thumb: #8B7355 (bronze)
+  Thumb Hover: #D4AF37 (gold)
+  Width: 8px
+  Border-radius: 4px
+
+
+ANIMATIONS & TRANSITIONS
+================================================================================
+
+All transitions use: ease timing function
+
+Animation Timings:
+
+  General UI: 0.3s ease
+    - Button hover
+    - Slot hover
+    - Filter changes
+    - Border/background color changes
+
+  Fast Response: 0.2s ease
+    - Slot scale on hover
+    - Close button color
+
+  Icon Effects:
+    - Close button: 90-degree rotation
+    - Slot items: Scale 1.05 (equipment), 1.08 (grid)
+    - No janky movements - all smooth
+
+Hover Effects:
+
+  Equipment Slot: scale(1.05)
+  Inventory Slot: scale(1.08)
+  Button: Color & glow change
+  Close Button: 90-degree rotate
+
+
+KEYBOARD SHORTCUTS
+================================================================================
+
+Key: I
+  Action: Toggle inventory open/close
+  Status: Built-in, no configuration needed
+
+Key: ESC
+  Action: Can close inventory (implement if needed)
+  Status: Not included by default
+
+
+RESPONSIVE DESIGN NOTES
+================================================================================
+
+Current Design:
+  Optimized for: Desktop (1200px+)
+  Panel width: 1200px fixed
+  Panel height: 85vh max
+
+Mobile Adaptation (if needed):
+  - Change panel width to 95vw
+  - Stack layout vertically
+  - Reduce inventory grid columns
+  - Simplify equipment display
+  - Adjust font sizes
+
+Example Mobile CSS:
+  @media (max-width: 768px) {
+    .inventory-panel {
+      width: 95vw;
+    }
+    .inventory-content {
+      flex-direction: column;
+    }
+    .inventory-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+
+ACCESSIBILITY NOTES
+================================================================================
+
+- All buttons are clickable with clear visual feedback
+- Tooltips provide item information
+- Color contrast meets standards
+- Keyboard navigation support (I key)
+- Hover states clearly indicate interactive elements
+- No rely on color alone - shape/position also differs
+
+
+================================================================================
+                          END OF VISUAL GUIDE
+================================================================================

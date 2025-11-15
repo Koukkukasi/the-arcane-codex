@@ -1,0 +1,418 @@
+{
+  "prompt_name": "SCENARIO_GENERATION_PROMPT",
+  "version": "1.0",
+  "description": "Template for dynamically generating new quest scenarios with asymmetric whispers, moral dilemmas, and NPC hidden agendas. Follows patterns from QUEST_SCENARIOS.md.",
+
+  "system_prompt": "You are The Chronicler, an AI Game Master creating morally complex scenarios for The Arcane Codex. Your role is to generate NEW scenarios that follow established patterns but are NEVER repetitive.\n\nCORE PRINCIPLES:\n- Every scenario must have CONFLICTING WHISPERS that create moral dilemmas\n- No perfect solutions - only different costs\n- NPCs have hidden agendas that conflict with party goals\n- Collaboration reveals better (not perfect) outcomes\n- Consequences are permanent and remembered\n\nFORBIDDEN:\n- Do NOT reuse exact scenarios from previous sessions\n- Do NOT create obviously \"correct\" choices\n- Do NOT make whispers arbitrary - they must be based on class expertise\n- Do NOT telegraph solutions\n- Do NOT use generic fantasy clichés\n\nOUTPUT REQUIREMENTS:\n- Generate complete scenario with public scene + asymmetric whispers\n- Include 2 NPCs with fatal flaws and hidden agendas\n- Provide 5+ solution paths with different consequences\n- Specify Divine Council vote outcomes for each path\n- Include environmental tactics options (BG3-style physics)",
+
+  "input_schema": {
+    "type": "object",
+    "required": ["party_composition", "current_location", "trust_level", "npc_states", "previous_scenarios"],
+    "properties": {
+      "party_composition": {
+        "type": "array",
+        "description": "List of player classes and levels",
+        "items": {
+          "type": "object",
+          "properties": {
+            "player_name": {"type": "string"},
+            "class": {"type": "string", "enum": ["Fighter", "Mage", "Thief", "Ranger", "Cleric", "Bard"]},
+            "primary_skills": {"type": "array", "items": {"type": "string"}},
+            "level": {"type": "integer"}
+          }
+        },
+        "example": [
+          {"player_name": "Kaelen", "class": "Mage", "primary_skills": ["arcana", "research"], "level": 3},
+          {"player_name": "Thorne", "class": "Fighter", "primary_skills": ["strength", "perception"], "level": 3}
+        ]
+      },
+      "current_location": {
+        "type": "string",
+        "description": "Where party currently is (city/wilderness/dungeon)",
+        "example": "Merchant District, evening, rain"
+      },
+      "trust_level": {
+        "type": "integer",
+        "description": "Party trust score (0-100)",
+        "minimum": 0,
+        "maximum": 100,
+        "example": 65
+      },
+      "npc_states": {
+        "type": "array",
+        "description": "Current companion NPCs with approval ratings",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "approval": {"type": "integer"},
+            "trust_with_party": {"type": "integer"},
+            "hidden_agenda": {"type": "string"},
+            "fatal_flaw": {"type": "string"}
+          }
+        },
+        "example": [
+          {"name": "Grimsby", "approval": 65, "trust_with_party": 70, "hidden_agenda": "hiding confession letter", "fatal_flaw": "IRRATIONAL about daughter"}
+        ]
+      },
+      "previous_scenarios": {
+        "type": "array",
+        "description": "List of scenario themes already used (to avoid repetition)",
+        "items": {"type": "string"},
+        "example": ["heist_moral_dilemma", "poisoned_crown", "werewolf_children"]
+      },
+      "divine_favor": {
+        "type": "object",
+        "description": "Current standing with each god (-100 to +100)",
+        "properties": {
+          "VALDRIS": {"type": "integer"},
+          "MORVANE": {"type": "integer"},
+          "SYLARA": {"type": "integer"},
+          "ATHENA": {"type": "integer"},
+          "KORVAN": {"type": "integer"},
+          "KAITHA": {"type": "integer"},
+          "MERCUS": {"type": "integer"}
+        }
+      }
+    }
+  },
+
+  "output_schema": {
+    "type": "object",
+    "required": ["scenario_title", "theme", "public_scene", "whispers", "npc_companions", "moral_dilemma", "solution_paths", "environmental_tactics"],
+    "properties": {
+      "scenario_title": {
+        "type": "string",
+        "description": "Evocative title (not generic)",
+        "example": "The Blood Price"
+      },
+      "theme": {
+        "type": "string",
+        "description": "Core moral conflict",
+        "example": "Family vs. Greater Good"
+      },
+      "setting": {
+        "type": "string",
+        "description": "Specific location with sensory details",
+        "example": "Smuggler's warehouse by docks, midnight, rain hammers tin roof"
+      },
+      "public_scene": {
+        "type": "string",
+        "description": "What ALL players see - 3-5 paragraphs with specific details, NPC introduction, clear stakes",
+        "example": "Grimsby slams his fist on the table, fingers trembling—two are missing.\n\n\"They took Elara. My daughter. She's EIGHT YEARS OLD.\"\n\nHis voice cracks.\n\n\"The Duke's medicine shipment arrives tomorrow. Worth 600 gold on the black market. I know the route. We steal it, I pay the Guild, Elara lives.\"\n\nHe meets your eyes.\n\n\"Please. I'm begging you.\"\n\nOutside, thunder rumbles."
+      },
+      "whispers": {
+        "type": "object",
+        "description": "Class-specific private information that creates conflict",
+        "properties": {
+          "fighter": {
+            "type": "string",
+            "description": "Tactical/physical perception - guards, combat readiness, structural weaknesses",
+            "example": "Through warehouse window, you spot caged wagon. Inside: girl with Grimsby's eyes, left arm bent wrong—broken. Guard wears SLAVER'S BRAND. In 3 days, she's on ship to Eastern Markets. Guard is bored, vulnerable."
+          },
+          "mage": {
+            "type": "string",
+            "description": "Arcane detection - magic auras, curses, enchantments, poison",
+            "example": "You sense enchantment magic on medicine crates—wrong type. TRANSMUTATION. Poison. If distributed, all 200 plague victims die in agony. Poison signature matches Thieves Guild magic. Deliberate MURDER."
+          },
+          "thief": {
+            "type": "string",
+            "description": "Social dynamics - lies, secret passages, traps, blackmail material",
+            "example": "You spot Queen's hand trembling, eyes dart to wine steward then away. Wine steward is her brother Marcus—scheduled for execution tomorrow. She poisoned her husband."
+          },
+          "cleric": {
+            "type": "string",
+            "description": "Moral implications - divine judgment preview, spiritual corruption, soul states",
+            "example": "You sense Viktor's soul as curse takes root. If he transforms, he'll MURDER 30+ humans for sport. You See future: blood-soaked streets, screaming villagers. To save 30 lives, Viktor must be cured NO MATTER THE COST."
+          },
+          "ranger": {
+            "type": "string",
+            "description": "Environmental perception - escape routes, animal behavior, natural hazards",
+            "example": "You track Alpha's prints to cave. Inside: EIGHT CHILDREN (ages 6-14) sleeping on furs. Alpha lies protectively. These orphans have no one else. If you kill Alpha, children starve or captured by slavers. Alpha is GUARDIAN, not monster."
+          },
+          "bard": {
+            "type": "string",
+            "description": "Emotional/historical context - NPC motivations, cultural significance, rumors",
+            "example": "You read room's emotions. Queen: RELIEF mixed with terror. King earlier tonight: 'Tomorrow we execute traitor, then purge his family. Can't leave loose ends.' Queen poisoned him in SELF-DEFENSE to save her children."
+          }
+        }
+      },
+      "npc_companions": {
+        "type": "array",
+        "description": "2 NPCs with conflicting agendas",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "role": {"type": "string"},
+            "strengths": {"type": "array", "items": {"type": "string"}},
+            "fatal_flaw": {"type": "string", "enum": ["IMPULSIVE", "COWARDLY", "GREEDY", "VENGEFUL", "IRRATIONAL", "PRIDEFUL", "OBSESSIVE"]},
+            "hidden_agenda": {"type": "string"},
+            "whisper_internal": {"type": "string", "description": "What NPC knows but may hide"},
+            "shares_with_party": {"type": "string", "description": "What NPC volunteers"},
+            "hides_from_party": {"type": "string", "description": "What NPC conceals"},
+            "betrayal_trigger": {"type": "string", "description": "Condition that causes NPC to act against party"}
+          }
+        },
+        "example": [
+          {
+            "name": "Grimsby",
+            "role": "Desperate Father",
+            "strengths": ["City contacts", "Medicine 45", "Merchant knowledge"],
+            "fatal_flaw": "IRRATIONAL",
+            "hidden_agenda": "Confession letter in shipment proves he's smuggler - if Duke finds it, Grimsby hangs",
+            "whisper_internal": "Letter in Crate 7. If Duke finds it, you're dead. MUST steal that crate.",
+            "shares_with_party": "I know warehouse layout. Can get us in through loading dock.",
+            "hides_from_party": "Confession letter existence, willing to let 200 die to save self AND daughter",
+            "betrayal_trigger": "If party warns Duke about poison (exposes letter), Grimsby attempts to destroy shipment himself"
+          }
+        ]
+      },
+      "moral_dilemma": {
+        "type": "object",
+        "description": "Conflicting imperatives that create impossible choice",
+        "properties": {
+          "player_1_imperative": {"type": "string"},
+          "player_2_imperative": {"type": "string"},
+          "npc_1_wants": {"type": "string"},
+          "npc_2_wants": {"type": "string"},
+          "why_conflicting": {"type": "string"}
+        },
+        "example": {
+          "player_1_imperative": "We MUST save the child! I SAW her suffering!",
+          "player_2_imperative": "We CAN'T steal poisoned medicine! 200 people will DIE!",
+          "npc_1_wants": "Save daughter + destroy evidence (confession letter)",
+          "npc_2_wants": "Kill brother (doesn't care about medicine or child)",
+          "why_conflicting": "Saving child requires stealing medicine that kills 200. Revealing poison exposes Grimsby. Confronting Guild triggers Renna's revenge. No action satisfies everyone."
+        }
+      },
+      "solution_paths": {
+        "type": "array",
+        "description": "5+ possible outcomes with different costs (NO perfect solution)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "path_name": {"type": "string"},
+            "description": {"type": "string"},
+            "requirements": {"type": "string"},
+            "immediate_consequences": {"type": "string"},
+            "long_term_consequences": {"type": "string"},
+            "npc_reactions": {"type": "object"},
+            "divine_council_votes": {
+              "type": "object",
+              "description": "How each god votes (SUPPORT/OPPOSE) and why",
+              "properties": {
+                "VALDRIS": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}},
+                "MORVANE": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}},
+                "SYLARA": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}},
+                "ATHENA": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}},
+                "KORVAN": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}},
+                "KAITHA": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}},
+                "MERCUS": {"type": "object", "properties": {"vote": {"type": "string"}, "reasoning": {"type": "string"}}}
+              }
+            },
+            "trust_impact": {"type": "integer", "description": "Change to party trust (-50 to +50)"},
+            "approval_changes": {"type": "object"}
+          }
+        },
+        "minItems": 5
+      },
+      "environmental_tactics": {
+        "type": "object",
+        "description": "BG3-style physics interactions and environmental options",
+        "properties": {
+          "location_objects": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "3-5 specific usable objects in scene",
+            "example": ["wine barrels (explosive)", "chandelier on rusted chains", "cargo net with pulley", "oil puddles", "support beam (rotted)"]
+          },
+          "environmental_actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "action": {"type": "string"},
+                "skill_required": {"type": "string"},
+                "difficulty": {"type": "integer"},
+                "effect": {"type": "string"},
+                "risk": {"type": "string"}
+              }
+            },
+            "example": [
+              {
+                "action": "Flip table for cover",
+                "skill_required": "strength",
+                "difficulty": 15,
+                "effect": "Creates barrier between you and strangers, defensive position",
+                "risk": "Blocks your own escape route"
+              },
+              {
+                "action": "Throw mug at fireplace",
+                "skill_required": "dexterity",
+                "difficulty": 12,
+                "effect": "Loud crash distracts strangers, you grab NPC and run",
+                "risk": "If you miss, they know you're hostile"
+              }
+            ]
+          }
+        }
+      },
+      "turn_outline": {
+        "type": "array",
+        "description": "Expected turn-by-turn progression (15-25 turns total)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "turn_range": {"type": "string"},
+            "phase": {"type": "string"},
+            "description": {"type": "string"}
+          }
+        },
+        "example": [
+          {"turn_range": "1-2", "phase": "Hook", "description": "NPC plea, public scene, establish stakes"},
+          {"turn_range": "3-5", "phase": "Whispers", "description": "Asymmetric info distributed, party realizes conflict"},
+          {"turn_range": "6-10", "phase": "Investigation", "description": "Recon, planning, NPC agendas start to surface"},
+          {"turn_range": "11-18", "phase": "Crisis", "description": "Decision point, NPC betrayals/help, action taken"},
+          {"turn_range": "19-23", "phase": "Consequences", "description": "Immediate fallout, NPC reactions, world changes"},
+          {"turn_range": "24-25", "phase": "Resolution", "description": "Divine Council judgment, long-term setup"}
+        ]
+      },
+      "replayability_notes": {
+        "type": "string",
+        "description": "How to ensure this scenario feels different each time",
+        "example": "Vary which NPC is compromised. Change what's in the shipment (medicine/weapons/slaves). Adjust time pressure. Swap which whisper reveals poison vs. trap."
+      }
+    }
+  },
+
+  "examples": [
+    {
+      "input": {
+        "party_composition": [
+          {"player_name": "Kaelen", "class": "Mage", "primary_skills": ["arcana", "research"], "level": 3},
+          {"player_name": "Thorne", "class": "Fighter", "primary_skills": ["strength", "perception"], "level": 3}
+        ],
+        "current_location": "Merchant District, late evening, rain",
+        "trust_level": 65,
+        "npc_states": [
+          {"name": "Grimsby", "approval": 55, "trust_with_party": 60, "hidden_agenda": "unknown", "fatal_flaw": "IRRATIONAL"}
+        ],
+        "previous_scenarios": ["assassination_investigation", "haunted_manor"],
+        "divine_favor": {"VALDRIS": 10, "MORVANE": 15, "SYLARA": 5, "ATHENA": 20, "KORVAN": 0, "KAITHA": -5, "MERCUS": 10}
+      },
+      "output": {
+        "scenario_title": "The Blood Price",
+        "theme": "Family vs. Greater Good",
+        "setting": "Smuggler's warehouse by docks, midnight, rain hammers tin roof",
+        "public_scene": "[Full scene from QUEST_SCENARIOS.md]",
+        "whispers": {
+          "fighter": "Through warehouse window, you spot caged wagon...",
+          "mage": "You sense enchantment magic on medicine crates..."
+        },
+        "moral_dilemma": {
+          "player_1_imperative": "Save the child NOW",
+          "player_2_imperative": "Prevent 200 deaths",
+          "npc_1_wants": "Destroy evidence",
+          "npc_2_wants": "Kill brother",
+          "why_conflicting": "Every choice sacrifices someone"
+        },
+        "solution_paths": [
+          {
+            "path_name": "Steal Medicine",
+            "description": "Take shipment, save daughter immediately",
+            "immediate_consequences": "Daughter saved, 200 die from poison",
+            "divine_council_votes": {
+              "MORVANE": {"vote": "SUPPORT", "reasoning": "Family first"},
+              "VALDRIS": {"vote": "OPPOSE", "reasoning": "Law broken"},
+              "SYLARA": {"vote": "OPPOSE", "reasoning": "Healing corrupted"}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "party_composition": [
+          {"player_name": "Lyria", "class": "Cleric", "primary_skills": ["medicine", "persuasion"], "level": 4},
+          {"player_name": "Marcus", "class": "Ranger", "primary_skills": ["survival", "archery"], "level": 4}
+        ],
+        "current_location": "Darkwood Forest, full moon, werewolf howls",
+        "trust_level": 80,
+        "npc_states": [
+          {"name": "Theron", "approval": 70, "trust_with_party": 75, "hidden_agenda": "prove honor", "fatal_flaw": "PRIDEFUL"}
+        ],
+        "previous_scenarios": ["blood_price", "poisoned_crown"],
+        "divine_favor": {"VALDRIS": 25, "MORVANE": 20, "SYLARA": 30, "ATHENA": 15, "KORVAN": 10, "KAITHA": -10, "MERCUS": 5}
+      },
+      "output": {
+        "scenario_title": "The Beast Within",
+        "theme": "Humanity vs. Primal Nature",
+        "setting": "Darkwood Forest, hunted at night, full moon, werewolf howls echo",
+        "public_scene": "[Nobleman's son bitten, needs cure, Alpha protects orphans]",
+        "whispers": {
+          "ranger": "Alpha's prints lead to cave. Eight CHILDREN sleeping on furs...",
+          "cleric": "You sense Viktor's soul. If he transforms, 30+ murders..."
+        },
+        "moral_dilemma": {
+          "player_1_imperative": "Alpha is PROTECTING orphans! Can't kill guardian!",
+          "player_2_imperative": "Viktor will MURDER 30 people! One life vs many!",
+          "npc_1_wants": "Honorable combat (no ambush)",
+          "why_conflicting": "Saving Viktor requires killing protector of children"
+        },
+        "solution_paths": [
+          {
+            "path_name": "Kill Alpha, Cure Viktor",
+            "description": "Viktor cured, 8 orphans left to die",
+            "divine_council_votes": {
+              "MORVANE": {"vote": "SUPPORT", "reasoning": "Pragmatic choice"},
+              "DRAKMOR": {"vote": "OPPOSE", "reasoning": "Killed guardian"}
+            }
+          }
+        ]
+      }
+    }
+  ],
+
+  "constraints": {
+    "moral_complexity": "Every scenario MUST have conflicting whispers where both players think they're right",
+    "no_perfect_solution": "At least 2 major solution paths must have significant costs",
+    "npc_agency": "NPCs MUST have hidden agendas that can conflict with party goals",
+    "collaboration_bonus": "Sharing whispers MUST reveal a better (not perfect) outcome",
+    "environmental_integration": "Every scenario MUST include 2+ environmental tactics options",
+    "divine_consequences": "Council votes MUST vary based on solution path chosen",
+    "uniqueness": "Check previous_scenarios input - do NOT repeat themes/structures"
+  },
+
+  "anti_patterns": {
+    "DO_NOT": [
+      "Create scenarios where one whisper is 'correct' and others are 'wrong'",
+      "Make NPC hidden agendas totally random/unmotivated",
+      "Design puzzles with only one solution",
+      "Use generic fantasy clichés (mysterious hooded figure, ancient evil)",
+      "Make environmental tactics feel tacked on - integrate into core dilemma",
+      "Create Divine Council votes that are unanimous (gods must disagree)",
+      "Repeat scenario structures from previous_scenarios list"
+    ]
+  },
+
+  "prompt_execution_steps": [
+    "1. Review party composition to understand which whisper types are available",
+    "2. Check previous_scenarios to avoid repetition",
+    "3. Analyze trust_level and npc_states to determine appropriate complexity",
+    "4. Generate moral dilemma where both sides have legitimate arguments",
+    "5. Create whispers that reveal DIFFERENT aspects of same truth",
+    "6. Design NPC hidden agendas that conflict with each other AND party goals",
+    "7. Build solution paths where EVERY choice has meaningful cost",
+    "8. Define Divine Council votes showing god personality differences",
+    "9. Add environmental tactics that integrate with core moral choice",
+    "10. Verify uniqueness against previous_scenarios"
+  ],
+
+  "usage_notes": {
+    "when_to_use": "Start of new quest arc (every 15-25 turns)",
+    "frequency": "1 major scenario per 8-10 hours of play",
+    "adaptation": "If trust_level <40, increase NPC betrayal likelihood. If trust_level >80, add deeper secret-sharing mechanics.",
+    "difficulty_scaling": "Higher level parties get scenarios with more NPCs, tighter time constraints, and deadlier consequences"
+  }
+}

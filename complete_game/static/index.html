@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 2px solid #d4af37;
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #d4af37;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #b8b8b8;
+            font-style: italic;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #444;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            color: #d4af37;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: linear-gradient(135deg, #555 0%, #333 100%);
+            color: #e0e0e0;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .option-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            color: #e0e0e0;
+            font-size: 1em;
+        }
+
+        .option-button:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: #d4af37;
+            transform: translateX(5px);
+        }
+
+        .option-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #d4af37;
+            color: #1a1a2e;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .question-header {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid #d4af37;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .god-speaker {
+            color: #d4af37;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d4af37 0%, #b8941f 100%);
+            transition: width 0.5s ease;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #555;
+            border-radius: 5px;
+            color: #e0e0e0;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .status-label {
+            color: #888;
+            font-size: 0.9em;
+            display: block;
+        }
+
+        .status-value {
+            color: #d4af37;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .message.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #90ee90;
+        }
+
+        .message.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff6b6b;
+        }
+
+        .message.info {
+            background: rgba(0, 150, 255, 0.1);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            color: #87ceeb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>THE ARCANE CODEX</h1>
+            <p class="subtitle">Where the Gods Judge Your Soul</p>
+        </header>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="card">
+            <h2>Welcome, Adventurer</h2>
+            <p>Choose your path:</p>
+            <div style="margin-top: 20px;">
+                <button class="button" onclick="startInterrogation()">Begin Divine Interrogation</button>
+                <button class="button secondary" onclick="showAbout()">About the Game</button>
+            </div>
+        </div>
+
+        <!-- About Screen -->
+        <div id="about-screen" class="card hidden">
+            <h2>About The Arcane Codex</h2>
+            <p style="margin-bottom: 15px;">
+                A 2-player co-op fantasy RPG where the AI Game Master creates moral dilemmas through asymmetric whispers.
+            </p>
+            <ul style="margin-left: 20px; margin-bottom: 20px;">
+                <li>7 gods judge your actions</li>
+                <li>10 questions determine your character class organically</li>
+                <li>NPC companions with hidden agendas</li>
+                <li>Trust/betrayal mechanics</li>
+                <li>Divine Council votes on your fate</li>
+            </ul>
+            <button class="button secondary" onclick="backToMenu()">Back</button>
+        </div>
+
+        <!-- Divine Interrogation Screen -->
+        <div id="interrogation-screen" class="card hidden">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+
+            <div class="question-header">
+                <div class="god-speaker" id="god-speaker"></div>
+                <div id="question-number" style="color: #888;"></div>
+            </div>
+
+            <div class="question-text" id="question-text"></div>
+
+            <div class="options-grid" id="options-container"></div>
+        </div>
+
+        <!-- Character Creation Screen -->
+        <div id="character-creation-screen" class="card hidden">
+            <h2>The Gods Have Judged You</h2>
+            <div id="divine-verdict"></div>
+
+            <div style="margin-top: 30px;">
+                <label for="character-name" style="display: block; margin-bottom: 10px; color: #d4af37;">
+                    What is your name, mortal?
+                </label>
+                <input type="text" id="character-name" class="input-field" placeholder="Enter your character name...">
+                <button class="button" onclick="finalizeCharacter()">Enter the World</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">Location</span>
+                    <span class="status-value" id="current-location">Valdria</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Party Trust</span>
+                    <span class="status-value" id="party-trust">50</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Turn</span>
+                    <span class="status-value" id="turn-count">1</span>
+                </div>
+            </div>
+
+            <div id="game-content" class="card">
+                <h2>Valdria - The Safe Haven</h2>
+                <p>Your adventure begins here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_URL = 'http://localhost:5000';
+        let playerId = 'player_' + Math.random().toString(36).substr(2, 9);
+        let currentQuestionIndex = 0;
+        let interrogationData = null;
+
+        // Utility Functions
+        function hideAll() {
+            document.querySelectorAll('.card, #game-screen').forEach(el => el.classList.add('hidden'));
+        }
+
+        function show(elementId) {
+            document.getElementById(elementId).classList.remove('hidden');
+        }
+
+        function showMessage(message, type = 'info') {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            msgDiv.textContent = message;
+            document.querySelector('.container').insertBefore(msgDiv, document.querySelector('.container').firstChild);
+            setTimeout(() => msgDiv.remove(), 5000);
+        }
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method,
+                headers: {'Content-Type': 'application/json'}
+            };
+            if (data) options.body = JSON.stringify(data);
+
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, options);
+                return await response.json();
+            } catch (error) {
+                showMessage('Error connecting to server. Is it running?', 'error');
+                console.error(error);
+                return null;
+            }
+        }
+
+        // Main Menu Functions
+        function backToMenu() {
+            hideAll();
+            show('main-menu');
+        }
+
+        function showAbout() {
+            hideAll();
+            show('about-screen');
+        }
+
+        // Divine Interrogation Functions
+        async function startInterrogation() {
+            const result = await apiCall('/api/interrogation/start', 'POST', {player_id: playerId});
+
+            if (result && result.status === 'started') {
+                interrogationData = result;
+                hideAll();
+                show('interrogation-screen');
+                displayQuestion(result.question);
+            }
+        }
+
+        function displayQuestion(questionData) {
+            currentQuestionIndex = questionData.question_number - 1;
+            const progress = (questionData.question_number / questionData.total_questions) * 100;
+
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('god-speaker').textContent = getGodIcon(questionData.god) + ' ' + questionData.god;
+            document.getElementById('question-number').textContent = `Question ${questionData.question_number} of ${questionData.total_questions}`;
+            document.getElementById('question-text').textContent = questionData.question_text;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            questionData.options.forEach(option => {
+                const optionDiv = document.createElement('button');
+                optionDiv.className = 'option-button';
+                optionDiv.innerHTML = `<span class="option-number">${option.id}</span>${option.text}`;
+                optionDiv.onclick = () => answerQuestion(option.id);
+                optionsContainer.appendChild(optionDiv);
+            });
+        }
+
+        async function answerQuestion(answerId) {
+            const result = await apiCall('/api/interrogation/answer', 'POST', {
+                player_id: playerId,
+                answer_id: answerId
+            });
+
+            if (result) {
+                if (result.status === 'continue') {
+                    displayQuestion(result.next_question);
+                } else if (result.status === 'complete') {
+                    displayVerdict(result);
+                }
+            }
+        }
+
+        function displayVerdict(result) {
+            hideAll();
+            show('character-creation-screen');
+
+            const verdictDiv = document.getElementById('divine-verdict');
+            verdictDiv.innerHTML = `
+                <div style="background: rgba(212, 175, 55, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 style="color: #d4af37; margin-bottom: 15px;">YOUR CLASS: ${result.character_class}</h3>
+                    <div style="white-space: pre-wrap; font-size: 0.95em;">${result.verdict}</div>
+                </div>
+            `;
+        }
+
+        async function finalizeCharacter() {
+            const name = document.getElementById('character-name').value.trim();
+
+            if (!name) {
+                showMessage('Please enter a character name', 'error');
+                return;
+            }
+
+            const result = await apiCall('/api/character/create', 'POST', {
+                player_id: playerId,
+                name: name
+            });
+
+            if (result && result.status === 'success') {
+                showMessage(`Welcome, ${name} the ${result.character.class}!`, 'success');
+                // For now, just show success. In full version, would start game.
+                setTimeout(() => {
+                    showMessage('Game ready! Waiting for second player...', 'info');
+                }, 2000);
+            }
+        }
+
+        function getGodIcon(god) {
+            const icons = {
+                'VALDRIS': '🌩️',
+                'KAITHA': '🔥',
+                'MORVANE': '💀',
+                'SYLARA': '🌿',
+                'KORVAN': '⚔️',
+                'ATHENA': '📚',
+                'MERCUS': '💰'
+            };
+            return icons[god] || '✨';
+        }
+    </script>
+</body>
+</html>

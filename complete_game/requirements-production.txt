@@ -1,0 +1,40 @@
+# The Arcane Codex - Production Dependencies
+# Complete list including monitoring and production tools
+
+# Core dependencies (from requirements.txt)
+Flask==3.0.0
+flask-cors==4.0.0
+flask-socketio==5.3.5
+python-socketio==5.10.0
+anthropic>=0.34.0
+discord.py==2.3.2
+python-dotenv==1.0.0
+psutil==5.9.6
+mcp>=0.9.0
+eventlet==0.33.3
+
+# Production extras
+gunicorn==21.2.0
+gevent==23.9.1
+
+# Redis caching
+redis==5.0.1
+hiredis==2.2.3
+
+# Monitoring and logging
+sentry-sdk[flask]==1.39.1
+
+# Performance
+ujson==5.9.0
+
+# Security
+cryptography==41.0.7
+
+# Database optimization
+apsw==3.44.2.0
+
+# Health checks
+requests==2.31.0
+
+# Process management (if not using Docker)
+# supervisor==4.2.5

@@ -1,0 +1,462 @@
+{
+  "prompt_name": "WHISPER_GENERATION_SCHEMA",
+  "version": "1.0",
+  "description": "Template for generating class-specific asymmetric whispers that create collaboration necessity through conflicting information. Each class sees different aspects of the same truth.",
+
+  "system_prompt": "You are The Chronicler, generating asymmetric whispers for The Arcane Codex. Your role is to create PRIVATE information that each player/NPC receives based on their class expertise.\n\nCORE PRINCIPLES:\n- Whispers reveal DIFFERENT aspects of the SAME situation\n- NO whisper is 'correct' - all are partial truths\n- Conflicting whispers force collaboration to see full picture\n- Whispers must be based on class expertise (not arbitrary)\n- NPCs also receive whispers based on their hidden agendas\n\nWHISPER CONFLICT PATTERNS:\n- COMPLEMENTARY: Whispers add together easily (low conflict)\n- CONTRADICTORY: Whispers seem to oppose but both are true (medium conflict)\n- MUTUALLY EXCLUSIVE: Whispers create impossible choice (high conflict)\n\nFORBIDDEN:\n- Do NOT give one player 'the answer' and others wrong info\n- Do NOT make whispers totally random\n- Do NOT create whispers that have no impact on decision\n- Do NOT make NPC whispers obvious (mystery matters)",
+
+  "input_schema": {
+    "type": "object",
+    "required": ["situation_context", "party_classes", "npc_companions", "whisper_conflict_level"],
+    "properties": {
+      "situation_context": {
+        "type": "object",
+        "description": "The observable scene everyone sees",
+        "properties": {
+          "public_description": {"type": "string"},
+          "location": {"type": "string"},
+          "npcs_present": {"type": "array", "items": {"type": "string"}},
+          "visible_threats": {"type": "array", "items": {"type": "string"}},
+          "time_pressure": {"type": "string"}
+        },
+        "example": {
+          "public_description": "Duke's warehouse. 2 guards at front door. Windows on second floor. Loading dock around back.",
+          "location": "Warehouse District, midnight",
+          "npcs_present": ["Grimsby (quest-giver)", "Guards (2)"],
+          "visible_threats": ["Professional guards", "Unknown inside"],
+          "time_pressure": "3 days before daughter sold to slavers"
+        }
+      },
+      "party_classes": {
+        "type": "array",
+        "description": "Classes present who will receive whispers",
+        "items": {
+          "type": "object",
+          "properties": {
+            "player_name": {"type": "string"},
+            "class": {"type": "string"},
+            "relevant_skills": {"type": "array", "items": {"type": "string"}},
+            "skill_levels": {"type": "object"}
+          }
+        },
+        "example": [
+          {
+            "player_name": "Kaelen",
+            "class": "Mage",
+            "relevant_skills": ["arcana", "research"],
+            "skill_levels": {"arcana": 70, "research": 60}
+          },
+          {
+            "player_name": "Thorne",
+            "class": "Fighter",
+            "relevant_skills": ["perception", "strength"],
+            "skill_levels": {"perception": 65, "strength": 75}
+          }
+        ]
+      },
+      "npc_companions": {
+        "type": "array",
+        "description": "NPCs who also receive whispers based on their agendas",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "hidden_agenda": {"type": "string"},
+            "fatal_flaw": {"type": "string"},
+            "approval": {"type": "integer"},
+            "trust": {"type": "integer"}
+          }
+        },
+        "example": [
+          {
+            "name": "Grimsby",
+            "hidden_agenda": "Confession letter in shipment",
+            "fatal_flaw": "IRRATIONAL about daughter",
+            "approval": 55,
+            "trust": 60
+          }
+        ]
+      },
+      "whisper_conflict_level": {
+        "type": "string",
+        "enum": ["COMPLEMENTARY", "CONTRADICTORY", "MUTUALLY_EXCLUSIVE"],
+        "description": "How much whispers should conflict",
+        "example": "MUTUALLY_EXCLUSIVE"
+      },
+      "hidden_information": {
+        "type": "array",
+        "description": "Facts hidden from public scene that whispers can reveal",
+        "items": {
+          "type": "object",
+          "properties": {
+            "fact": {"type": "string"},
+            "detectable_by": {"type": "array", "items": {"type": "string"}},
+            "importance": {"type": "string", "enum": ["CRITICAL", "IMPORTANT", "INTERESTING"]}
+          }
+        },
+        "example": [
+          {
+            "fact": "Medicine shipment is poisoned - 200 will die if distributed",
+            "detectable_by": ["Mage (arcana)", "Cleric (divine sense)"],
+            "importance": "CRITICAL"
+          },
+          {
+            "fact": "Guards are expecting trouble - this is a trap",
+            "detectable_by": ["Fighter (perception)", "Ranger (survival)", "Thief (perception)"],
+            "importance": "CRITICAL"
+          },
+          {
+            "fact": "Grimsby's daughter visible in caged wagon nearby",
+            "detectable_by": ["Fighter (perception)", "Ranger (tracking)"],
+            "importance": "IMPORTANT"
+          }
+        ]
+      }
+    }
+  },
+
+  "output_schema": {
+    "type": "object",
+    "required": ["whisper_distribution", "conflict_analysis", "sharing_incentives"],
+    "properties": {
+      "whisper_distribution": {
+        "type": "object",
+        "description": "Individual whispers sent to each player/NPC",
+        "properties": {
+          "player_whispers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "recipient": {"type": "string"},
+                "class": {"type": "string"},
+                "skill_basis": {"type": "string", "description": "Which skill revealed this info"},
+                "whisper_text": {"type": "string", "description": "2-4 paragraphs, specific sensory details"},
+                "information_type": {"type": "string", "enum": ["TACTICAL", "ARCANE", "SOCIAL", "MORAL", "ENVIRONMENTAL", "HISTORICAL"]},
+                "reveals": {"type": "array", "items": {"type": "string"}},
+                "conceals": {"type": "array", "items": {"type": "string"}, "description": "What this whisper doesn't show"}
+              }
+            }
+          },
+          "npc_whispers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "npc_name": {"type": "string"},
+                "internal_whisper": {"type": "string", "description": "What NPC knows"},
+                "will_share_if": {"type": "string", "description": "Conditions for sharing"},
+                "will_hide_because": {"type": "string", "description": "Why NPC conceals this"},
+                "sharing_probability": {
+                  "type": "object",
+                  "properties": {
+                    "if_approval_60_plus": {"type": "integer"},
+                    "if_trust_60_plus": {"type": "integer"},
+                    "if_directly_asked": {"type": "integer"},
+                    "if_conflicts_with_agenda": {"type": "integer"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "conflict_analysis": {
+        "type": "object",
+        "description": "How whispers interact and conflict",
+        "properties": {
+          "pattern": {"type": "string", "enum": ["COMPLEMENTARY", "CONTRADICTORY", "MUTUALLY_EXCLUSIVE"]},
+          "player_1_will_think": {"type": "string"},
+          "player_2_will_think": {"type": "string"},
+          "actual_truth": {"type": "string"},
+          "if_shared": {"type": "string", "description": "What happens if all whispers combined"},
+          "if_not_shared": {"type": "string", "description": "What happens if players act on partial info"}
+        }
+      },
+      "sharing_incentives": {
+        "type": "object",
+        "description": "Why players should share (and risks of not sharing)",
+        "properties": {
+          "trust_gain_if_shared": {"type": "integer"},
+          "trust_loss_if_hidden": {"type": "integer"},
+          "consequences_of_silence": {"type": "array", "items": {"type": "string"}},
+          "better_outcome_if_collaborated": {"type": "string"}
+        }
+      },
+      "delivery_format": {
+        "type": "object",
+        "description": "How whispers are presented in Discord",
+        "properties": {
+          "public_announcement": {"type": "string"},
+          "dm_format": {"type": "string"},
+          "npc_behavior_hints": {"type": "string"}
+        }
+      }
+    }
+  },
+
+  "class_whisper_templates": {
+    "FIGHTER": {
+      "expertise": "Tactical analysis, combat readiness, structural weaknesses, physical threats",
+      "whisper_reveals": [
+        "Guard quality (professional vs thugs)",
+        "Defensive positions and vulnerabilities",
+        "Weapon quality and armor gaps",
+        "Structural weak points (rotted beams, loose stones)",
+        "Combat readiness (expecting trouble vs relaxed)",
+        "Physical evidence (boot prints, blood trails, drag marks)",
+        "Tactical advantages (high ground, choke points, cover)",
+        "Enemy numbers and formation"
+      ],
+      "sensory_focus": "Visual details, physical positioning, body language of threats",
+      "example": "Your military training kicks in. Guards are PROFESSIONALS (disciplined stance, quality armor, hands near weapons). They're EXPECTING trouble. This is a trap. Frontal assault = suicide. Need alternative or reconsider entirely."
+    },
+    "MAGE": {
+      "expertise": "Arcane detection, magical auras, curses, enchantments, spell identification",
+      "whisper_reveals": [
+        "Magic type (evocation, necromancy, transmutation, etc)",
+        "Curse presence and severity",
+        "Ward mechanisms and how to bypass",
+        "Magical conductors (water + lightning, metal + fire)",
+        "Arcane power sources (runes, ley lines, crystals)",
+        "Spell residue (who cast what recently)",
+        "Enchanted objects (cursed, blessed, trapped)",
+        "Mana flows and disruption points"
+      ],
+      "sensory_focus": "Magical auras, spectral colors, tingling sensations, arcane patterns",
+      "example": "You sense magic radiating from warehouse. STRONG necrotic energy. Medicine shipment is CURSED. If distributed to plague victims, won't heal—will KILL them. Slowly, painfully. 200+ die within days. Someone WANTS those victims dead. This is assassination, not medicine."
+    },
+    "THIEF": {
+      "expertise": "Social perception, lies, traps, hidden passages, security weaknesses",
+      "whisper_reveals": [
+        "Who is lying (nervous tells, eye movements)",
+        "Hidden mechanisms (secret doors, trap triggers)",
+        "Security blind spots and patrol patterns",
+        "Valuable objects worth stealing",
+        "Lockpicking difficulty assessment",
+        "Blackmail material and leverage",
+        "Social hierarchies (who fears whom)",
+        "Escape routes and bolt holes"
+      ],
+      "sensory_focus": "Micro-expressions, hand signals, architectural anomalies, valuable glints",
+      "example": "You spot Queen's hand trembling, napkin wet with sweat. Her eyes dart to wine steward, then away. TOO QUICKLY. Wine steward is her brother Marcus—scheduled for execution tomorrow. You've seen this look before. GUILT. FEAR. She poisoned her husband. But question is: WHY? Queens don't murder Kings lightly."
+    },
+    "CLERIC": {
+      "expertise": "Moral implications, divine judgment preview, spiritual corruption, soul states",
+      "whisper_reveals": [
+        "Soul alignment (corrupted, pure, conflicted)",
+        "Divine judgment preview (what gods will think)",
+        "Undead presence and vulnerability",
+        "Consecrated/cursed ground",
+        "Spiritual consequences of actions",
+        "Past sins visible on soul",
+        "Divine favor or disfavor radiating from person/place",
+        "Future visions of consequences"
+      ],
+      "sensory_focus": "Spiritual auras, divine whispers, soul weight, moral clarity",
+      "example": "You sense Viktor's soul as curse takes root. Werewolf curse isn't just physical—it's SPIRITUAL corruption. If Viktor transforms, he won't be animal. He'll be MURDERER. Werewolves hunt HUMANS for sport. You See Viktor's future: blood-soaked streets, screaming villagers. Body count 30+ before finally put down. To save 30 innocent lives, Viktor must be cured. NO MATTER THE COST."
+    },
+    "RANGER": {
+      "expertise": "Environmental perception, tracking, escape routes, animal behavior, natural hazards",
+      "whisper_reveals": [
+        "Tracks (age, direction, creature type)",
+        "Environmental hazards (loose rocks, animal nests, poisonous plants)",
+        "Weather patterns affecting situation",
+        "Escape routes through wilderness",
+        "Animal behavior (scared, aggressive, protective)",
+        "Natural resources (water, shelter, food)",
+        "Terrain advantages (choke points, ambush spots)",
+        "Time until environmental change (storm, nightfall)"
+      ],
+      "sensory_focus": "Natural details, animal sounds, wind direction, earth vibrations",
+      "example": "You track Alpha's prints to hidden cave. Inside: Eight CHILDREN (ages 6-14), sleeping on furs. Human children. Alpha lies among them protectively—massive gray wolf, scarred and ancient. These are ORPHANS. Werewolf protecting them from bandits, feeding them, keeping warm. They have no one else. If you kill Alpha, these children starve or captured by slavers. Alpha is not monster. It's GUARDIAN."
+    },
+    "BARD": {
+      "expertise": "Emotional insight, historical context, cultural significance, NPC motivations",
+      "whisper_reveals": [
+        "Emotional states (reading room's mood)",
+        "Historical significance of location/object",
+        "Cultural taboos and customs",
+        "NPC true motivations (beyond words)",
+        "Songs/stories revealing truth",
+        "Reputation and rumors",
+        "Social dynamics (alliances, rivalries)",
+        "Distraction/performance opportunities"
+      ],
+      "sensory_focus": "Emotional resonance, historical echoes, social undercurrents, musical harmony",
+      "example": "You read room's emotions. Queen: RELIEF mixed with terror (relieved King dying, terrified of being caught). Wine steward (her brother): DESPERATION (knows he's dead tomorrow). The King: Earlier tonight, you overheard him laughing with advisors: 'Tomorrow we execute traitor. Then purge his family. Can't leave loose ends.' He was planning to kill Queen and her children AFTER executing her brother. Queen poisoned him in SELF-DEFENSE. To save her family."
+    }
+  },
+
+  "whisper_conflict_patterns": {
+    "COMPLEMENTARY": {
+      "description": "Whispers add together easily - low conflict, easy collaboration",
+      "example": {
+        "fighter_whisper": "Guard is SCARED (trembling hands, eyes darting)",
+        "bard_whisper": "Guard is being BLACKMAILED (emotional reading shows coercion)",
+        "combined_insight": "Guard is victim being forced to work here - can be negotiated with or freed",
+        "collaboration_outcome": "Party realizes they can turn guard into ally instead of fighting"
+      },
+      "when_to_use": "Early game, high trust parties (80+), teaching collaboration mechanics"
+    },
+    "CONTRADICTORY": {
+      "description": "Whispers seem to oppose but both are true - medium conflict, requires discussion",
+      "example": {
+        "thief_whisper": "Merchant is LYING (all the tells: eye twitch, hand covering mouth)",
+        "cleric_whisper": "Merchant is TERRIFIED (soul shows genuine fear, not malice)",
+        "combined_insight": "Merchant lying BECAUSE terrified (being blackmailed/threatened)",
+        "collaboration_outcome": "Party realizes merchant is victim, not villain - changes interrogation approach"
+      },
+      "when_to_use": "Mid-game, medium trust (40-79), standard moral complexity"
+    },
+    "MUTUALLY_EXCLUSIVE": {
+      "description": "Whispers create impossible choice - high conflict, forces moral decision",
+      "example": {
+        "fighter_whisper": "Child is suffering NOW in cage, broken arm. Guard vulnerable. MUST rescue immediately before slavers ship her away in 3 days.",
+        "mage_whisper": "Medicine is POISONED. If party steals it (to save child), 200 plague victims die agonizing deaths.",
+        "combined_insight": "Save child now = 200 die later. No way to satisfy both imperatives.",
+        "collaboration_outcome": "Party must make moral choice - no perfect solution, only different costs"
+      },
+      "when_to_use": "Major plot points, any trust level, defining moral moments"
+    }
+  },
+
+  "examples": [
+    {
+      "input": {
+        "situation_context": {
+          "public_description": "Duke's warehouse. Medicine shipment inside. Grimsby needs it to save daughter from slavers (3 days deadline). 2 guards at front door.",
+          "location": "Warehouse District, midnight, rain",
+          "npcs_present": ["Grimsby", "2 Guards", "Grimsby's daughter (hidden nearby)"],
+          "visible_threats": ["Professional guards", "Unknown warehouse interior"],
+          "time_pressure": "3 days before daughter sold"
+        },
+        "party_classes": [
+          {"player_name": "Kaelen", "class": "Mage", "relevant_skills": ["arcana"], "skill_levels": {"arcana": 70}},
+          {"player_name": "Thorne", "class": "Fighter", "relevant_skills": ["perception"], "skill_levels": {"perception": 65}}
+        ],
+        "npc_companions": [
+          {"name": "Grimsby", "hidden_agenda": "Confession letter in shipment", "fatal_flaw": "IRRATIONAL", "approval": 55, "trust": 60}
+        ],
+        "whisper_conflict_level": "MUTUALLY_EXCLUSIVE",
+        "hidden_information": [
+          {"fact": "Medicine is poisoned, kills 200 if distributed", "detectable_by": ["Mage"], "importance": "CRITICAL"},
+          {"fact": "Guards expecting trouble, it's a trap", "detectable_by": ["Fighter"], "importance": "CRITICAL"},
+          {"fact": "Daughter visible in cage nearby", "detectable_by": ["Fighter"], "importance": "IMPORTANT"}
+        ]
+      },
+      "output": {
+        "whisper_distribution": {
+          "player_whispers": [
+            {
+              "recipient": "Thorne",
+              "class": "Fighter",
+              "skill_basis": "Perception 65",
+              "whisper_text": "Through warehouse window, you spot caged wagon in alley. Inside: Small girl with Grimsby's eyes. Her left arm bent wrong—broken. She's crying silently, rocking. Guard watching her wears SLAVER'S BRAND on wrist. In 3 days, she's on ship to Eastern Markets. Once gone, you'll never find her. Guard yawns. He's bored. Vulnerable.",
+              "information_type": "TACTICAL",
+              "reveals": ["Daughter's location", "Her injury", "Guard vulnerability", "Time sensitivity"],
+              "conceals": ["Medicine is poisoned", "Confession letter exists", "This is a trap"]
+            },
+            {
+              "recipient": "Kaelen",
+              "class": "Mage",
+              "skill_basis": "Arcana 70",
+              "whisper_text": "You sense enchantment magic on medicine crates—wrong type. This isn't healing magic. It's TRANSMUTATION. Poison. Someone sabotaged shipment. If distributed to plague victims, all 200 die in agony within hours instead of being cured. Duke doesn't know. This is deliberate MURDER. Poison signature matches Thieves Guild magic. They're sabotaging rival (Duke) while framing desperate people like Grimsby.",
+              "information_type": "ARCANE",
+              "reveals": ["Medicine is poisoned", "200 will die", "Thieves Guild responsible", "Duke is target"],
+              "conceals": ["Daughter's suffering", "Guard vulnerability", "Trap setup"]
+            }
+          ],
+          "npc_whispers": [
+            {
+              "npc_name": "Grimsby",
+              "internal_whisper": "Confession letter in Crate 7. If Duke's men find it when distributing medicine, you're dead. You MUST steal that crate. Willing to let 200 die to save daughter AND yourself.",
+              "will_share_if": "Never (directly conflicts with survival)",
+              "will_hide_because": "Self-preservation + daughter's safety",
+              "sharing_probability": {
+                "if_approval_60_plus": 0,
+                "if_trust_60_plus": 0,
+                "if_directly_asked": 10,
+                "if_conflicts_with_agenda": 0
+              }
+            }
+          ]
+        },
+        "conflict_analysis": {
+          "pattern": "MUTUALLY_EXCLUSIVE",
+          "player_1_will_think": "We MUST save the child! I SAW her suffering! She's RIGHT THERE!",
+          "player_2_will_think": "We CAN'T steal poisoned medicine! 200 people will DIE in agony!",
+          "actual_truth": "Both are correct. Saving child requires stealing medicine that kills 200. No way to satisfy both.",
+          "if_shared": "Party realizes impossible dilemma. May seek third option (rescue child directly, warn Duke, find alternative cure). Trust +15 for sharing critical info.",
+          "if_not_shared": "Thorne pushes for rescue. Kaelen pushes to refuse heist. Party paralyzed by disagreement. Grimsby may act alone (disaster). Trust -10 for withholding."
+        },
+        "sharing_incentives": {
+          "trust_gain_if_shared": 15,
+          "trust_loss_if_hidden": -10,
+          "consequences_of_silence": [
+            "If Thorne doesn't share: Party steals poisoned medicine, 200 die, massive guilt",
+            "If Kaelen doesn't share: Party rescues child but doesn't realize medicine was trap all along",
+            "If neither shares: Decisions made on incomplete info, worst outcome likely"
+          ],
+          "better_outcome_if_collaborated": "Path 3 unlocked: Rescue child directly (avoiding medicine entirely), warn Duke about poison, expose Thieves Guild plot. Daughter saved, 200 saved, confession letter becomes negotiable."
+        },
+        "delivery_format": {
+          "public_announcement": "🔮 WHISPERS DISTRIBUTED\n[PLAYER 1 - Check your DMs]\n[PLAYER 2 - Check your DMs]\n[NPCs received whispers too. Will they share?]\n\nNow discuss your options as party...",
+          "dm_format": "👁️ FIGHTER PERCEPTION:\n\n[Whisper text here with emoji prefix based on class]\n\n[This information is PRIVATE. Share or keep secret?]",
+          "npc_behavior_hints": "Grimsby shares warehouse layout (helpful) but stays SILENT about confession letter. Glances at party nervously when medicine discussed."
+        }
+      }
+    }
+  ],
+
+  "npc_whisper_sharing_logic": {
+    "description": "Algorithm for when NPCs share their whispers with party",
+    "rules": [
+      {
+        "condition": "whisper_importance == 'CRITICAL' AND npc_approval >= 60",
+        "result": "NPC shares proactively (90% chance)",
+        "example": "Grimsby: 'Guards are expecting us. I overheard them.'"
+      },
+      {
+        "condition": "whisper_conflicts_with_hidden_agenda AND party_trust < 70",
+        "result": "NPC lies or stays silent (100% chance)",
+        "example": "Grimsby: 'I don't know anything about letters' [LIES]"
+      },
+      {
+        "condition": "npc_approval >= 70",
+        "result": "Shares whisper without being asked",
+        "example": "Grimsby: 'I need to tell you something...'"
+      },
+      {
+        "condition": "npc_approval >= 40 AND npc_approval < 70",
+        "result": "Shares if asked (requires Persuasion DC 60)",
+        "example": "Thorne: 'What do you know?' Grimsby: [Persuasion check] 'Fine, there's a tunnel...'"
+      },
+      {
+        "condition": "npc_approval < 40",
+        "result": "Refuses to share even if asked",
+        "example": "Grimsby: 'That's none of your business.'"
+      },
+      {
+        "condition": "party_trust >= 80",
+        "result": "Trust overrides approval - NPC shares despite low personal approval",
+        "example": "Even at Approval 35, Grimsby shares: 'I don't like you, but party deserves truth'"
+      }
+    ]
+  },
+
+  "constraints": {
+    "balance": "Each class must receive meaningful whisper - no useless information",
+    "fairness": "No whisper is 'the right answer' - all partial truths",
+    "integration": "Whispers must relate to class expertise logically",
+    "impact": "Whispers must materially affect decision-making",
+    "mystery": "Don't reveal EVERYTHING - leave room for investigation",
+    "specificity": "Whispers use sensory details, not generic descriptions"
+  },
+
+  "usage_notes": {
+    "when_to_trigger": "Start of each major scene/quest, critical decision points, NPC introductions",
+    "frequency": "Every 3-5 turns during active quest",
+    "adaptation": "Higher skill levels reveal MORE detail in whispers. Low trust = NPCs withhold more."
+  }
+}

@@ -1,0 +1,436 @@
+{
+  "prompt_name": "ENVIRONMENTAL_TACTICS_PROMPT",
+  "version": "1.0",
+  "description": "Template for generating BG3-style environmental interaction options that integrate physics, tactics, and class-specific perception into every scene.",
+
+  "system_prompt": "You are The Chronicler, creating dynamic, physics-based environmental interactions for The Arcane Codex. Every location is ALIVE with tactical possibilities.\n\nCORE PRINCIPLES:\n- Environment is NOT backdrop - it's interactive playground\n- Every scene has 3-5 specific usable objects/features\n- Physics are consistent (fire spreads, water conducts lightning)\n- Class whispers reveal environmental opportunities\n- Environmental tactics integrate with moral dilemmas (not separate)\n\nBG3 INSPIRATION:\n- Oil barrels can be thrown + ignited\n- High ground provides advantage\n- Water puddles conduct lightning\n- Chandeliers can be dropped\n- Explosive crates change combat\n- Terrain affects movement and strategy\n\nFORBIDDEN:\n- Generic 'furniture' - be SPECIFIC (oak table, rope coil, torch sconce)\n- Arbitrary physics (define rules clearly)\n- Environmental actions feel tacked on - integrate into narrative\n- Every location same (warehouse ≠ forest ≠ throne room)\n- Ignore consequences (fire spreads, structures collapse)",
+
+  "input_schema": {
+    "type": "object",
+    "required": ["location_type", "scene_context", "party_classes", "npcs_present", "immediate_threat"],
+    "properties": {
+      "location_type": {
+        "type": "string",
+        "enum": ["URBAN_INDOOR", "URBAN_OUTDOOR", "WILDERNESS", "DUNGEON", "NOBLE_ESTATE", "COMBAT_ARENA", "MAGICAL_LOCATION"],
+        "example": "URBAN_INDOOR"
+      },
+      "scene_context": {
+        "type": "object",
+        "properties": {
+          "location_name": {"type": "string"},
+          "time_of_day": {"type": "string"},
+          "weather": {"type": "string"},
+          "lighting": {"type": "string"},
+          "current_situation": {"type": "string"},
+          "party_goal": {"type": "string"}
+        },
+        "example": {
+          "location_name": "Warehouse District - Duke's Storage",
+          "time_of_day": "Midnight",
+          "weather": "Rain hammering tin roof",
+          "lighting": "Dim - few torches, many shadows",
+          "current_situation": "Party planning heist, guards inside",
+          "party_goal": "Steal medicine without alerting guards"
+        }
+      },
+      "party_classes": {
+        "type": "array",
+        "description": "Classes present - determines whisper types",
+        "items": {"type": "string"},
+        "example": ["Fighter", "Mage", "Thief"]
+      },
+      "npcs_present": {
+        "type": "array",
+        "description": "NPCs in scene who might use environment",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "combat_capable": {"type": "boolean"},
+            "environmental_knowledge": {"type": "string"}
+          }
+        },
+        "example": [
+          {"name": "Grimsby", "combat_capable": false, "environmental_knowledge": "Knows warehouse layout, smuggler tunnels"}
+        ]
+      },
+      "immediate_threat": {
+        "type": "object",
+        "properties": {
+          "threat_type": {"type": "string", "enum": ["COMBAT", "STEALTH", "SOCIAL", "PUZZLE", "TIME_PRESSURE"]},
+          "enemies_present": {"type": "array", "items": {"type": "string"}},
+          "threat_level": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "DEADLY"]}
+        },
+        "example": {
+          "threat_type": "STEALTH",
+          "enemies_present": ["2 professional guards"],
+          "threat_level": "MEDIUM"
+        }
+      }
+    }
+  },
+
+  "output_schema": {
+    "type": "object",
+    "required": ["environment_description", "usable_objects", "environmental_actions", "class_specific_whispers", "physics_rules", "npc_environmental_behavior"],
+    "properties": {
+      "environment_description": {
+        "type": "string",
+        "description": "3-5 paragraphs with SPECIFIC objects, terrain features, hazards. Include sensory details.",
+        "example": "The warehouse floor is cluttered with CARGO CRATES (heavy oak, 3ft tall, stackable). WINE BARRELS line the west wall, stamped 'ALCHEMICAL' - they're EXPLOSIVE if ignited.\n\nAbove, a CHANDELIER (iron, 6 candles) hangs from RUSTED CHAINS over the center. One good tug drops it.\n\nOIL PUDDLES near east door (slippery, flammable). ROPE COILS (30ft each) stacked by loading dock.\n\nSecond floor has WOODEN BALCONY (rotted railing, groans under weight). WINDOWS (barred, but glass breakable).\n\nSupport beam (northeast corner) shows WATER DAMAGE - structural weak point."
+      },
+      "usable_objects": {
+        "type": "array",
+        "description": "3-7 specific interactive objects with stats",
+        "items": {
+          "type": "object",
+          "properties": {
+            "object_name": {"type": "string"},
+            "location": {"type": "string"},
+            "properties": {"type": "array", "items": {"type": "string"}},
+            "can_be_moved": {"type": "boolean"},
+            "weight": {"type": "string"},
+            "flammable": {"type": "boolean"},
+            "explosive": {"type": "boolean"},
+            "structural": {"type": "boolean"}
+          }
+        },
+        "example": [
+          {
+            "object_name": "Wine Barrels (Alchemical)",
+            "location": "West wall, 8 barrels",
+            "properties": ["Explosive if ignited", "Can be thrown (Strength 15)", "Radius: 15ft", "Damage: 40 to all in radius"],
+            "can_be_moved": true,
+            "weight": "Heavy",
+            "flammable": false,
+            "explosive": true,
+            "structural": false
+          },
+          {
+            "object_name": "Iron Chandelier",
+            "location": "Center ceiling, hanging 15ft up",
+            "properties": ["Drop via rope pulley (east wall)", "Falls on area below", "Damage: 30 + stunned 2 turns"],
+            "can_be_moved": true,
+            "weight": "Very Heavy",
+            "flammable": false,
+            "explosive": false,
+            "structural": false
+          },
+          {
+            "object_name": "Support Beam (Northeast)",
+            "location": "Northeast corner, supporting balcony",
+            "properties": ["Water damaged - weak point", "Kick (Strength 25) = collapses balcony", "Area of effect: 10ft radius", "Anyone on balcony falls + debris damage"],
+            "can_be_moved": false,
+            "weight": "N/A",
+            "flammable": false,
+            "explosive": false,
+            "structural": true
+          },
+          {
+            "object_name": "Oil Puddles",
+            "location": "Near east door",
+            "properties": ["Slippery (Dexterity 12 to cross without falling)", "Flammable (ignite with torch/spell)", "Spreads fire to adjacent wooden objects"],
+            "can_be_moved": false,
+            "weight": "N/A",
+            "flammable": true,
+            "explosive": false,
+            "structural": false
+          }
+        ]
+      },
+      "environmental_actions": {
+        "type": "array",
+        "description": "1-2 environmental actions per turn integrated into choices",
+        "items": {
+          "type": "object",
+          "properties": {
+            "action": {"type": "string"},
+            "skill_required": {"type": "string"},
+            "difficulty": {"type": "integer"},
+            "icon": {"type": "string"},
+            "immediate_effect": {"type": "string"},
+            "risks": {"type": "array", "items": {"type": "string"}},
+            "combos_with": {"type": "array", "items": {"type": "string"}, "description": "Other actions this chains with"}
+          }
+        },
+        "example": [
+          {
+            "action": "Cut chandelier rope - drop on guards below",
+            "skill_required": "dexterity",
+            "difficulty": 15,
+            "icon": "💡",
+            "immediate_effect": "Chandelier crashes down. Guards in 5ft radius: 30 damage + stunned 2 turns. Creates barrier.",
+            "risks": ["If guards move before it falls, wastes action", "Noise alerts other guards", "Chandelier blocks your path too"],
+            "combos_with": ["Mage can use Telekinesis to aim fall direction", "Fighter can push guards into drop zone"]
+          },
+          {
+            "action": "Throw explosive barrel at enemy group",
+            "skill_required": "strength",
+            "difficulty": 20,
+            "icon": "💥",
+            "immediate_effect": "40 damage to all in 15ft radius. Sets oil puddles on fire (spreads).",
+            "risks": ["Damages party if too close", "Fire spreads to wooden crates (creates ongoing hazard)", "Explosion alerts entire building"],
+            "combos_with": ["Mage can cast Firebolt to detonate from range", "Thief can position barrel near grouped enemies first"]
+          },
+          {
+            "action": "Kick water-damaged support beam",
+            "skill_required": "strength",
+            "difficulty": 25,
+            "icon": "🦵",
+            "immediate_effect": "Balcony collapses. Enemies on balcony fall 15ft (20 damage) + buried in debris (incapacitated 3 turns).",
+            "risks": ["Hard check (25)", "Collapsing balcony blocks exit", "Noise alerts everyone", "If you're under balcony when it falls..."],
+            "combos_with": ["Fighter can lure enemies onto balcony first", "Ranger can shoot support from range instead"]
+          },
+          {
+            "action": "Ignite oil puddles (create fire barrier)",
+            "skill_required": "arcana",
+            "difficulty": 10,
+            "icon": "🔥",
+            "immediate_effect": "Fire spreads across oil (creates 10ft burning barrier). Enemies crossing take 15 damage/turn.",
+            "risks": ["Fire spreads to wooden crates (uncontrolled blaze)", "Blocks YOUR escape route too", "Smoke fills room (visibility -20%)"],
+            "combos_with": ["Thief can throw oil vials to extend fire line", "Mage can control fire spread with magic"]
+          },
+          {
+            "action": "Stack crates to reach balcony (stealth route)",
+            "skill_required": "strength",
+            "difficulty": 15,
+            "icon": "📦",
+            "immediate_effect": "Create climbable path to balcony. Bypass ground-floor guards entirely.",
+            "risks": ["Takes 1 turn to stack", "Noise during stacking (Perception check for guards)", "Crates may collapse if not stacked well"],
+            "combos_with": ["Thief can climb silently (Stealth advantage)", "Party can split: stealth team balcony, combat team ground"]
+          }
+        ]
+      },
+      "class_specific_whispers": {
+        "type": "object",
+        "description": "Environmental info revealed by class expertise",
+        "properties": {
+          "fighter": {
+            "type": "string",
+            "description": "Tactical advantages, structural weaknesses, defensive positions",
+            "example": "👁️ FIGHTER PERCEPTION:\n\nSupport beam (northeast) shows water damage - one good kick collapses entire balcony. Enemies up there = 20 damage fall + trapped under debris.\n\nChandelier hanging over center - drop it = 30 damage + blocks movement.\n\nHigh ground (balcony) gives +15% to ranged attacks. Stack crates to climb up."
+          },
+          "mage": {
+            "type": "string",
+            "description": "Magical interactions, elemental hazards, spell amplification",
+            "example": "🔮 ARCANE PERCEPTION:\n\nOil puddles near door = perfect lightning conductor. Cast Lightning Bolt = chains to all in puddle (double damage).\n\nExplosive barrels (west wall) = alchemical compound. Firebolt detonates from range (40 damage, 15ft radius).\n\nWooden structures (balcony, crates) = Fireball spreads FAST here. Risk: uncontrolled blaze."
+          },
+          "thief": {
+            "type": "string",
+            "description": "Hidden mechanisms, trap potential, escape routes, sabotage",
+            "example": "🗝️ THIEF'S EYE:\n\nRope pulley (east wall) controls chandelier. Cut rope = chandelier drops on guards below.\n\nVentilation shaft (north wall, hidden behind crates) = leads behind guards. Sneak attack opportunity.\n\nOil barrels can be repositioned (Stealth 20) BEFORE combat starts = pre-trap area.\n\nBalcony railing rotted - push enemy into it = they fall through."
+          },
+          "ranger": {
+            "type": "string",
+            "description": "Natural hazards, tracking through terrain, environmental movement",
+            "example": "🏹 RANGER PERCEPTION:\n\nWind from broken window (east) = affects ranged attacks. Shoot WITH wind = +10%, against = -10%.\n\nWater damage on support beam = termite infestation. Structurally unsound.\n\nRope coils (loading dock) = 30ft each. Can swing from balcony to ground (bypasses guards).\n\nRain through tin roof = floor slippery in places. Enemies moving fast must check Dexterity or slip."
+          },
+          "cleric": {
+            "type": "string",
+            "description": "Consecrated/cursed ground, spiritual implications of destruction",
+            "example": "✝️ DIVINE PERCEPTION:\n\nThis warehouse was built on old temple ruins. Consecrated ground beneath northeast corner.\n\nIf you collapse support beam there = disturbs sacred ground. Ghosts may awaken.\n\nExplosive barrels = alchemical reagents stolen from temple. Using them = desecration (SYLARA -10).\n\nGuards are desperate, not evil. Killing unnecessarily = spiritual cost."
+          },
+          "bard": {
+            "type": "string",
+            "description": "Historical context, social implications, performance opportunities",
+            "example": "🎵 BARD'S INSIGHT:\n\nThis warehouse stores Duke's medical supplies for plague district. Destroying it = 200+ die.\n\nChandelier is ceremonial (Duke's family crest) - drop it = political statement against Duke.\n\nGuards are SCARED (you sense fear). Loud explosion = they flee (Intimidation opportunity).\n\nHistorically, this building has secret escape tunnel (smugglers' prohibition-era route). Ask Grimsby."
+          }
+        }
+      },
+      "physics_rules": {
+        "type": "object",
+        "description": "Consistent physics interactions in this location",
+        "properties": {
+          "fire_propagation": {
+            "type": "string",
+            "example": "Fire spreads to adjacent WOODEN objects (crates, barrels, support beams) in 1 turn. Oil accelerates spread (2x speed). Rain through roof = slows but doesn't stop fire."
+          },
+          "structural_integrity": {
+            "type": "string",
+            "example": "Balcony supported by northeast beam (water damaged). Destroy beam = balcony collapses. Crates stacked 3+ high = unstable (collapse if hit)."
+          },
+          "elemental_interactions": {
+            "type": "string",
+            "example": "Water (puddles) + Lightning (spell) = conducts to all in water. Oil + Fire = ignites (15 damage/turn to crossers). Explosive barrels + ANY fire source = detonation."
+          },
+          "falling_damage": {
+            "type": "string",
+            "example": "Balcony height: 15ft. Fall damage: 20 HP. Chandelier drop: 30 damage + stunned 2 turns. Pushed through rotten railing: automatic fall."
+          },
+          "line_of_sight": {
+            "type": "string",
+            "example": "Crates provide cover (blocks attacks). Chandelier (if dropped) creates impassable barrier. Smoke from fire reduces visibility (-20% ranged)."
+          }
+        }
+      },
+      "npc_environmental_behavior": {
+        "type": "array",
+        "description": "How NPCs proactively use environment (Approval 50+)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "npc_name": {"type": "string"},
+            "environmental_action": {"type": "string"},
+            "why": {"type": "string"},
+            "when_triggered": {"type": "string"}
+          }
+        },
+        "example": [
+          {
+            "npc_name": "Grimsby",
+            "environmental_action": "Points out smuggler's tunnel behind crates: 'That's how I used to get in during prohibition. Costs 5 gold to bribe bartender, but gets us out clean.'",
+            "why": "Approval 60+ (Friendly) = shares useful knowledge proactively",
+            "when_triggered": "When party discusses escape routes"
+          },
+          {
+            "npc_name": "Renna",
+            "environmental_action": "Repositions explosive barrel near grouped guards BEFORE combat: 'If things go loud, I've got a surprise for them.'",
+            "why": "Approval 70+ (Friendly) + Thief expertise = sets up tactical advantage",
+            "when_triggered": "During planning phase, if party chooses stealth approach"
+          },
+          {
+            "npc_name": "Guard (Enemy)",
+            "environmental_action": "Flips table for cover when combat starts. Shoots from behind it.",
+            "why": "Professional guards use environment tactically",
+            "when_triggered": "Turn 1 of combat"
+          }
+        ]
+      },
+      "dynamic_consequences": {
+        "type": "array",
+        "description": "How environment changes based on player actions",
+        "items": {
+          "type": "object",
+          "properties": {
+            "trigger": {"type": "string"},
+            "consequence": {"type": "string"},
+            "duration": {"type": "string"}
+          }
+        },
+        "example": [
+          {
+            "trigger": "Explosive barrel detonated",
+            "consequence": "Fire spreads to wooden crates. Smoke fills room (-20% visibility). Guards alerted by explosion. New hazard: burning crates deal 10 damage if adjacent.",
+            "duration": "5 turns or until extinguished"
+          },
+          {
+            "trigger": "Balcony collapsed",
+            "consequence": "Debris blocks northeast corner. Escape route compromised. Enemies on balcony incapacitated 3 turns. Noise alerts entire building.",
+            "duration": "Permanent (until cleared)"
+          },
+          {
+            "trigger": "Oil ignited",
+            "consequence": "10ft fire barrier near east door. Anyone crossing: 15 damage. Spreads to adjacent oil puddles. Blocks exit.",
+            "duration": "3 turns or until oil consumed"
+          }
+        ]
+      },
+      "combo_opportunities": {
+        "type": "array",
+        "description": "Multi-player environmental combos (BG3 style)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "combo_name": {"type": "string"},
+            "requires": {"type": "array", "items": {"type": "string"}},
+            "execution": {"type": "string"},
+            "effect": {"type": "string"},
+            "difficulty": {"type": "string"}
+          }
+        },
+        "example": [
+          {
+            "combo_name": "Barrel Bomb Trap",
+            "requires": ["Thief (reposition barrel)", "Mage (detonate from range)", "Fighter (herd enemies into blast zone)"],
+            "execution": "1) Renna (Thief) silently moves barrel to choke point. 2) Thorne (Fighter) provokes guards, leads them to barrel. 3) Kaelen (Mage) casts Firebolt to detonate when grouped.",
+            "effect": "40 damage to all guards + fire spreads (ongoing hazard). Party safe at range.",
+            "difficulty": "Requires coordination + 3 successful checks"
+          },
+          {
+            "combo_name": "Chandelier + Push",
+            "requires": ["Thief (cut rope)", "Fighter (push enemy into drop zone)"],
+            "execution": "1) Renna cuts chandelier rope. 2) As it falls, Thorne shoves guard into impact area (Strength contested check).",
+            "effect": "30 damage + stunned 2 turns + enemy pinned under chandelier (incapacitated until freed).",
+            "difficulty": "Timing critical - both must act same turn"
+          }
+        ]
+      }
+    }
+  },
+
+  "location_templates": {
+    "WAREHOUSE": {
+      "typical_objects": ["Crates (stackable)", "Barrels (throwable, may be explosive)", "Rope coils", "Pulleys/chains", "Support beams", "Balconies", "Loading dock", "Torch sconces"],
+      "typical_hazards": ["Oil spills", "Unstable structures", "Fire spread risk", "Falling objects"],
+      "tactical_features": ["High ground (balconies)", "Cover (crates)", "Choke points (doorways)", "Ambush spots (shadows)"]
+    },
+    "TAVERN": {
+      "typical_objects": ["Tables (flip for cover)", "Chairs (throwable weapons)", "Chandelier", "Fireplace", "Mugs/bottles (throw for distraction)", "Kegs (flammable)", "Kitchen knives"],
+      "typical_hazards": ["Fire from fireplace", "Broken glass", "Slippery floors (spilled beer)", "Smoke"],
+      "tactical_features": ["Kitchen exit", "Upstairs rooms", "Bar (cover)", "Fireplace (hazard/disposal)"]
+    },
+    "FOREST": {
+      "typical_objects": ["Trees (cover, climbing)", "Vines (swing, trip wires)", "Logs (roll down slopes)", "Branches (snap for noise)", "Bushes (hiding)", "Streams (water hazards)"],
+      "typical_hazards": ["Cliffs (fall damage)", "Animal nests (disturb = swarm)", "Quicksand/mud", "Poisonous plants", "Lightning during storm"],
+      "tactical_features": ["High ground (trees)", "Natural choke points (narrow paths)", "Ambush positions (thick foliage)"]
+    },
+    "THRONE_ROOM": {
+      "typical_objects": ["Throne (symbol of power)", "Tapestries (hide behind, burn)", "Guards' halberds", "Chandelier", "Ceremonial braziers", "Marble columns"],
+      "typical_hazards": ["Armed guards", "Political consequences", "Desecration penalties", "Falling from elevated throne platform"],
+      "tactical_features": ["Elevated throne (high ground)", "Columns (cover)", "Multiple exits (guards block)", "Gallery above (archers)"]
+    },
+    "DUNGEON": {
+      "typical_objects": ["Torture devices", "Chains", "Cells (trap enemies)", "Weapons racks", "Oil lamps", "Stone debris"],
+      "typical_hazards": ["Traps", "Collapsing ceilings", "Flooded areas", "Rat swarms", "Disease"],
+      "tactical_features": ["Narrow corridors (choke points)", "Cells (imprison enemies)", "Multiple levels (ambush)"]
+    }
+  },
+
+  "examples": [
+    {
+      "input": {
+        "location_type": "URBAN_INDOOR",
+        "scene_context": {
+          "location_name": "Duke's Warehouse",
+          "time_of_day": "Midnight",
+          "weather": "Rain",
+          "lighting": "Dim torches",
+          "current_situation": "Party planning heist",
+          "party_goal": "Steal medicine without alerting guards"
+        },
+        "party_classes": ["Fighter", "Mage", "Thief"],
+        "npcs_present": [{"name": "Grimsby", "combat_capable": false, "environmental_knowledge": "Smuggler routes"}],
+        "immediate_threat": {
+          "threat_type": "STEALTH",
+          "enemies_present": ["2 professional guards"],
+          "threat_level": "MEDIUM"
+        }
+      },
+      "output": {
+        "environment_description": "[Full warehouse description with specific objects]",
+        "usable_objects": [
+          {"object_name": "Explosive Barrels", "properties": ["40 damage 15ft radius"]},
+          {"object_name": "Chandelier", "properties": ["30 damage + stunned"]}
+        ],
+        "environmental_actions": [
+          {"action": "Drop chandelier on guards", "skill_required": "dexterity", "difficulty": 15},
+          {"action": "Throw explosive barrel", "skill_required": "strength", "difficulty": 20}
+        ]
+      }
+    }
+  ],
+
+  "constraints": {
+    "specificity": "NO generic 'furniture' - name exact objects (oak table, iron chandelier)",
+    "physics_consistency": "Define rules clearly - fire spreads how? Falls hurt how much?",
+    "class_integration": "Environmental whispers must feel earned (Mage sees magic, Fighter sees tactics)",
+    "narrative_integration": "Environment relates to moral dilemma (explosive barrels = Duke's medical supplies)",
+    "balance": "Environmental tactics powerful but have risks/costs"
+  },
+
+  "usage_notes": {
+    "when_to_use": "EVERY scene - environment is always interactive",
+    "frequency": "Generate new environmental options every location change",
+    "adaptation": "Combat = more destructive options. Stealth = more subtle options. Puzzle = structural manipulation."
+  }
+}

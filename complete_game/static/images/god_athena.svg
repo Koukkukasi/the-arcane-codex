@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="wisdomGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+    <filter id="wisdomGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ATHENA - Wisdom/Knowledge: Owl and Book -->
+
+  <!-- Ancient book -->
+  <rect x="24" y="34" width="16" height="20" fill="#2d1b69" stroke="#d4af37" stroke-width="1.5"/>
+
+  <!-- Book pages -->
+  <rect x="25" y="35" width="14" height="18" fill="#f5f5f0" opacity="0.9"/>
+
+  <!-- Page lines -->
+  <g stroke="#1a1a2e" stroke-width="0.5" opacity="0.3">
+    <line x1="27" y1="38" x2="37" y2="38"/>
+    <line x1="27" y1="41" x2="37" y2="41"/>
+    <line x1="27" y1="44" x2="37" y2="44"/>
+    <line x1="27" y1="47" x2="35" y2="47"/>
+  </g>
+
+  <!-- Book runes/text -->
+  <g fill="#8B5CF6" font-family="serif" font-size="8" opacity="0.6">
+    <text x="32" y="42" text-anchor="middle">⚡</text>
+  </g>
+
+  <!-- Owl body -->
+  <ellipse cx="32" cy="18" rx="10" ry="12" fill="url(#wisdomGrad)" filter="url(#wisdomGlow)"/>
+
+  <!-- Owl wings -->
+  <path d="M 24 18 Q 18 16 16 20 L 22 20 Z" fill="#1e40af" opacity="0.8"/>
+  <path d="M 40 18 Q 46 16 48 20 L 42 20 Z" fill="#1e40af" opacity="0.8"/>
+
+  <!-- Owl eyes - all-seeing -->
+  <circle cx="28" cy="16" r="4" fill="#fcd34d" filter="url(#wisdomGlow)"/>
+  <circle cx="36" cy="16" r="4" fill="#fcd34d" filter="url(#wisdomGlow)"/>
+
+  <!-- Owl pupils -->
+  <circle cx="28" cy="16" r="2" fill="#0F0F17"/>
+  <circle cx="36" cy="16" r="2" fill="#0F0F17"/>
+
+  <!-- Pupil highlights -->
+  <circle cx="28.5" cy="15.5" r="0.8" fill="#fff"/>
+  <circle cx="36.5" cy="15.5" r="0.8" fill="#fff"/>
+
+  <!-- Owl beak -->
+  <path d="M 32 18 L 30 20 L 34 20 Z" fill="#d4af37"/>
+
+  <!-- Owl ear tufts -->
+  <path d="M 26 10 L 24 8 L 26 12" fill="#1e40af"/>
+  <path d="M 38 10 L 40 8 L 38 12" fill="#1e40af"/>
+
+  <!-- Knowledge radiance -->
+  <g stroke="#fcd34d" stroke-width="1" fill="none" opacity="0.4">
+    <circle cx="32" cy="18" r="14"/>
+    <line x1="32" y1="4" x2="32" y2="8"/>
+    <line x1="46" y1="18" x2="42" y2="18"/>
+    <line x1="18" y1="18" x2="22" y2="18"/>
+  </g>
+
+  <!-- Floating wisdom motes -->
+  <g fill="#3b82f6" opacity="0.5">
+    <circle cx="14" cy="14" r="1.5"/>
+    <circle cx="50" cy="14" r="1.5"/>
+    <circle cx="18" cy="48" r="1.5"/>
+    <circle cx="46" cy="48" r="1.5"/>
+  </g>
+</svg>

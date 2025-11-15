@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Layout Test - Three Column Verification</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-info {
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .status-good {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .status-bad {
+            color: #f44336;
+            font-weight: bold;
+        }
+        iframe {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #666;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>Arcane Codex Layout Test</h1>
+        <h2>Expected Layout:</h2>
+        <ul>
+            <li><span class="status-good">✓</span> Left Sidebar (80px width) - Inventory, Map, Journal, Settings buttons</li>
+            <li><span class="status-good">✓</span> Center Panel (flexible width) - Main narrative content</li>
+            <li><span class="status-good">✓</span> Right Panel (350px width) - Party members and stats</li>
+        </ul>
+        <h2>Changes Made:</h2>
+        <ul>
+            <li>Added missing left-sidebar HTML structure with 4 buttons</li>
+            <li>Renamed right-panel to party-panel for consistency</li>
+            <li>Added CSS for left-sidebar with 80px width</li>
+            <li>Added forced visibility CSS (!important) for both sidebars</li>
+            <li>Fixed media queries to properly handle desktop layout</li>
+            <li>Added desktop media query (1025px+) to ensure proper three-column layout</li>
+        </ul>
+        <p>To bypass the welcome screen and see the game board directly, you can:</p>
+        <ol>
+            <li>Open browser console (F12)</li>
+            <li>Run: <code>document.querySelector('.welcome-screen').style.display = 'none'; document.querySelector('.game-ui').style.display = 'flex';</code></li>
+        </ol>
+    </div>
+
+    <iframe src="arcane_codex_scenario_ui_enhanced.html"></iframe>
+
+    <script>
+        // Auto-bypass welcome screen after iframe loads
+        setTimeout(() => {
+            const iframe = document.querySelector('iframe');
+            if (iframe && iframe.contentWindow) {
+                try {
+                    const iframeDoc = iframe.contentWindow.document;
+                    const welcomeScreen = iframeDoc.querySelector('.welcome-screen');
+                    const gameUI = iframeDoc.querySelector('.game-ui');
+
+                    if (welcomeScreen) welcomeScreen.style.display = 'none';
+                    if (gameUI) gameUI.style.display = 'flex';
+
+                    console.log('Welcome screen bypassed successfully!');
+                } catch (e) {
+                    console.log('Could not auto-bypass welcome screen:', e);
+                }
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

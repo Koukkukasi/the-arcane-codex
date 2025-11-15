@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4af37;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#aa8b2c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6D28D9;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer mystical circle -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="url(#purpleGradient)" stroke-width="2" opacity="0.4"/>
+
+  <!-- Runic circle decorations -->
+  <circle cx="100" cy="100" r="75" fill="none" stroke="url(#goldGradient)" stroke-width="1.5" opacity="0.6" stroke-dasharray="3 6"/>
+
+  <!-- Ancient book base -->
+  <path d="M 60 70 L 60 130 L 140 130 L 140 70 Z" fill="#1a1a2e" stroke="url(#goldGradient)" stroke-width="2"/>
+
+  <!-- Book spine detail -->
+  <line x1="70" y1="70" x2="70" y2="130" stroke="url(#goldGradient)" stroke-width="1" opacity="0.5"/>
+
+  <!-- Eye of Judgment - center piece -->
+  <ellipse cx="100" cy="100" rx="30" ry="20" fill="url(#purpleGradient)" opacity="0.3" filter="url(#glow)"/>
+
+  <!-- Pupil/Portal -->
+  <circle cx="100" cy="100" r="12" fill="#0F0F17" stroke="url(#goldGradient)" stroke-width="2"/>
+  <circle cx="100" cy="100" r="8" fill="url(#goldGradient)" opacity="0.8" filter="url(#strongGlow)"/>
+
+  <!-- Mystical runes around eye -->
+  <g fill="url(#goldGradient)" font-family="serif" font-size="16" font-weight="bold" opacity="0.7">
+    <text x="100" y="60" text-anchor="middle">☥</text>
+    <text x="100" y="150" text-anchor="middle">⚚</text>
+    <text x="50" y="105" text-anchor="middle">ᚱ</text>
+    <text x="150" y="105" text-anchor="middle">ᛟ</text>
+  </g>
+
+  <!-- Corner ornaments -->
+  <g stroke="url(#goldGradient)" stroke-width="1.5" fill="none" opacity="0.5">
+    <!-- Top left -->
+    <path d="M 40 50 L 50 40 M 40 50 L 40 60 M 40 50 L 50 50"/>
+    <!-- Top right -->
+    <path d="M 160 50 L 150 40 M 160 50 L 160 60 M 160 50 L 150 50"/>
+    <!-- Bottom left -->
+    <path d="M 40 150 L 50 160 M 40 150 L 40 140 M 40 150 L 50 150"/>
+    <!-- Bottom right -->
+    <path d="M 160 150 L 150 160 M 160 150 L 160 140 M 160 150 L 150 150"/>
+  </g>
+
+  <!-- Ethereal particles -->
+  <g fill="url(#goldGradient)" opacity="0.6">
+    <circle cx="30" cy="80" r="2"/>
+    <circle cx="170" cy="80" r="2"/>
+    <circle cx="30" cy="120" r="2"/>
+    <circle cx="170" cy="120" r="2"/>
+    <circle cx="100" cy="30" r="2"/>
+    <circle cx="100" cy="170" r="2"/>
+  </g>
+
+  <!-- Inner geometric pattern -->
+  <polygon points="100,80 115,95 115,105 100,120 85,105 85,95"
+           fill="none" stroke="url(#purpleGradient)" stroke-width="1" opacity="0.3"/>
+</svg>

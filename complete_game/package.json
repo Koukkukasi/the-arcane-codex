@@ -1,0 +1,23 @@
+{
+  "name": "the-arcane-codex",
+  "version": "1.0.0",
+  "description": "The Arcane Codex - Multiplayer AI RPG",
+  "main": "web_game.py",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report test-results/html",
+    "install-playwright": "playwright install chromium"
+  },
+  "keywords": ["rpg", "multiplayer", "ai", "playwright"],
+  "author": "The Arcane Codex Team",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.56.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Arcane Codex - Asset Demo</title>
+  <link rel="stylesheet" href="css/game.css">
+  <link rel="stylesheet" href="css/arcane_effects.css">
+  <style>
+    /* Demo specific styles */
+    .demo-section {
+      margin: 3rem 0;
+      padding: 2rem;
+      background: rgba(26, 26, 46, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    .demo-item {
+      text-align: center;
+    }
+
+    .demo-item img {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 0.5rem;
+    }
+
+    .demo-item label {
+      display: block;
+      font-size: 0.875rem;
+      color: #c4a962;
+    }
+
+    .large-icon {
+      width: 200px !important;
+      height: 200px !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Arcane Background Layer -->
+  <div class="arcane-background">
+    <!-- Floating mystical orbs -->
+    <div class="mystical-orb orb-purple"></div>
+    <div class="mystical-orb orb-gold"></div>
+  </div>
+
+  <!-- Arcane Corners -->
+  <div class="arcane-corner corner-top-left">
+    <img src="images/corner_flourish.svg" alt="">
+  </div>
+  <div class="arcane-corner corner-top-right">
+    <img src="images/corner_flourish.svg" alt="">
+  </div>
+  <div class="arcane-corner corner-bottom-left">
+    <img src="images/corner_flourish.svg" alt="">
+  </div>
+  <div class="arcane-corner corner-bottom-right">
+    <img src="images/corner_flourish.svg" alt="">
+  </div>
+
+  <!-- Floating Particles -->
+  <div class="arcane-particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="landing-page">
+    <div class="container">
+      <!-- Game Header with Divine Symbol -->
+      <div class="game-header">
+        <div class="divine-symbol">
+          <img src="images/arcane_codex_logo.svg" alt="The Arcane Codex" style="width: 100%; height: 100%;">
+        </div>
+
+        <div class="game-title">
+          <h1 class="title-main text-shimmer">THE ARCANE CODEX</h1>
+          <p class="title-sub">Where Gods Judge and Mortals Tremble</p>
+        </div>
+      </div>
+
+      <!-- Arcane Divider -->
+      <div class="arcane-divider"></div>
+
+      <!-- Demo: Main Logo -->
+      <div class="demo-section codex-reveal">
+        <h2 style="color: #d4af37; margin-bottom: 1rem;">Divine Symbol / Main Logo</h2>
+        <p style="color: #9ca3af; margin-bottom: 1.5rem;">
+          The Eye of Judgment within the ancient codex - use this as the main logo/icon for the game.
+        </p>
+        <div style="text-align: center;">
+          <img src="images/arcane_codex_logo.svg" alt="Arcane Codex Logo" class="large-icon ethereal-glow">
+        </div>
+      </div>
+
+      <!-- Demo: God Icons -->
+      <div class="demo-section codex-reveal">
+        <h2 style="color: #d4af37; margin-bottom: 1rem;">The Seven Gods</h2>
+        <p style="color: #9ca3af; margin-bottom: 1.5rem;">
+          Divine symbols representing each god. Hover over them to see the mystical effect.
+        </p>
+        <div class="demo-grid">
+          <div class="demo-item">
+            <img src="images/god_valdris.svg" alt="Valdris" class="god-icon">
+            <label>VALDRIS<br>Order/Law</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/god_kaitha.svg" alt="Kaitha" class="god-icon">
+            <label>KAITHA<br>Chaos/Freedom</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/god_morvane.svg" alt="Morvane" class="god-icon">
+            <label>MORVANE<br>Death/Survival</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/god_sylara.svg" alt="Sylara" class="god-icon">
+            <label>SYLARA<br>Nature/Healing</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/god_korvan.svg" alt="Korvan" class="god-icon">
+            <label>KORVAN<br>War/Honor</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/god_athena.svg" alt="Athena" class="god-icon">
+            <label>ATHENA<br>Wisdom/Knowledge</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/god_mercus.svg" alt="Mercus" class="god-icon">
+            <label>MERCUS<br>Commerce/Wealth</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arcane Divider -->
+      <div class="arcane-divider"></div>
+
+      <!-- Demo: Decorative Elements -->
+      <div class="demo-section codex-reveal">
+        <h2 style="color: #d4af37; margin-bottom: 1rem;">Decorative Elements</h2>
+        <p style="color: #9ca3af; margin-bottom: 1.5rem;">
+          Arcane runes and mystical symbols for animations and decorations.
+        </p>
+        <div class="demo-grid">
+          <div class="demo-item">
+            <img src="images/rune_symbol_1.svg" alt="Rune 1" style="animation: runeFloat 5s ease-in-out infinite;">
+            <label>Circle Rune</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/rune_symbol_2.svg" alt="Rune 2" style="animation: runeFloat 5s ease-in-out infinite; animation-delay: 1s;">
+            <label>Triangle Rune</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/rune_symbol_3.svg" alt="Rune 3" style="animation: runeFloat 5s ease-in-out infinite; animation-delay: 2s;">
+            <label>Hexagon Rune</label>
+          </div>
+          <div class="demo-item">
+            <img src="images/corner_flourish.svg" alt="Corner Flourish">
+            <label>Corner Flourish</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo: Loading Animation -->
+      <div class="demo-section codex-reveal">
+        <h2 style="color: #d4af37; margin-bottom: 1rem;">Loading Animation</h2>
+        <p style="color: #9ca3af; margin-bottom: 1.5rem;">
+          Mystical arcane circle loader with rotating golden/purple rings.
+        </p>
+        <div style="text-align: center; padding: 2rem;">
+          <div class="arcane-loader"></div>
+          <p style="color: #9ca3af; margin-top: 1rem; font-style: italic;">Consulting the ancient texts...</p>
+        </div>
+      </div>
+
+      <!-- Usage Instructions -->
+      <div class="demo-section codex-reveal">
+        <h2 style="color: #d4af37; margin-bottom: 1rem;">Integration Guide</h2>
+        <div style="color: #c9c9d4; line-height: 1.8;">
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">CSS Files</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;link rel="stylesheet" href="static/css/game.css"&gt;
+&lt;link rel="stylesheet" href="static/css/arcane_effects.css"&gt;</code></pre>
+
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">Background Layer</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;div class="arcane-background"&gt;
+  &lt;div class="mystical-orb orb-purple"&gt;&lt;/div&gt;
+  &lt;div class="mystical-orb orb-gold"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">Divine Logo</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;div class="divine-symbol"&gt;
+  &lt;img src="static/images/arcane_codex_logo.svg" alt="The Arcane Codex"&gt;
+&lt;/div&gt;</code></pre>
+
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">God Icons</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;img src="static/images/god_valdris.svg" alt="Valdris" class="god-icon"&gt;
+&lt;img src="static/images/god_kaitha.svg" alt="Kaitha" class="god-icon"&gt;
+&lt;!-- etc for all 7 gods --&gt;</code></pre>
+
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">Floating Particles</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;div class="arcane-particles"&gt;
+  &lt;div class="particle"&gt;&lt;/div&gt;
+  &lt;div class="particle"&gt;&lt;/div&gt;
+  &lt;div class="particle"&gt;&lt;/div&gt;
+  &lt;div class="particle"&gt;&lt;/div&gt;
+  &lt;div class="particle"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">Corner Decorations</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;div class="arcane-corner corner-top-left"&gt;
+  &lt;img src="static/images/corner_flourish.svg" alt=""&gt;
+&lt;/div&gt;
+&lt;!-- Use corner-top-right, corner-bottom-left, corner-bottom-right --&gt;</code></pre>
+
+          <h3 style="color: #8B5CF6; font-size: 1.125rem; margin: 1.5rem 0 0.75rem;">Text Effects</h3>
+          <pre style="background: #0F0F17; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;h1 class="text-shimmer"&gt;Shimmering Gold Text&lt;/h1&gt;
+&lt;div class="codex-reveal"&gt;Fade-in reveal animation&lt;/div&gt;
+&lt;div class="ethereal-glow"&gt;Hover for mystical glow&lt;/div&gt;</code></pre>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="game-footer">
+        <p>May the Gods grant you wisdom in judgment</p>
+        <p class="footer-info">The Arcane Codex - Asset Library Demo</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

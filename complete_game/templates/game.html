@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Game Session</title>
+    <link rel="stylesheet" href="/static/css/game.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=UnifrakturMaguntia&display=swap');
+
+        /* EPIC GAME STYLING */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxwYXRoIGQ9Ik0gMTAwIDAgTCAwIDAgMCAxMDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjE1LDAsMC4wNSkiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==');
+            font-family: 'Cinzel', serif;
+            color: #e8d4a0;
+            animation: screenFlicker 2s ease-in-out infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* CRT Screen flicker */
+        @keyframes screenFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.98; }
+        }
+
+        /* CRT Scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03) 0px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            animation: scanlineMove 8s linear infinite;
+        }
+
+        @keyframes scanlineMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(10px); }
+        }
+
+        /* CRT Vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* EPIC LOBBY SCREEN */
+        #lobby-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .screen-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .screen-title {
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: 4rem;
+            color: #00ff00;
+            text-shadow:
+                0 0 20px rgba(0, 255, 0, 0.8),
+                0 0 40px rgba(0, 255, 0, 0.5),
+                0 4px 8px rgba(0, 0, 0, 0.8);
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 0, 0.8), 0 0 40px rgba(0, 255, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8); }
+            50% { text-shadow: 0 0 30px rgba(0, 255, 0, 1), 0 0 60px rgba(0, 255, 0, 0.7), 0 4px 8px rgba(0, 0, 0, 0.8); }
+        }
+
+        .screen-subtitle {
+            font-size: 1.2rem;
+            color: #00ffff;
+            font-style: italic;
+        }
+
+        .lobby-content {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .lobby-section {
+            background: linear-gradient(135deg, rgba(20, 15, 10, 0.9), rgba(40, 30, 20, 0.9));
+            border: 3px solid #cc8800;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(0, 255, 0, 0.2),
+                0 0 60px rgba(255, 176, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lobby-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 48%, rgba(0, 255, 0, 0.08) 50%, transparent 52%);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .lobby-section h3 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* EPIC SECTION STYLING */
+        .section-icon {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px currentColor);
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .create-section .section-icon {
+            color: #00ff00;
+        }
+
+        .join-section .section-icon {
+            color: #ffb000;
+        }
+
+        .section-title {
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: 2.2rem !important;
+            text-align: center;
+            margin-bottom: 15px !important;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .create-section .section-title {
+            color: #00ff00 !important;
+            text-shadow:
+                0 0 20px rgba(0, 255, 0, 0.8),
+                0 0 40px rgba(0, 255, 0, 0.5);
+        }
+
+        .join-section .section-title {
+            color: #ffb000 !important;
+            text-shadow:
+                0 0 20px rgba(255, 176, 0, 0.8),
+                0 0 40px rgba(255, 176, 0, 0.5);
+        }
+
+        .section-desc {
+            text-align: center;
+            color: #00ffff;
+            font-size: 1.1rem;
+            margin-bottom: 35px;
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        .btn-icon {
+            margin-right: 8px;
+            font-size: 1.3rem;
+            display: inline-block;
+            animation: btnIconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes btnIconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Improve lobby content layout */
+        .lobby-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 40px;
+            padding: 20px;
+        }
+
+        /* Make lobby sections more epic */
+        .lobby-section {
+            padding: 50px 35px !important;
+            transform: translateY(0);
+            transition: all 0.4s ease;
+        }
+
+        .lobby-section:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, 0.9),
+                inset 0 1px 0 rgba(0, 255, 0, 0.3),
+                0 0 80px rgba(255, 176, 0, 0.4);
+        }
+
+        /* ========================================
+           REALTIME 2D MAP STYLES
+           ======================================== */
+        .map-container {
+            margin: 30px 0;
+            background: linear-gradient(135deg, rgba(10, 20, 10, 0.95), rgba(20, 30, 15, 0.95));
+            border: 3px solid #00ff00;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow:
+                0 8px 32px rgba(0, 255, 0, 0.3),
+                inset 0 1px 0 rgba(0, 255, 0, 0.2);
+            animation: mapPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes mapPulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(0, 255, 0, 0.3), inset 0 1px 0 rgba(0, 255, 0, 0.2); }
+            50% { box-shadow: 0 12px 40px rgba(0, 255, 0, 0.5), inset 0 1px 0 rgba(0, 255, 0, 0.3); }
+        }
+
+        .map-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.1), rgba(0, 255, 0, 0.05));
+            border-bottom: 2px solid #00ff00;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .map-header:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.15), rgba(0, 255, 0, 0.08));
+        }
+
+        .map-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 0, 0.8));
+            animation: mapIconSpin 20s linear infinite;
+        }
+
+        @keyframes mapIconSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .map-title {
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: 1.8rem;
+            color: #00ff00;
+            text-shadow:
+                0 0 15px rgba(0, 255, 0, 0.8),
+                0 0 30px rgba(0, 255, 0, 0.5);
+            margin: 0;
+            flex-grow: 1;
+            margin-left: 15px;
+        }
+
+        .map-toggle-btn {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .map-toggle-btn:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .game-map {
+            padding: 25px;
+            max-height: 500px;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+            opacity: 1;
+        }
+
+        .game-map.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+        }
+
+        .map-grid {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background:
+                linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            border: 2px solid rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0, 255, 0, 0.1);
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0, 255, 0, 0.1) 39px, rgba(0, 255, 0, 0.1) 40px),
+                repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0, 255, 0, 0.1) 39px, rgba(0, 255, 0, 0.1) 40px);
+            pointer-events: none;
+            animation: gridScan 4s linear infinite;
+        }
+
+        @keyframes gridScan {
+            0% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Location Markers */
+        .location-marker {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .location-start {
+            top: 10%;
+            left: 15%;
+        }
+
+        .location-objective {
+            bottom: 15%;
+            right: 20%;
+        }
+
+        .marker-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 0 15px currentColor);
+            animation: markerFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes markerFloat {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.1); }
+        }
+
+        .location-start .marker-icon {
+            color: #00ffff;
+        }
+
+        .location-objective .marker-icon {
+            color: #ffb000;
+            animation: markerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes markerPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px #ffb000); }
+            50% { transform: scale(1.2); filter: drop-shadow(0 0 25px #ffb000); }
+        }
+
+        .marker-label {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #00ff00;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid currentColor;
+            white-space: nowrap;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        /* Player Markers */
+        .player-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .player-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.5s ease;
+            cursor: pointer;
+            pointer-events: all;
+            animation: playerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes playerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .player-marker.you {
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.4), transparent);
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+        }
+
+        .player-marker.ally {
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.4), transparent);
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        }
+
+        .player-marker .player-name {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #00ff00;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            border: 1px solid currentColor;
+        }
+
+        /* Path Overlay */
+        .path-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* Map Legend */
+        .map-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00ff00;
+            font-size: 0.95rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        /* ========================================
+           DIVINE INTERROGATION STYLES
+           Multi-color CRT Phosphor Theme
+           ======================================== */
+
+        /* Divine Interrogation screen-specific title */
+        #interrogation-screen .screen-title {
+            background: linear-gradient(135deg, #00ff00, #00ffff, #ffb000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: divineGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes divineGlow {
+            0%, 100% {
+                filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.8))
+                        drop-shadow(0 0 40px rgba(0, 255, 255, 0.4));
+            }
+            50% {
+                filter: drop-shadow(0 0 30px rgba(0, 255, 255, 1))
+                        drop-shadow(0 0 60px rgba(255, 176, 0, 0.6));
+            }
+        }
+
+        .interrogation-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .question-progress {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #00ffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            margin-top: 15px;
+            overflow: hidden;
+            box-shadow:
+                inset 0 0 10px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg,
+                #00ff00 0%,
+                #00ffff 50%,
+                #ffb000 100%
+            );
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+            animation: progressPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes progressPulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; box-shadow: 0 0 30px rgba(0, 255, 255, 1); }
+        }
+
+        .question-card {
+            background: linear-gradient(135deg, rgba(20, 15, 10, 0.95), rgba(30, 25, 15, 0.95));
+            border: 3px solid #00ffff;
+            border-radius: 16px;
+            padding: 50px;
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, 0.9),
+                inset 0 1px 0 rgba(0, 255, 255, 0.3),
+                0 0 80px rgba(0, 255, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 48%, rgba(0, 255, 255, 0.05) 50%, transparent 52%);
+            background-size: 20px 20px;
+            pointer-events: none;
+            animation: scanlines 8s linear infinite;
+        }
+
+        @keyframes scanlines {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100px; }
+        }
+
+        .question-text {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            text-shadow:
+                0 0 15px rgba(0, 255, 255, 0.8),
+                0 0 30px rgba(0, 255, 255, 0.5),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 1;
+            animation: questionFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes questionFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .answer-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .answer-option {
+            background: linear-gradient(135deg, rgba(30, 20, 10, 0.9), rgba(40, 25, 15, 0.9));
+            border: 3px solid #cc8800;
+            border-radius: 12px;
+            padding: 25px 30px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: #ffb000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            line-height: 1.5;
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(204, 136, 0, 0.3),
+                0 0 40px rgba(255, 176, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .answer-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 176, 0, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .answer-option:hover {
+            transform: translateY(-5px);
+            border-color: #00ff00;
+            color: #00ff00;
+            box-shadow:
+                0 12px 40px rgba(0, 255, 0, 0.6),
+                inset 0 1px 0 rgba(0, 255, 0, 0.5),
+                0 0 80px rgba(0, 255, 0, 0.5);
+        }
+
+        .answer-option:hover::before {
+            left: 100%;
+        }
+
+        .answer-option:active {
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 20px rgba(0, 255, 255, 0.8),
+                inset 0 1px 0 rgba(0, 255, 255, 0.7),
+                0 0 60px rgba(0, 255, 255, 0.7);
+            border-color: #00ffff;
+            color: #00ffff;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            color: #e8d4a0;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #cc8800;
+            border-radius: 8px;
+            color: #ffb000;
+            font-size: 18px;
+            font-family: 'Cinzel', serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .form-group input::placeholder {
+            color: #66ff66;
+            opacity: 0.5;
+        }
+
+        /* EPIC BUTTONS */
+        .btn {
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0099cc, #00ccff, #66e0ff);
+            color: #0a0a0a;
+            box-shadow:
+                0 6px 20px rgba(0, 204, 255, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            font-weight: 900;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 8px 30px rgba(0, 204, 255, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #cc8800, #ffb000, #ffd966);
+            color: #1a1410;
+            box-shadow:
+                0 6px 20px rgba(255, 176, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            font-weight: 900;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 8px 30px rgba(255, 176, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-full {
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-code-input {
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+
+        #lobby-error {
+            background: rgba(139, 0, 0, 0.3);
+            border: 2px solid #8b0000;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #ff6b6b;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* HEADER BAR */
+        .game-header-bar {
+            display: none; /* Hide until in-game */
+        }
+
+        /* SIDEBAR REMOVED - BAD UX */
+        .game-sidebar {
+            display: none !important;
+        }
+
+        /* Sidebar styles removed - using fullscreen layout */
+
+        /* Mystical Rune Particles */
+        .rune-particle {
+            position: fixed;
+            font-size: 24px;
+            color: #00ff00;
+            opacity: 0.4;
+            pointer-events: none;
+            text-shadow: 0 0 10px #00ff00;
+            animation: floatRune linear infinite;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        @keyframes floatRune {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.4;
+            }
+            90% {
+                opacity: 0.4;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .rune-particle.cyan {
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+
+        .rune-particle.orange {
+            color: #ffaa00;
+            text-shadow: 0 0 15px #ffaa00;
+        }
+    </style>
+</head>
+<body class="game-page">
+    <div id="runes-container"></div>
+    <div class="game-container">
+        <!-- Game Header -->
+        <header class="game-header-bar">
+            <div class="header-left">
+                <div class="game-code-display">
+                    <span class="label">Code:</span>
+                    <span id="game-code" class="code-value">------</span>
+                </div>
+                <div class="player-count">
+                    <span class="label">Players:</span>
+                    <span id="player-count">0/4</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="trust-meter-container">
+                    <label for="trust-meter" class="trust-label">Party Trust</label>
+                    <div class="trust-meter">
+                        <div id="trust-bar" class="trust-bar" style="width: 100%"></div>
+                        <span id="trust-value" class="trust-value">100/100</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </header>
+
+        <div class="game-layout">
+            <!-- Main Game Area -->
+            <main class="game-main">
+                <!-- Lobby Screen (Create/Join Game) -->
+                <div id="lobby-screen" class="game-screen">
+                    <div class="screen-header">
+                        <h2 class="screen-title">⚔ The Arcane Codex ⚔</h2>
+                    </div>
+                    <div class="lobby-content">
+                        <!-- Create Game Section -->
+                        <div class="lobby-section create-section">
+                            <div class="section-icon">⚔</div>
+                            <h3 class="section-title">Create New Game</h3>
+                            <p class="section-desc">Begin your journey as the quest leader</p>
+                            <form id="create-game-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="creator-name">Hero Name</label>
+                                    <input type="text" id="creator-name" placeholder="Enter your hero's name..." maxlength="20" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full">
+                                    <span class="btn-icon">✨</span>
+                                    <span>Embark on Quest</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Join Game Section -->
+                        <div class="lobby-section join-section">
+                            <div class="section-icon">⚡</div>
+                            <h3 class="section-title">Join Existing Quest</h3>
+                            <p class="section-desc">Join a fellowship already in progress</p>
+                            <form id="join-game-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="join-name">Hero Name</label>
+                                    <input type="text" id="join-name" placeholder="Enter your hero's name..." maxlength="20" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="join-code">Quest Code</label>
+                                    <input type="text" id="join-code" class="game-code-input" placeholder="XXXXXX" maxlength="6" required>
+                                </div>
+                                <button type="submit" class="btn btn-secondary btn-full">
+                                    <span class="btn-icon">🚪</span>
+                                    <span>Join Fellowship</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Error Display -->
+                        <div id="lobby-error" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Divine Interrogation Screen -->
+                <div id="interrogation-screen" class="game-screen" style="display: none;">
+                    <div class="screen-header">
+                        <h2 class="screen-title">Divine Interrogation</h2>
+                        <p class="screen-subtitle">The gods seek to know your soul...</p>
+                    </div>
+                    <div class="interrogation-content">
+                        <div class="question-progress">
+                            <span>Question <span id="question-number">1</span> of 10</span>
+                            <div class="progress-bar">
+                                <div id="progress-fill" class="progress-fill" style="width: 10%"></div>
+                            </div>
+                        </div>
+                        <div class="question-card">
+                            <h3 id="question-text" class="question-text">Loading question...</h3>
+                            <div id="answer-options" class="answer-options">
+                                <!-- Answer buttons will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scenario Display Screen -->
+                <div id="scenario-screen" class="game-screen" style="display: none;">
+                    <div class="screen-header">
+                        <h2 class="screen-title">Current Scenario</h2>
+                        <p id="turn-indicator" class="turn-indicator">Turn 1</p>
+                    </div>
+                    <div class="scenario-content">
+                        <div class="public-scene">
+                            <h3>The Scene</h3>
+                            <div id="public-description" class="scene-text">
+                                <!-- Public scenario text -->
+                            </div>
+                        </div>
+                        <div id="whisper-container" class="whisper-container">
+                            <div class="whisper-header">
+                                <span class="whisper-icon">🔒</span>
+                                <span>YOUR SECRET (<span id="player-class">Unknown</span>)</span>
+                            </div>
+                            <div id="whisper-content" class="whisper-content">
+                                <!-- Secret whisper text -->
+                            </div>
+                            <p class="whisper-hint">This information is for your eyes only. Share wisely.</p>
+                        </div>
+
+                        <!-- REALTIME 2D MAP -->
+                        <div class="map-container">
+                            <div class="map-header">
+                                <span class="map-icon">🗺️</span>
+                                <h3 class="map-title">Party Positions</h3>
+                                <button id="map-toggle" class="map-toggle-btn" aria-label="Toggle map">
+                                    <span>▼</span>
+                                </button>
+                            </div>
+                            <div id="game-map" class="game-map">
+                                <div class="map-grid">
+                                    <!-- Grid background -->
+                                    <div class="grid-lines"></div>
+
+                                    <!-- Location markers -->
+                                    <div class="location-marker location-start" data-location="start">
+                                        <div class="marker-icon">🏰</div>
+                                        <div class="marker-label">Start</div>
+                                    </div>
+                                    <div class="location-marker location-objective" data-location="objective">
+                                        <div class="marker-icon">⭐</div>
+                                        <div class="marker-label">Objective</div>
+                                    </div>
+
+                                    <!-- Player markers (will be populated via JavaScript) -->
+                                    <div id="player-markers" class="player-markers">
+                                        <!-- Dynamic player markers -->
+                                    </div>
+
+                                    <!-- Path indicators -->
+                                    <svg class="path-overlay" width="100%" height="100%">
+                                        <defs>
+                                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+                                                <polygon points="0 0, 10 5, 0 10" fill="#00ff00" opacity="0.6"/>
+                                            </marker>
+                                        </defs>
+                                        <g id="path-lines">
+                                            <!-- Dynamic path lines will be drawn here -->
+                                        </g>
+                                    </svg>
+                                </div>
+                                <div class="map-legend">
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: #00ff00;"></span>
+                                        <span>You</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: #00ffff;"></span>
+                                        <span>Allies</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: #ffb000;"></span>
+                                        <span>Objective</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="choice-section">
+                            <label for="choice-input" class="choice-label">What do you do?</label>
+                            <textarea
+                                id="choice-input"
+                                class="choice-input"
+                                placeholder="Describe your action... (Be creative!)"
+                                maxlength="500"
+                                rows="4"
+                                aria-label="Your choice input"
+                            ></textarea>
+                            <div class="choice-actions">
+                                <span id="char-count" class="char-count">0/500</span>
+                                <button id="submit-choice" class="btn btn-primary">
+                                    Submit Choice
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Waiting Screen -->
+                <div id="waiting-screen" class="game-screen" style="display: none;">
+                    <div class="waiting-content">
+                        <div class="waiting-animation">
+                            <div class="arcane-circle">
+                                <div class="circle-ring"></div>
+                                <div class="circle-ring"></div>
+                                <div class="circle-ring"></div>
+                            </div>
+                        </div>
+                        <h2>Waiting for Other Players...</h2>
+                        <div id="waiting-status" class="waiting-status">
+                            <!-- Player status list -->
+                        </div>
+                        <p class="waiting-message">The threads of fate are being woven...</p>
+                    </div>
+                </div>
+
+                <!-- Results Screen -->
+                <div id="results-screen" class="game-screen" style="display: none;">
+                    <div class="screen-header">
+                        <h2 class="screen-title">Turn Resolution</h2>
+                    </div>
+                    <div class="results-content">
+                        <div id="outcome-text" class="outcome-text">
+                            <!-- Turn outcome description -->
+                        </div>
+                        <div id="player-choices" class="player-choices">
+                            <h3>Player Actions</h3>
+                            <div id="choices-list" class="choices-list">
+                                <!-- Individual player choices -->
+                            </div>
+                        </div>
+                        <div class="results-effects">
+                            <h3>Consequences</h3>
+                            <div id="effects-list" class="effects-list">
+                                <!-- Trust changes, HP changes, etc. -->
+                            </div>
+                        </div>
+                        <button id="continue-button" class="btn btn-primary btn-large">
+                            Continue Adventure
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Character Creation Complete Screen -->
+                <div id="creation-complete-screen" class="game-screen" style="display: none;">
+                    <div class="creation-complete">
+                        <h2>Your Destiny is Sealed</h2>
+                        <div class="character-reveal">
+                            <div class="class-badge">
+                                <span id="class-icon" class="class-icon">⚔️</span>
+                                <h3 id="assigned-class">Loading...</h3>
+                            </div>
+                            <div id="class-description" class="class-description">
+                                <!-- Class description -->
+                            </div>
+                        </div>
+                        <p class="waiting-message">Waiting for other players to complete interrogation...</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Sidebar (Desktop) / Bottom Panel (Mobile) -->
+            <aside id="game-sidebar" class="game-sidebar">
+                <div class="sidebar-section character-info">
+                    <h3>Your Character</h3>
+                    <div class="character-card">
+                        <div class="character-name">
+                            <span id="player-name">Unknown</span>
+                            <span id="player-class-badge" class="class-badge">-</span>
+                        </div>
+                        <div class="character-stats">
+                            <div class="stat">
+                                <span class="stat-label">HP</span>
+                                <div class="stat-bar hp-bar">
+                                    <div id="hp-fill" class="stat-fill" style="width: 100%"></div>
+                                    <span id="hp-text" class="stat-text">20/20</span>
+                                </div>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Mana</span>
+                                <div class="stat-bar mana-bar">
+                                    <div id="mana-fill" class="stat-fill" style="width: 100%"></div>
+                                    <span id="mana-text" class="stat-text">10/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section players-list">
+                    <h3>Party Members</h3>
+                    <div id="players-container" class="players-container">
+                        <!-- Player list items -->
+                    </div>
+                </div>
+
+                <div class="sidebar-section npcs-list">
+                    <h3>NPCs</h3>
+                    <div id="npcs-container" class="npcs-container">
+                        <!-- NPC list items -->
+                    </div>
+                </div>
+
+                <button id="leave-game" class="btn btn-danger btn-small">
+                    Leave Game
+                </button>
+            </aside>
+        </div>
+
+        <!-- Overlay Elements -->
+        <div id="error-toast" class="error-toast" role="alert" aria-live="assertive"></div>
+        <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+            <div class="spinner"></div>
+            <p id="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/game.js?v=20251110003"></script>
+    <script>
+        // Initialize game interface
+        document.addEventListener('DOMContentLoaded', () => {
+            const game = new ArcaneCodexGame();
+            game.initGameInterface();
+        });
+
+        // Mystical Rune Particle System
+        const runeSymbols = ['⚡', '✦', '◈', '⟡', '⬢', '◉', '⊛', '⊹', '✧', '※', '∴', '⋆', '◇', '⬡', '◬'];
+        const runeColors = ['', 'cyan', 'orange'];
+
+        function createRune() {
+            const rune = document.createElement('div');
+            rune.className = 'rune-particle';
+
+            // Random rune symbol
+            rune.textContent = runeSymbols[Math.floor(Math.random() * runeSymbols.length)];
+
+            // Random color (green, cyan, or orange)
+            const colorClass = runeColors[Math.floor(Math.random() * runeColors.length)];
+            if (colorClass) rune.classList.add(colorClass);
+
+            // Random horizontal position
+            rune.style.left = Math.random() * 100 + '%';
+
+            // Random size
+            const size = 16 + Math.random() * 16;
+            rune.style.fontSize = size + 'px';
+
+            // Random animation duration (slower = more mystical)
+            const duration = 15 + Math.random() * 20;
+            rune.style.animationDuration = duration + 's';
+
+            // Random delay
+            rune.style.animationDelay = Math.random() * 5 + 's';
+
+            document.getElementById('runes-container').appendChild(rune);
+
+            // Remove after animation completes
+            setTimeout(() => {
+                rune.remove();
+            }, (duration + 5) * 1000);
+        }
+
+        // Create initial runes
+        for (let i = 0; i < 12; i++) {
+            setTimeout(createRune, i * 1000);
+        }
+
+        // Continuously spawn new runes
+        setInterval(createRune, 3500);
+    </script>
+</body>
+</html>

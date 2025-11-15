@@ -1,0 +1,676 @@
+================================================================================
+                INVENTORY OVERLAY - COPY & PASTE SECTIONS
+          These sections should be added to your main HTML file
+================================================================================
+
+STEP 1: Add this CSS to your <style> section
+================================================================================
+
+        /* ========================================
+           INVENTORY OVERLAY STYLES
+           ======================================== */
+        #inventory-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+        }
+
+        #inventory-overlay.active {
+            display: flex;
+        }
+
+        .game-overlay {
+            display: flex;
+            position: fixed;
+            inset: 0;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+        }
+
+        .overlay-panel {
+            position: relative;
+            z-index: 2001;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.98) 0%, rgba(26, 22, 18, 0.98) 100%);
+            border: 4px solid;
+            border-image: linear-gradient(135deg, #5C4A3A, #8B7355, #D4AF37, #8B7355, #5C4A3A) 1;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), inset 0 0 30px rgba(0, 0, 0, 0.7);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .inventory-panel {
+            width: 1200px;
+            max-height: 85vh;
+        }
+
+        .overlay-header {
+            background: linear-gradient(90deg, #8B7355, #D4AF37, #8B7355);
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid #5C4A3A;
+            flex-shrink: 0;
+        }
+
+        .overlay-title {
+            font-family: 'Cinzel', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2A1810;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .capacity-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            color: #2A1810;
+            font-weight: 600;
+        }
+
+        .capacity-label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .capacity-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #2A1810;
+            border-radius: 50%;
+            font-size: 28px;
+            color: #2A1810;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
+            transform: rotate(90deg);
+        }
+
+        /* Inventory Filters */
+        .inventory-filters {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 2px solid #8B7355;
+            flex-shrink: 0;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.8) 0%, rgba(26, 22, 18, 0.8) 100%);
+            border: 2px solid #8B7355;
+            border-radius: 6px;
+            color: #D4AF37;
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-btn:hover {
+            border-color: #D4AF37;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(139, 115, 85, 0.3) 100%);
+            color: #FFD700;
+        }
+
+        .filter-btn.active {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(139, 115, 85, 0.4) 100%);
+            color: #FFD700;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Inventory Content */
+        .inventory-content {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Equipment Section */
+        .equipment-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 250px;
+        }
+
+        .equipment-header {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #8B7355;
+        }
+
+        .equipment-slots {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .equipment-slot {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .slot-label {
+            font-family: 'Cinzel', serif;
+            font-size: 12px;
+            color: #8B7355;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .slot-item {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.9) 0%, rgba(26, 22, 18, 0.9) 100%);
+            border: 3px solid #8B7355;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .slot-item.equipped {
+            border-color: #D4AF37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), inset 0 0 10px rgba(212, 175, 55, 0.1);
+        }
+
+        .slot-item:hover {
+            border-color: #D4AF37;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(139, 115, 85, 0.2) 100%);
+            transform: scale(1.05);
+        }
+
+        /* Grid Section */
+        .grid-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            min-width: 600px;
+        }
+
+        .grid-header {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #8B7355;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            flex: 1;
+        }
+
+        .inventory-slot {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.85) 0%, rgba(26, 22, 18, 0.85) 100%);
+            border: 2px solid #8B7355;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 60px;
+        }
+
+        .inventory-slot:hover {
+            border-color: #D4AF37;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(139, 115, 85, 0.2) 100%);
+            transform: scale(1.08);
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .grid-item {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .grid-item:active {
+            cursor: grabbing;
+        }
+
+        .item-quantity {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            background: rgba(212, 175, 55, 0.9);
+            color: #2A1810;
+            font-family: 'Cinzel', serif;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 4px;
+            border-radius: 3px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        /* Item Details Panel */
+        .item-details {
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 2px solid #8B7355;
+            padding: 15px 20px;
+            min-height: 100px;
+            flex-shrink: 0;
+        }
+
+        .details-title {
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .details-content {
+            font-size: 14px;
+            color: #D4AF37;
+            line-height: 1.6;
+        }
+
+        .details-placeholder {
+            color: #8B7355;
+            font-style: italic;
+        }
+
+        /* Tooltip/Hover Details */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #D4AF37;
+            padding: 8px 12px;
+            border: 2px solid #8B7355;
+            border-radius: 6px;
+            font-family: 'Yrsa', serif;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 3000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Inventory Scrollbar */
+        .inventory-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .inventory-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .inventory-content::-webkit-scrollbar-thumb {
+            background: #8B7355;
+            border-radius: 4px;
+        }
+
+        .inventory-content::-webkit-scrollbar-thumb:hover {
+            background: #D4AF37;
+        }
+
+================================================================================
+STEP 2: Add this HTML just BEFORE the closing </body> tag
+================================================================================
+
+        <!-- Inventory Overlay -->
+        <div id="inventory-overlay" class="game-overlay">
+            <div class="overlay-backdrop"></div>
+            <div class="overlay-panel inventory-panel">
+                <div class="overlay-header">
+                    <div class="overlay-title">Inventory</div>
+                    <div class="capacity-info">
+                        <span class="capacity-label">Weight:</span>
+                        <span class="capacity-value">45 / 100</span>
+                    </div>
+                    <button class="close-btn">x</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="inventory-filters">
+                    <button class="filter-btn active" data-filter="all">All Items</button>
+                    <button class="filter-btn" data-filter="weapons">Weapons</button>
+                    <button class="filter-btn" data-filter="armor">Armor</button>
+                    <button class="filter-btn" data-filter="consumables">Consumables</button>
+                </div>
+
+                <div class="inventory-content">
+                    <!-- Equipment Slots Section -->
+                    <div class="equipment-section">
+                        <div class="equipment-header">EQUIPPED ITEMS</div>
+                        <div class="equipment-slots">
+                            <!-- Main Hand Slot -->
+                            <div class="equipment-slot main-hand" data-slot="main-hand">
+                                <div class="slot-label">Main Hand</div>
+                                <div class="slot-item equipped" data-item-id="weapon-001" data-tooltip="Blade of the Fallen King | Damage: 15-22 | Rare">
+                                    x
+                                </div>
+                            </div>
+
+                            <!-- Off Hand Slot -->
+                            <div class="equipment-slot off-hand" data-slot="off-hand">
+                                <div class="slot-label">Off-Hand</div>
+                                <div class="slot-item equipped" data-item-id="shield-001" data-tooltip="Iron Kite Shield | Defense: 8 | Common">
+                                    x
+                                </div>
+                            </div>
+
+                            <!-- Armor Slot -->
+                            <div class="equipment-slot armor" data-slot="armor">
+                                <div class="slot-label">Armor</div>
+                                <div class="slot-item equipped" data-item-id="armor-001" data-tooltip="Plate Armor | Defense: 12 | Uncommon">
+                                    x
+                                </div>
+                            </div>
+
+                            <!-- Helmet Slot -->
+                            <div class="equipment-slot helmet" data-slot="helmet">
+                                <div class="slot-label">Helmet</div>
+                                <div class="slot-item equipped" data-item-id="helmet-001" data-tooltip="Ornate Helm | Defense: 5 | Uncommon">
+                                    x
+                                </div>
+                            </div>
+
+                            <!-- Gloves Slot -->
+                            <div class="equipment-slot gloves" data-slot="gloves">
+                                <div class="slot-label">Gloves</div>
+                                <div class="slot-item" data-slot-empty="true">
+                                    -
+                                </div>
+                            </div>
+
+                            <!-- Boots Slot -->
+                            <div class="equipment-slot boots" data-slot="boots">
+                                <div class="slot-label">Boots</div>
+                                <div class="slot-item" data-slot-empty="true">
+                                    -
+                                </div>
+                            </div>
+
+                            <!-- Accessory Slot 1 -->
+                            <div class="equipment-slot accessory-1" data-slot="accessory-1">
+                                <div class="slot-label">Amulet</div>
+                                <div class="slot-item equipped" data-item-id="amulet-001" data-tooltip="Amulet of Warding | Magic Defense: 4 | Uncommon">
+                                    x
+                                </div>
+                            </div>
+
+                            <!-- Accessory Slot 2 -->
+                            <div class="equipment-slot accessory-2" data-slot="accessory-2">
+                                <div class="slot-label">Ring</div>
+                                <div class="slot-item" data-slot-empty="true">
+                                    -
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Grid Section -->
+                    <div class="grid-section">
+                        <div class="grid-header">INVENTORY GRID (8x6)</div>
+                        <div class="inventory-grid">
+                            <!-- Row 1 -->
+                            <div class="inventory-slot" data-slot-id="slot-0">
+                                <div class="grid-item" data-item-id="potion-001" data-tooltip="Health Potion | Restores 100 HP | Common">
+                                    x
+                                    <span class="item-quantity">3</span>
+                                </div>
+                            </div>
+                            <div class="inventory-slot" data-slot-id="slot-1">
+                                <div class="grid-item" data-item-id="potion-002" data-tooltip="Mana Potion | Restores 80 Mana | Common">
+                                    x
+                                    <span class="item-quantity">2</span>
+                                </div>
+                            </div>
+                            <div class="inventory-slot" data-slot-id="slot-2">
+                                <div class="grid-item" data-item-id="key-001" data-tooltip="Copper Key | Unlocks warehouse door | Quest Item">
+                                    x
+                                    <span class="item-quantity">1</span>
+                                </div>
+                            </div>
+                            <div class="inventory-slot" data-slot-id="slot-3">
+                                <div class="grid-item" data-item-id="scroll-001" data-tooltip="Scroll of Fireball | Spell Scroll | Uncommon">
+                                    x
+                                    <span class="item-quantity">1</span>
+                                </div>
+                            </div>
+                            <div class="inventory-slot" data-slot-id="slot-4">
+                                <div class="grid-item" data-item-id="vial-001" data-tooltip="Alchemical Vial | Restores 50 HP | Rare">
+                                    x
+                                    <span class="item-quantity">5</span>
+                                </div>
+                            </div>
+                            <div class="inventory-slot" data-slot-id="slot-5"></div>
+                            <div class="inventory-slot" data-slot-id="slot-6"></div>
+                            <div class="inventory-slot" data-slot-id="slot-7"></div>
+
+                            <!-- Row 2 -->
+                            <div class="inventory-slot" data-slot-id="slot-8"></div>
+                            <div class="inventory-slot" data-slot-id="slot-9"></div>
+                            <div class="inventory-slot" data-slot-id="slot-10"></div>
+                            <div class="inventory-slot" data-slot-id="slot-11"></div>
+                            <div class="inventory-slot" data-slot-id="slot-12"></div>
+                            <div class="inventory-slot" data-slot-id="slot-13"></div>
+                            <div class="inventory-slot" data-slot-id="slot-14"></div>
+                            <div class="inventory-slot" data-slot-id="slot-15"></div>
+
+                            <!-- Row 3 -->
+                            <div class="inventory-slot" data-slot-id="slot-16"></div>
+                            <div class="inventory-slot" data-slot-id="slot-17"></div>
+                            <div class="inventory-slot" data-slot-id="slot-18"></div>
+                            <div class="inventory-slot" data-slot-id="slot-19"></div>
+                            <div class="inventory-slot" data-slot-id="slot-20"></div>
+                            <div class="inventory-slot" data-slot-id="slot-21"></div>
+                            <div class="inventory-slot" data-slot-id="slot-22"></div>
+                            <div class="inventory-slot" data-slot-id="slot-23"></div>
+
+                            <!-- Row 4 -->
+                            <div class="inventory-slot" data-slot-id="slot-24"></div>
+                            <div class="inventory-slot" data-slot-id="slot-25"></div>
+                            <div class="inventory-slot" data-slot-id="slot-26"></div>
+                            <div class="inventory-slot" data-slot-id="slot-27"></div>
+                            <div class="inventory-slot" data-slot-id="slot-28"></div>
+                            <div class="inventory-slot" data-slot-id="slot-29"></div>
+                            <div class="inventory-slot" data-slot-id="slot-30"></div>
+                            <div class="inventory-slot" data-slot-id="slot-31"></div>
+
+                            <!-- Row 5 -->
+                            <div class="inventory-slot" data-slot-id="slot-32"></div>
+                            <div class="inventory-slot" data-slot-id="slot-33"></div>
+                            <div class="inventory-slot" data-slot-id="slot-34"></div>
+                            <div class="inventory-slot" data-slot-id="slot-35"></div>
+                            <div class="inventory-slot" data-slot-id="slot-36"></div>
+                            <div class="inventory-slot" data-slot-id="slot-37"></div>
+                            <div class="inventory-slot" data-slot-id="slot-38"></div>
+                            <div class="inventory-slot" data-slot-id="slot-39"></div>
+
+                            <!-- Row 6 -->
+                            <div class="inventory-slot" data-slot-id="slot-40"></div>
+                            <div class="inventory-slot" data-slot-id="slot-41"></div>
+                            <div class="inventory-slot" data-slot-id="slot-42"></div>
+                            <div class="inventory-slot" data-slot-id="slot-43"></div>
+                            <div class="inventory-slot" data-slot-id="slot-44"></div>
+                            <div class="inventory-slot" data-slot-id="slot-45"></div>
+                            <div class="inventory-slot" data-slot-id="slot-46"></div>
+                            <div class="inventory-slot" data-slot-id="slot-47"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item Details Panel -->
+                <div class="item-details">
+                    <div class="details-title">Item Details</div>
+                    <div class="details-content">
+                        <p class="details-placeholder">Hover over an item to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+================================================================================
+STEP 3: Add this JavaScript before the closing </script> tag
+================================================================================
+
+        // === Inventory Overlay Management ===
+        const inventoryOverlay = document.getElementById('inventory-overlay');
+        const closeBtn = inventoryOverlay.querySelector('.close-btn');
+        const filterBtns = inventoryOverlay.querySelectorAll('.filter-btn');
+        const detailsContent = inventoryOverlay.querySelector('.details-content');
+        const backdropOverlay = inventoryOverlay.querySelector('.overlay-backdrop');
+
+        // Close button handler
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                inventoryOverlay.classList.remove('active');
+            });
+        }
+
+        // Close on backdrop click
+        if (backdropOverlay) {
+            backdropOverlay.addEventListener('click', () => {
+                inventoryOverlay.classList.remove('active');
+            });
+        }
+
+        // Filter button handlers
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.getAttribute('data-filter');
+                console.log('Filter changed to:', filter);
+                // TODO: Add filter logic here
+            });
+        });
+
+        // Item hover handlers for detail display
+        const allItems = inventoryOverlay.querySelectorAll('[data-item-id]');
+        allItems.forEach(item => {
+            item.addEventListener('mouseenter', (e) => {
+                const tooltip = item.getAttribute('data-tooltip');
+                if (tooltip) {
+                    detailsContent.innerHTML = `<p>${tooltip}</p>`;
+                }
+            });
+
+            item.addEventListener('mouseleave', () => {
+                detailsContent.innerHTML = '<p class="details-placeholder">Hover over an item to view details</p>';
+            });
+        });
+
+        // Keyboard shortcut - I key to toggle inventory
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'i') {
+                inventoryOverlay.classList.toggle('active');
+            }
+        });
+
+        // Global toggle function
+        window.toggleInventory = () => {
+            inventoryOverlay.classList.toggle('active');
+        };
+
+        console.log('Inventory overlay loaded - Press I to toggle');
+
+================================================================================
+INTEGRATION INSTRUCTIONS
+================================================================================
+
+1. Find the <style> closing tag in your HTML file
+2. Paste all the CSS from STEP 1 before the </style> tag
+
+3. Find the </body> closing tag in your HTML file
+4. Paste all the HTML from STEP 2 before the </body> tag
+
+5. Find the <script> closing tag in your HTML file
+6. Paste all the JavaScript from STEP 3 before the </script> tag
+
+7. Make sure the fonts are imported at the top of your <style>:
+   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Yrsa:wght@300;400;500;600;700&display=swap');
+
+DONE! The inventory overlay should now be functional.
+
+================================================================================
+QUICK TEST
+================================================================================
+
+1. Open your HTML file in a browser
+2. Press the 'I' key to toggle the inventory open/close
+3. Click on items to see tooltips appear in the details panel
+4. Click filter buttons to test the filter system
+5. Click the X button to close the inventory
+
+================================================================================

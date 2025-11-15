@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ASCII Rain Effect */
+        .ascii-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .rain-column {
+            position: absolute;
+            top: -100%;
+            font-size: 20px;
+            animation: rain 10s linear infinite;
+        }
+
+        @keyframes rain {
+            to {
+                transform: translateY(200vh);
+            }
+        }
+
+        /* Main Container */
+        .game-container {
+            width: 90%;
+            max-width: 900px;
+            z-index: 10;
+            text-align: center;
+        }
+
+        /* Title */
+        .game-title {
+            font-size: 60px;
+            color: #0f0;
+            text-shadow:
+                0 0 10px #0f0,
+                0 0 20px #0f0,
+                0 0 30px #0f0;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #0f0; }
+            to { text-shadow: 0 0 20px #0f0, 0 0 30px #0f0, 0 0 40px #0f0; }
+        }
+
+        .subtitle {
+            color: #090;
+            margin-bottom: 40px;
+            font-size: 28px;
+        }
+
+        /* ASCII Box */
+        .ascii-box {
+            border: 3px solid #0f0;
+            padding: 40px;
+            background: rgba(0, 255, 0, 0.02);
+            margin-bottom: 30px;
+            box-shadow:
+                0 0 20px rgba(0, 255, 0, 0.5),
+                inset 0 0 20px rgba(0, 255, 0, 0.1);
+        }
+
+        /* Form Elements */
+        .game-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 28px;
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-family: inherit;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .game-input:focus {
+            outline: none;
+            box-shadow: 0 0 15px #0f0;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .game-button {
+            width: 100%;
+            padding: 20px;
+            font-size: 32px;
+            background: #000;
+            border: 3px solid #0f0;
+            color: #0f0;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .game-button:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow:
+                0 0 30px #0f0,
+                inset 0 0 30px rgba(0, 0, 0, 0.3);
+            transform: scale(1.05);
+        }
+
+        .game-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: screenIn 0.5s;
+        }
+
+        @keyframes screenIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Game Code Display */
+        .game-code-display {
+            font-size: 72px;
+            color: #0f0;
+            letter-spacing: 10px;
+            margin: 30px 0;
+            padding: 20px;
+            border: 3px dashed #0f0;
+            background: rgba(0, 255, 0, 0.1);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Player List */
+        .player-list {
+            text-align: left;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid #0f0;
+            margin: 20px 0;
+        }
+
+        .player-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #0f0;
+            padding-left: 15px;
+        }
+
+        /* Status Messages */
+        .status-message {
+            color: #ff0;
+            font-size: 20px;
+            margin-top: 20px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ASCII Dragon */
+        .ascii-art {
+            color: #0f0;
+            font-size: 16px;
+            line-height: 1;
+            margin: 20px 0;
+            white-space: pre;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- ASCII Rain Background -->
+    <div class="ascii-rain" id="rain"></div>
+
+    <div class="game-container">
+        <h1 class="game-title">THE ARCANE CODEX</h1>
+        <p class="subtitle">Where Secrets Shatter Bonds</p>
+
+        <!-- SCREEN 1: Enter Name -->
+        <div id="name-screen" class="screen active">
+            <div class="ascii-box">
+                <h2>WHO DARES ENTER VALDRIA?</h2>
+                <br>
+                <input type="text"
+                       id="player-name"
+                       class="game-input"
+                       placeholder="ENTER YOUR NAME"
+                       maxlength="20"
+                       autocomplete="off">
+                <button class="game-button" onclick="setPlayerName()">
+                    ENTER THE REALM
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Create or Join -->
+        <div id="menu-screen" class="screen">
+            <div class="ascii-box">
+                <h2>WELCOME, <span id="welcome-name"></span></h2>
+                <div class="ascii-art">
+    ╔═══════════════════╗
+    ║  Choose Your Path ║
+    ╚═══════════════════╝
+                </div>
+                <button class="game-button" onclick="showCreateGame()">
+                    CREATE NEW GAME
+                </button>
+                <button class="game-button" onclick="showJoinGame()">
+                    JOIN EXISTING GAME
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: Create Game -->
+        <div id="create-screen" class="screen">
+            <div class="ascii-box">
+                <h2>YOUR GAME CODE</h2>
+                <div class="game-code-display" id="game-code">------</div>
+                <p>Share this code with up to 3 friends</p>
+                <div class="player-list" id="player-list">
+                    <h3>PLAYERS IN LOBBY:</h3>
+                    <div id="players"></div>
+                </div>
+                <button class="game-button" onclick="startGame()">
+                    START ADVENTURE
+                </button>
+                <div class="status-message">Waiting for players...</div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Join Game -->
+        <div id="join-screen" class="screen">
+            <div class="ascii-box">
+                <h2>ENTER GAME CODE</h2>
+                <input type="text"
+                       id="join-code"
+                       class="game-input"
+                       placeholder="XXXXXX"
+                       maxlength="6"
+                       style="letter-spacing: 10px; font-size: 48px;"
+                       autocomplete="off">
+                <button class="game-button" onclick="joinGame()">
+                    JOIN GAME
+                </button>
+                <button class="game-button" onclick="backToMenu()">
+                    BACK
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: Game Lobby -->
+        <div id="lobby-screen" class="screen">
+            <div class="ascii-box">
+                <h2>GAME LOBBY</h2>
+                <div class="game-code-display" id="lobby-code">------</div>
+                <div class="player-list" id="lobby-players">
+                    <h3>ADVENTURERS:</h3>
+                    <div id="lobby-list"></div>
+                </div>
+                <div class="status-message">Waiting for host to start...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let playerName = '';
+        let gameCode = '';
+        let isHost = false;
+
+        // Create ASCII rain effect
+        function createRain() {
+            const rain = document.getElementById('rain');
+            const chars = '01アイウエオカキクケコサシスセソタチツテト';
+
+            for(let i = 0; i < 30; i++) {
+                const column = document.createElement('div');
+                column.className = 'rain-column';
+                column.style.left = Math.random() * 100 + '%';
+                column.style.animationDelay = Math.random() * 10 + 's';
+                column.style.animationDuration = (10 + Math.random() * 10) + 's';
+
+                let text = '';
+                for(let j = 0; j < 50; j++) {
+                    text += chars[Math.floor(Math.random() * chars.length)] + '<br>';
+                }
+                column.innerHTML = text;
+                rain.appendChild(column);
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        async function setPlayerName() {
+            const input = document.getElementById('player-name');
+            playerName = input.value.trim().toUpperCase();
+
+            if(playerName.length < 2) {
+                input.style.borderColor = '#f00';
+                input.placeholder = 'NAME TOO SHORT!';
+                return;
+            }
+
+            // FIXED: Set username in server session before creating/joining games
+            try {
+                const response = await fetch('/api/set_username', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: playerName})
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to set username');
+                }
+
+                document.getElementById('welcome-name').textContent = playerName;
+
+                // Check if user clicked "JOIN GAME" from main menu
+                if(localStorage.getItem('auto_show_join') === 'true') {
+                    localStorage.removeItem('auto_show_join');
+                    showScreen('join-screen');
+                } else {
+                    showScreen('menu-screen');
+                }
+            } catch (error) {
+                console.error('Error setting username:', error);
+                input.style.borderColor = '#f00';
+                input.placeholder = 'CONNECTION ERROR!';
+            }
+        }
+
+        async function showCreateGame() {
+            isHost = true;
+            gameCode = generateGameCode();
+            document.getElementById('game-code').textContent = gameCode;
+
+            // Add host to player list
+            const playerList = document.getElementById('players');
+            playerList.innerHTML = `<div class="player-item">👑 ${playerName} (HOST)</div>`;
+
+            showScreen('create-screen');
+
+            // FIXED: Properly handle create_game errors instead of silent failure
+            try {
+                const response = await fetch('/api/create_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({player_name: playerName})
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create game');
+                }
+
+                console.log('Game created successfully:', gameCode);
+            } catch (error) {
+                console.error('Failed to create game:', error);
+                alert(`ERROR: ${error.message}\n\nPlease refresh the page and try again.`);
+                showScreen('menu-screen');
+            }
+        }
+
+        function showJoinGame() {
+            showScreen('join-screen');
+        }
+
+        function generateGameCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for(let i = 0; i < 6; i++) {
+                code += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return code;
+        }
+
+        function joinGame() {
+            const code = document.getElementById('join-code').value.toUpperCase();
+            if(code.length !== 6) {
+                document.getElementById('join-code').style.borderColor = '#f00';
+                return;
+            }
+
+            gameCode = code;
+            document.getElementById('lobby-code').textContent = code;
+            document.getElementById('lobby-list').innerHTML =
+                `<div class="player-item">⚔️ ${playerName}</div>`;
+
+            showScreen('lobby-screen');
+
+            // Simulate API call
+            fetch('/api/join_game', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    game_code: code,
+                    player_name: playerName
+                })
+            }).catch(e => console.log('API not connected - demo mode'));
+        }
+
+        function startGame() {
+            if(!isHost) return;
+
+            // Redirect to actual game
+            window.location.href = `/game?code=${gameCode}`;
+        }
+
+        function backToMenu() {
+            showScreen('menu-screen');
+        }
+
+        // Enter key handling
+        document.addEventListener('DOMContentLoaded', () => {
+            createRain();
+
+            document.getElementById('player-name').addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') setPlayerName();
+            });
+
+            document.getElementById('join-code').addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') joinGame();
+            });
+        });
+    </script>
+</body>
+</html>

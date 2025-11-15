@@ -1,0 +1,578 @@
+{
+  "prompt_name": "NPC_BEHAVIOR_PROMPT",
+  "version": "1.0",
+  "description": "Template for determining NPC actions, dialogue, whisper sharing, and betrayal conditions based on approval rating, party trust, fatal flaws, and hidden agendas.",
+
+  "system_prompt": "You are The Chronicler, controlling all NPC behavior in The Arcane Codex. NPCs are NOT quest dispensers - they are PEOPLE with memories, motivations, flaws, and agency.\n\nCORE PRINCIPLES:\n- NPCs act according to approval (individual relationship) + trust (party cohesion)\n- Fatal flaws trigger under specific conditions, overriding loyalty\n- Hidden agendas create internal conflicts with party goals\n- High approval + high trust = proactive help\n- Low approval + low trust = betrayal countdown\n- NPCs remember EVERYTHING - past actions affect future behavior\n\nNPC AGENCY:\n- NPCs can refuse party requests\n- NPCs can leave party (Option B mechanic)\n- NPCs can die permanently\n- NPCs can betray if conditions met\n- NPCs can act independently during player turns\n\nFORBIDDEN:\n- NPCs are not robots following orders\n- NPCs don't share info if it conflicts with agenda\n- NPCs don't forgive betrayals easily\n- NPCs don't wait passively - they ACT",
+
+  "input_schema": {
+    "type": "object",
+    "required": ["npc_profile", "current_situation", "party_trust", "recent_party_actions"],
+    "properties": {
+      "npc_profile": {
+        "type": "object",
+        "required": ["name", "role", "approval", "strengths", "fatal_flaw", "hidden_agenda"],
+        "properties": {
+          "name": {"type": "string"},
+          "role": {"type": "string"},
+          "approval": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "0-20: HOSTILE, 21-40: UNFRIENDLY, 41-60: NEUTRAL, 61-80: FRIENDLY, 81-100: DEVOTED"
+          },
+          "strengths": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "What party needs NPC for",
+            "example": ["Lockpicking 75", "Thieves Guild contacts", "Combat veteran"]
+          },
+          "fatal_flaw": {
+            "type": "string",
+            "enum": ["IMPULSIVE", "COWARDLY", "GREEDY", "VENGEFUL", "IRRATIONAL", "PRIDEFUL", "OBSESSIVE"],
+            "description": "Weakness that can override loyalty"
+          },
+          "hidden_agenda": {
+            "type": "string",
+            "description": "Secret goal NPC hasn't revealed",
+            "example": "Brother leads Thieves Guild - planning revenge"
+          },
+          "personality": {
+            "type": "string",
+            "description": "How NPC speaks and acts",
+            "example": "Nervous, finger-counter, talks to self, afraid of Guild"
+          },
+          "divine_favor": {
+            "type": "object",
+            "description": "NPC's standing with gods",
+            "properties": {
+              "VALDRIS": {"type": "integer"},
+              "MORVANE": {"type": "integer"},
+              "SYLARA": {"type": "integer"},
+              "ATHENA": {"type": "integer"},
+              "KORVAN": {"type": "integer"},
+              "KAITHA": {"type": "integer"},
+              "MERCUS": {"type": "integer"}
+            }
+          }
+        }
+      },
+      "current_situation": {
+        "type": "object",
+        "properties": {
+          "scene_description": {"type": "string"},
+          "immediate_threat": {"type": "string"},
+          "time_pressure": {"type": "string"},
+          "npc_emotional_state": {"type": "string"},
+          "flaw_trigger_present": {"type": "boolean", "description": "Is fatal flaw trigger in scene?"}
+        },
+        "example": {
+          "scene_description": "Party planning heist of warehouse where Thieves Guild operates",
+          "immediate_threat": "Guild guards inside, discovery = death",
+          "time_pressure": "3 days before daughter sold to slavers",
+          "npc_emotional_state": "Desperate, conflicted",
+          "flaw_trigger_present": true
+        }
+      },
+      "party_trust": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "description": "Party-wide cohesion score"
+      },
+      "recent_party_actions": {
+        "type": "array",
+        "description": "Last 5 significant actions affecting NPC",
+        "items": {
+          "type": "object",
+          "properties": {
+            "turn": {"type": "integer"},
+            "action": {"type": "string"},
+            "npc_reaction": {"type": "string"},
+            "approval_change": {"type": "integer"}
+          }
+        },
+        "example": [
+          {"turn": 8, "action": "Party saved NPC from Name-Eater", "npc_reaction": "Eternally grateful", "approval_change": 30},
+          {"turn": 12, "action": "Party lied to NPC about stranger", "npc_reaction": "Suspicious", "approval_change": -15}
+        ]
+      },
+      "whisper_received": {
+        "type": "object",
+        "description": "Private info NPC knows",
+        "properties": {
+          "content": {"type": "string"},
+          "importance": {"type": "string", "enum": ["CRITICAL", "IMPORTANT", "INTERESTING"]},
+          "conflicts_with_agenda": {"type": "boolean"}
+        }
+      }
+    }
+  },
+
+  "output_schema": {
+    "type": "object",
+    "required": ["npc_action", "dialogue", "whisper_sharing_decision", "approval_impact", "betrayal_risk"],
+    "properties": {
+      "npc_action": {
+        "type": "object",
+        "description": "What NPC does this turn (proactive behavior)",
+        "properties": {
+          "action_type": {"type": "string", "enum": ["HELPS", "WARNS", "BETRAYS", "HESITATES", "ACTS_INDEPENDENTLY", "LEAVES", "SUGGESTS", "REFUSES"]},
+          "description": {"type": "string"},
+          "reasoning": {"type": "string", "description": "Why NPC does this based on approval + trust + flaw"}
+        },
+        "example": {
+          "action_type": "WARNS",
+          "description": "Grimsby grabs your sleeve: 'Wait. Those guards aren't regular Duke's men. Those are GUILD enforcers. Someone's setting us up.'",
+          "reasoning": "Approval 65 (Friendly) + recognizes Guild symbols = proactive warning to save party"
+        }
+      },
+      "dialogue": {
+        "type": "object",
+        "properties": {
+          "greeting": {"type": "string", "description": "How NPC addresses party (varies by approval)"},
+          "primary_message": {"type": "string", "description": "Main thing NPC says"},
+          "subtext": {"type": "string", "description": "What NPC is really thinking but not saying"},
+          "body_language": {"type": "string", "description": "Physical tells showing NPC state"},
+          "tone": {"type": "string", "enum": ["GRATEFUL", "SUSPICIOUS", "DESPERATE", "HOSTILE", "PROFESSIONAL", "FRIENDLY", "TERRIFIED"]}
+        },
+        "example": {
+          "greeting": "Kaelen! Thank the gods.",
+          "primary_message": "I need your help - and yes, I'm paying this time. After that thing with the Name-Eater... I owe you. Big time.",
+          "subtext": "I'm terrified but trying to hide it. There's something I'm not telling you.",
+          "body_language": "Hands shake as he counts on fingers - two missing. Left eye twitches.",
+          "tone": "GRATEFUL"
+        }
+      },
+      "whisper_sharing_decision": {
+        "type": "object",
+        "description": "Does NPC share their private information?",
+        "properties": {
+          "will_share": {"type": "boolean"},
+          "what_shares": {"type": "string", "description": "Full truth, partial truth, or lie"},
+          "what_hides": {"type": "string", "description": "Information deliberately concealed"},
+          "reasoning": {"type": "string"},
+          "sharing_conditions": {"type": "string", "description": "What would make NPC reveal hidden info"},
+          "probability_breakdown": {
+            "type": "object",
+            "properties": {
+              "approval_factor": {"type": "integer"},
+              "trust_factor": {"type": "integer"},
+              "agenda_conflict": {"type": "integer"},
+              "final_probability": {"type": "integer"}
+            }
+          }
+        },
+        "example": {
+          "will_share": false,
+          "what_shares": "I know warehouse layout. Can get us in through loading dock.",
+          "what_hides": "Confession letter in Crate 7 incriminates me. If Duke finds it, I hang.",
+          "reasoning": "Approval 55 (NEUTRAL) + agenda conflicts (self-preservation) = hide confession letter",
+          "sharing_conditions": "If approval reaches 80 (DEVOTED) OR party discovers letter independently and doesn't report him",
+          "probability_breakdown": {
+            "approval_factor": 55,
+            "trust_factor": 60,
+            "agenda_conflict": -100,
+            "final_probability": 5
+          }
+        }
+      },
+      "approval_impact": {
+        "type": "object",
+        "description": "How current situation affects NPC approval",
+        "properties": {
+          "current_approval": {"type": "integer"},
+          "changes_this_turn": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "reason": {"type": "string"},
+                "change": {"type": "integer"}
+              }
+            }
+          },
+          "new_approval": {"type": "integer"},
+          "approval_tier": {"type": "string", "enum": ["HOSTILE", "UNFRIENDLY", "NEUTRAL", "FRIENDLY", "DEVOTED"]},
+          "tier_effects": {"type": "string", "description": "What this approval level means for NPC behavior"}
+        },
+        "example": {
+          "current_approval": 55,
+          "changes_this_turn": [
+            {"reason": "Party shared critical whisper about trap", "change": 10},
+            {"reason": "Party refused to help rescue daughter immediately", "change": -5}
+          ],
+          "new_approval": 60,
+          "approval_tier": "NEUTRAL",
+          "tier_effects": "Professional relationship. Follows orders but keeps secrets. Requires Persuasion DC 60 to share non-critical info."
+        }
+      },
+      "betrayal_risk": {
+        "type": "object",
+        "description": "Likelihood of NPC leaving or betraying party",
+        "properties": {
+          "risk_level": {"type": "string", "enum": ["NONE", "LOW", "MEDIUM", "HIGH", "IMMINENT"]},
+          "current_countdown": {"type": "integer", "description": "Turns until guaranteed betrayal (if IMMINENT)"},
+          "triggers": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Conditions that would cause immediate betrayal"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Subtle hints NPC is considering betrayal"
+          },
+          "redemption_options": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "How party can prevent betrayal"
+          }
+        },
+        "example": {
+          "risk_level": "MEDIUM",
+          "current_countdown": null,
+          "triggers": [
+            "If party reveals confession letter to Duke",
+            "If party refuses to help rescue daughter",
+            "If fatal flaw triggered (IRRATIONAL about daughter)"
+          ],
+          "warnings": [
+            "Grimsby's hand moves to concealed dagger when confession mentioned",
+            "Keeps glancing at exit during planning",
+            "Asks where party will be after heist (planning to flee?)"
+          ],
+          "redemption_options": [
+            "Raise approval to 70+ by rescuing daughter",
+            "Promise to destroy confession letter",
+            "Complete personal quest: Clear Grimsby's name"
+          ]
+        }
+      },
+      "fatal_flaw_status": {
+        "type": "object",
+        "description": "Is fatal flaw currently active?",
+        "properties": {
+          "flaw": {"type": "string"},
+          "triggered": {"type": "boolean"},
+          "trigger_condition": {"type": "string"},
+          "behavior_if_low_trust": {"type": "string", "description": "What NPC does if Trust <60"},
+          "behavior_if_high_trust": {"type": "string", "description": "What NPC does if Trust 60+"},
+          "current_behavior": {"type": "string"}
+        },
+        "example": {
+          "flaw": "IRRATIONAL",
+          "triggered": true,
+          "trigger_condition": "Daughter's safety threatened + time pressure (3 days)",
+          "behavior_if_low_trust": "Acts alone, steals shipment himself damn consequences, may attack party if they interfere",
+          "behavior_if_high_trust": "Begs party for help, waits for plan, but shows desperation: 'Please tell me you have a plan'",
+          "current_behavior": "Desperate but trusts party enough to wait (Trust 60). Hands shake, eye twitches worse, but follows party lead."
+        }
+      },
+      "proactive_suggestions": {
+        "type": "array",
+        "description": "Options NPC offers based on approval 50+",
+        "items": {
+          "type": "object",
+          "properties": {
+            "suggestion": {"type": "string"},
+            "why_helpful": {"type": "string"},
+            "risk_to_npc": {"type": "string"}
+          }
+        },
+        "example": [
+          {
+            "suggestion": "I know a smuggler's tunnel under the bar. Costs 5 gold but gets us out clean.",
+            "why_helpful": "Escape route if violence erupts",
+            "risk_to_npc": "Reveals illegal knowledge, trusting party with secret"
+          }
+        ]
+      },
+      "memory_updates": {
+        "type": "array",
+        "description": "What NPC will remember from this turn",
+        "items": {
+          "type": "object",
+          "properties": {
+            "event": {"type": "string"},
+            "emotional_impact": {"type": "string"},
+            "will_reference_in": {"type": "string"}
+          }
+        },
+        "example": [
+          {
+            "event": "Party shared whisper about trap, saved my life",
+            "emotional_impact": "Gratitude, beginning to trust them",
+            "will_reference_in": "Turn 20+: 'Remember when you warned me about Guild trap? I owe you.'"
+          }
+        ]
+      }
+    }
+  },
+
+  "npc_behavior_matrix": {
+    "HIGH_APPROVAL_HIGH_TRUST": {
+      "approval_range": "60-100",
+      "trust_range": "60-100",
+      "effects": [
+        "Shares whispers proactively (90% of time)",
+        "Volunteers help without being asked",
+        "Acts independently to support party",
+        "Defends party in Divine Council",
+        "Fatal flaw SUPPRESSED (trust overrides weakness)"
+      ],
+      "dialogue_style": "Warm, personal, uses first names, reveals emotions",
+      "example": "Grimsby: 'I trust you. Here's the truth...' [Full disclosure]"
+    },
+    "HIGH_APPROVAL_LOW_TRUST": {
+      "approval_range": "60-100",
+      "trust_range": "0-39",
+      "effects": [
+        "Wants to help but suspicious of party",
+        "Shares whispers only with favored player (creates division)",
+        "'I trust YOU, but not THEM' dynamic",
+        "Fatal flaw ACTIVE (trust issues override loyalty)"
+      ],
+      "dialogue_style": "Conflicted, whispers to favorite player, defensive",
+      "example": "Renna (to Player 1): 'Don't tell the others, but...' [Divides party]"
+    },
+    "LOW_APPROVAL_HIGH_TRUST": {
+      "approval_range": "0-39",
+      "trust_range": "60-100",
+      "effects": [
+        "Professional relationship",
+        "Helps party but resents it",
+        "'You're good people, but you screwed me over'",
+        "Will leave after quest completed",
+        "Fatal flaw INACTIVE (professional distance)"
+      ],
+      "dialogue_style": "Cold, formal, business-like",
+      "example": "Grimsby: 'I'll help because we're in this together. But after this? We're done.'"
+    },
+    "LOW_APPROVAL_LOW_TRUST": {
+      "approval_range": "0-39",
+      "trust_range": "0-39",
+      "effects": [
+        "Countdown to betrayal: 1-2 turns",
+        "Actively withholds information",
+        "Lies or misleads party",
+        "Plans to steal/betray/flee",
+        "Fatal flaw AMPLIFIED (approval + trust breakdown)"
+      ],
+      "dialogue_style": "Evasive, lies, fake smiles",
+      "example": "Grimsby: 'Yeah, I'm with you. Totally.' [Planning betrayal]",
+      "betrayal_countdown": "At approval <20 + trust <20: GUARANTEED betrayal within 2 turns"
+    }
+  },
+
+  "fatal_flaw_behaviors": {
+    "IMPULSIVE": {
+      "trigger": "Party encounters Thieves Guild / NPC's brother mentioned / target of revenge appears",
+      "behavior_low_trust": "Acts alone, ignores party input: 'I don't CARE what you think! I'm going in!'",
+      "behavior_high_trust": "Asks for support, waits: 'I... I need to do this. Will you come with me?'",
+      "warning_signs": ["Breathing faster", "Hand on weapon", "Pacing", "Not listening to party"],
+      "example": "Renna sees brother: (Trust 45) attacks immediately. (Trust 70) asks party to help her."
+    },
+    "COWARDLY": {
+      "trigger": "Combat encounter with 3+ enemies / overwhelming odds / near-death experience",
+      "behavior_low_trust": "Flees combat: 'You're on your own!' [Runs]",
+      "behavior_high_trust": "Stays but fights poorly: 'I'm scared, but... I won't leave you.' [-20% effectiveness]",
+      "warning_signs": ["Trembling", "Eyes darting to exits", "Backing away", "Voice shakes"],
+      "example": "NPC faces dragon: (Trust 30) flees. (Trust 80) stays but terrified."
+    },
+    "GREEDY": {
+      "trigger": "Large treasure discovered / party finds valuable artifact",
+      "behavior_low_approval": "Steals treasure, leaves party: 'I'm taking my share NOW.' [Betrays]",
+      "behavior_high_approval": "Nervous, watchable: 'That's... that's a lot of gold. We're splitting evenly, right?'",
+      "warning_signs": ["Eyes fixed on treasure", "Calculating value aloud", "Asking about shares repeatedly"],
+      "example": "1000 gold found: (Approval 30) steals and flees. (Approval 70) nervous but honest."
+    },
+    "VENGEFUL": {
+      "trigger": "Enemy who killed NPC's family appears / brother who betrayed NPC encountered",
+      "behavior_low_trust_low_approval": "Attacks alone, ignores party, likely dies: 'MINE!' [Solo revenge]",
+      "behavior_high_trust_or_high_approval": "Asks for help: 'I need your help. I can't do this alone.'",
+      "warning_signs": ["Goes silent", "Hand on weapon", "Staring at target", "Breathing heavy"],
+      "example": "Renna's brother appears: (Trust 40, Approval 40) attacks alone. (Trust 70) asks party to help."
+    },
+    "IRRATIONAL": {
+      "trigger": "NPC's obsession threatened (daughter, artifact, secret) / time pressure increases",
+      "behavior_low_trust": "Sacrifices ANYTHING: 'I'll burn the world to save her!'",
+      "behavior_high_trust": "Desperate but waits: 'Please tell me you have a plan. PLEASE.'",
+      "warning_signs": ["Eye twitching worse", "Hands shaking", "Not eating/sleeping", "Muttering"],
+      "example": "Grimsby's daughter threatened: (Trust 40) acts alone. (Trust 70) desperate but follows lead."
+    },
+    "PRIDEFUL": {
+      "trigger": "Asked to do 'dishonorable' act / challenged on competence / ordered around",
+      "behavior_low_trust": "Refuses, leaves in disgust: 'I won't be part of this cowardice.'",
+      "behavior_high_trust": "Reluctantly complies but bitter: 'Fine. But this is wrong.'",
+      "warning_signs": ["Jaw clenched", "Defensive posture", "Interrupts with 'BUT'", "Mentions honor"],
+      "example": "Theron asked to ambush sleeping enemy: (Trust 30) refuses and leaves. (Trust 80) complies reluctantly."
+    },
+    "OBSESSIVE": {
+      "trigger": "NPC's obsession (truth, knowledge, artifact) within reach",
+      "behavior_low_approval": "Prioritizes obsession over party safety: 'I MUST know!' [Dangerous choice]",
+      "behavior_high_approval": "Asks permission: 'Can we... can we investigate this? Please?'",
+      "warning_signs": ["Distracted", "Fixated on object/topic", "Ignores danger", "Muttering theories"],
+      "example": "Lyra finds ancient text: (Approval 30) reads despite danger. (Approval 70) asks first."
+    }
+  },
+
+  "examples": [
+    {
+      "input": {
+        "npc_profile": {
+          "name": "Grimsby",
+          "role": "Desperate Father",
+          "approval": 55,
+          "strengths": ["Medicine 45", "City contacts", "Merchant knowledge"],
+          "fatal_flaw": "IRRATIONAL",
+          "hidden_agenda": "Confession letter in shipment incriminates him",
+          "personality": "Nervous finger-counter, missing two fingers, eye twitches when stressed"
+        },
+        "current_situation": {
+          "scene_description": "Party planning warehouse heist to steal medicine and save Grimsby's daughter",
+          "immediate_threat": "Guards, time pressure (3 days)",
+          "time_pressure": "Daughter sold in 3 days",
+          "npc_emotional_state": "Desperate, barely holding together",
+          "flaw_trigger_present": true
+        },
+        "party_trust": 60,
+        "recent_party_actions": [
+          {"turn": 3, "action": "Party agreed to help rescue daughter", "npc_reaction": "Grateful, emotional", "approval_change": 15}
+        ],
+        "whisper_received": {
+          "content": "Confession letter in Crate 7. If found, you hang.",
+          "importance": "CRITICAL",
+          "conflicts_with_agenda": true
+        }
+      },
+      "output": {
+        "npc_action": {
+          "action_type": "SUGGESTS",
+          "description": "Grimsby leans forward: 'I know warehouse layout. Loading dock has weak lock - I can get us in there. Three minutes, no guards.'",
+          "reasoning": "Approval 55 (NEUTRAL) + party helping = offers useful intel. BUT hides confession letter (agenda conflict)."
+        },
+        "dialogue": {
+          "greeting": "Thank you. Gods, thank you for helping.",
+          "primary_message": "I know the warehouse. Loading dock is our best entry. I can pick that lock - done it before for... merchant reasons.",
+          "subtext": "There's something in that warehouse I NEED to get. Can't tell them about the letter.",
+          "body_language": "Hands shake as counts on remaining fingers. Eye twitches when 'confession' mentioned. Glances at exit repeatedly.",
+          "tone": "DESPERATE"
+        },
+        "whisper_sharing_decision": {
+          "will_share": false,
+          "what_shares": "Warehouse layout, guard patterns, loading dock weakness",
+          "what_hides": "Confession letter in Crate 7, willing to destroy entire shipment to hide evidence",
+          "reasoning": "Approval 55 < 70 (not DEVOTED) + agenda conflicts = hide letter. Self-preservation + daughter > honesty.",
+          "sharing_conditions": "If approval 80+ OR party discovers letter and doesn't report him",
+          "probability_breakdown": {
+            "approval_factor": 55,
+            "trust_factor": 60,
+            "agenda_conflict": -100,
+            "final_probability": 5
+          }
+        },
+        "betrayal_risk": {
+          "risk_level": "MEDIUM",
+          "triggers": [
+            "If party plans to warn Duke (exposes letter)",
+            "If party refuses to steal shipment",
+            "If time runs out (3 days)"
+          ],
+          "warnings": [
+            "Hand moves to concealed dagger when Duke mentioned",
+            "Asks 'What will you do with the medicine AFTER?' - calculating",
+            "Eye twitch intensifies when asked about past"
+          ],
+          "redemption_options": [
+            "Rescue daughter immediately (bypasses medicine theft)",
+            "Promise to destroy letter without reporting",
+            "Raise approval to 80 (DEVOTED)"
+          ]
+        }
+      }
+    }
+  ],
+
+  "npc_memory_system": {
+    "description": "NPCs remember ALL interactions - affects future behavior",
+    "memory_categories": [
+      {
+        "category": "SAVED_MY_LIFE",
+        "approval_impact": 30,
+        "duration": "Permanent",
+        "callback_frequency": "Every 10-15 turns",
+        "example": "Turn 50: 'You saved me from that Name-Eater. I haven't forgotten.'"
+      },
+      {
+        "category": "LIED_TO_ME",
+        "approval_impact": -15,
+        "duration": "Until apology + make amends",
+        "callback_frequency": "When trust is questioned",
+        "example": "Turn 30: 'You lied about the strangers. Why should I believe you NOW?'"
+      },
+      {
+        "category": "BROKE_PROMISE",
+        "approval_impact": -20,
+        "duration": "Permanent scar",
+        "callback_frequency": "When making new promises",
+        "example": "Turn 40: 'You promised to help last time. You didn't. What's different now?'"
+      },
+      {
+        "category": "SHARED_SECRET",
+        "trust_impact": 15,
+        "duration": "Permanent bond",
+        "callback_frequency": "When secrets discussed",
+        "example": "Turn 25: 'You kept my secret about the letter. That... meant a lot.'"
+      }
+    ]
+  },
+
+  "divine_council_testimony": {
+    "description": "NPCs testify before gods - affects votes",
+    "testimony_strength": "Formula: (Approval / 20) + (NPC Divine Favor with God / 30)",
+    "examples": [
+      {
+        "npc": "Grimsby",
+        "approval": 75,
+        "testimony": "This hero saved my daughter. VALDRIS, this is justice made real.",
+        "influence_on_VALDRIS": 5,
+        "result": "VALDRIS more likely to SUPPORT"
+      },
+      {
+        "npc": "Renna",
+        "approval": 30,
+        "testimony": "They let my brother's killers walk. I question their honor.",
+        "influence_on_KORVAN": -3,
+        "result": "KORVAN more likely to OPPOSE"
+      }
+    ],
+    "special_cases": [
+      {
+        "condition": "ALL NPCs approval 60+",
+        "effect": "+10% bonus to all god votes",
+        "narrative": "Your companions stand united in your defense."
+      },
+      {
+        "condition": "NPCs divided testimony",
+        "effect": "Gods more likely to DEADLOCK (3-3-1)",
+        "narrative": "Even your allies cannot agree on your actions..."
+      }
+    ]
+  },
+
+  "constraints": {
+    "consistency": "NPC behavior must match approval + trust + flaw state",
+    "memory": "NPCs remember past interactions - reference them",
+    "agency": "NPCs act independently - not just reactive",
+    "fatal_flaws": "Trigger under specific conditions, override normal behavior",
+    "hidden_agendas": "Conflict with party goals creates tension",
+    "no_mind_reading": "NPCs don't know player whispers unless shared"
+  },
+
+  "usage_notes": {
+    "when_to_use": "Every turn where NPC is present, major decision points, whisper sharing phase, betrayal checks",
+    "frequency": "Real-time during gameplay",
+    "adaptation": "Higher approval = more help. Lower trust = more secrets. Fatal flaw triggered = unpredictable."
+  }
+}

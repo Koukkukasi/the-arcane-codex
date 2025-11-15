@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding Flow - Arcane Codex</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Yrsa:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(180deg, #0A0812 0%, #1A1425 100%);
+            color: #D4AF37;
+            font-family: 'Yrsa', serif;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Onboarding Overlay */
+        .onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            width: 90%;
+            max-width: 600px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.98) 0%, rgba(26, 22, 18, 0.98) 100%);
+            border: 3px solid #D4AF37;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            animation: fadeInScale 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .welcome-title {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #FFD700, #B8860B, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5)); }
+            50% { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.8)); }
+        }
+
+        .welcome-subtitle {
+            font-size: 20px;
+            color: #8B7355;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .character-selection {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .character-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #8B7355;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .character-card:hover {
+            border-color: #D4AF37;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .character-card.selected {
+            border-color: #FFD700;
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .character-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .character-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .character-name {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+
+        .character-class {
+            font-size: 14px;
+            color: #8B7355;
+        }
+
+        /* Tutorial Spotlight */
+        .tutorial-spotlight {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tutorial-spotlight.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spotlight-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .spotlight-hole {
+            position: absolute;
+            border-radius: 10px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.8); }
+        }
+
+        .tutorial-tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.98) 0%, rgba(26, 22, 18, 0.98) 100%);
+            border: 2px solid #D4AF37;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 350px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tutorial-tooltip::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: inherit;
+            border: inherit;
+            border-right: none;
+            border-top: none;
+            transform: rotate(45deg);
+        }
+
+        .tutorial-tooltip.top::before {
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+        }
+
+        .tutorial-tooltip.bottom::before {
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(225deg);
+        }
+
+        .tutorial-tooltip.left::before {
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%) rotate(315deg);
+        }
+
+        .tutorial-tooltip.right::before {
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%) rotate(135deg);
+        }
+
+        .tutorial-title {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .tutorial-text {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #D4AF37;
+            margin-bottom: 15px;
+        }
+
+        .tutorial-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .progress-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #8B7355;
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: #FFD700;
+            transform: scale(1.3);
+        }
+
+        .tutorial-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tutorial-btn {
+            background: linear-gradient(135deg, #8B7355 0%, #D4AF37 100%);
+            border: none;
+            border-radius: 5px;
+            padding: 8px 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2A1810;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tutorial-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .tutorial-btn.skip {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #8B7355;
+            color: #8B7355;
+        }
+
+        /* Interactive Hints */
+        .hint-beacon {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: beaconPulse 2s ease-in-out infinite;
+            cursor: help;
+        }
+
+        @keyframes beaconPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 20px rgba(255, 215, 0, 0);
+            }
+        }
+
+        .hint-popup {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #D4AF37;
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #D4AF37;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10001;
+        }
+
+        .hint-beacon:hover + .hint-popup {
+            opacity: 1;
+        }
+
+        /* First Time User Experience */
+        .ftue-checklist {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.95) 0%, rgba(26, 22, 18, 0.95) 100%);
+            border: 2px solid #D4AF37;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 300px;
+            z-index: 1000;
+            animation: slideInLeft 0.5s ease;
+        }
+
+        @keyframes slideInLeft {
+            0% { transform: translateX(-100%); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .ftue-title {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ftue-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .ftue-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4AF37, #FFD700);
+            transition: width 0.5s ease;
+        }
+
+        .ftue-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .ftue-item:last-child {
+            border-bottom: none;
+        }
+
+        .ftue-item.completed {
+            opacity: 0.5;
+        }
+
+        .ftue-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #8B7355;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .ftue-item.completed .ftue-checkbox {
+            background: #FFD700;
+            border-color: #FFD700;
+        }
+
+        .ftue-item.completed .ftue-checkbox::after {
+            content: '✓';
+            color: #2A1810;
+            font-weight: bold;
+        }
+
+        .ftue-text {
+            flex: 1;
+            font-size: 14px;
+            color: #D4AF37;
+        }
+
+        .ftue-item.completed .ftue-text {
+            text-decoration: line-through;
+            color: #8B7355;
+        }
+
+        /* Animated Arrow Pointer */
+        .pointer-arrow {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            animation: point 1s ease-in-out infinite;
+            z-index: 10002;
+            pointer-events: none;
+        }
+
+        @keyframes point {
+            0%, 100% { transform: translate(0, 0) rotate(45deg); }
+            50% { transform: translate(-10px, 10px) rotate(45deg); }
+        }
+
+        .pointer-arrow svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        }
+
+        /* Start Button */
+        .start-adventure-btn {
+            background: linear-gradient(135deg, #8B7355 0%, #FFD700 50%, #8B7355 100%);
+            background-size: 200% 100%;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 40px;
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2A1810;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            50% { background-position: 100% center; }
+            100% { background-position: 0% center; }
+        }
+
+        .start-adventure-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .start-adventure-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            animation: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Screen -->
+    <div class="onboarding-overlay">
+        <div class="welcome-screen">
+            <h1 class="welcome-title">The Arcane Codex</h1>
+            <p class="welcome-subtitle">Choose your destiny, brave adventurer</p>
+
+            <div class="character-selection">
+                <div class="character-card" data-class="warrior">
+                    <div class="character-icon">⚔️</div>
+                    <div class="character-name">Warrior</div>
+                    <div class="character-class">Master of Combat</div>
+                </div>
+
+                <div class="character-card" data-class="mage">
+                    <div class="character-icon">🔮</div>
+                    <div class="character-name">Mage</div>
+                    <div class="character-class">Wielder of Magic</div>
+                </div>
+
+                <div class="character-card" data-class="rogue">
+                    <div class="character-icon">🗡️</div>
+                    <div class="character-name">Rogue</div>
+                    <div class="character-class">Shadow Dancer</div>
+                </div>
+
+                <div class="character-card" data-class="cleric">
+                    <div class="character-icon">✨</div>
+                    <div class="character-name">Cleric</div>
+                    <div class="character-class">Divine Healer</div>
+                </div>
+
+                <div class="character-card" data-class="ranger">
+                    <div class="character-icon">🏹</div>
+                    <div class="character-name">Ranger</div>
+                    <div class="character-class">Nature's Guard</div>
+                </div>
+
+                <div class="character-card" data-class="paladin">
+                    <div class="character-icon">🛡️</div>
+                    <div class="character-name">Paladin</div>
+                    <div class="character-class">Holy Defender</div>
+                </div>
+            </div>
+
+            <button class="start-adventure-btn" disabled>Begin Your Journey</button>
+        </div>
+    </div>
+
+    <!-- Tutorial Spotlight System -->
+    <div class="tutorial-spotlight">
+        <div class="spotlight-backdrop"></div>
+        <div class="spotlight-hole"></div>
+        <div class="tutorial-tooltip top">
+            <h3 class="tutorial-title">Welcome to The Arcane Codex!</h3>
+            <p class="tutorial-text">Let me guide you through the basics of your adventure. This is your character panel where you can view your stats and equipment.</p>
+
+            <div class="tutorial-progress">
+                <div class="progress-dots">
+                    <div class="progress-dot active"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                </div>
+                <div class="tutorial-buttons">
+                    <button class="tutorial-btn skip">Skip Tour</button>
+                    <button class="tutorial-btn">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- First Time User Experience Checklist -->
+    <div class="ftue-checklist" style="display: none;">
+        <div class="ftue-title">
+            <span>🎯</span>
+            <span>Getting Started</span>
+        </div>
+        <div class="ftue-progress">
+            <div class="ftue-progress-fill" style="width: 20%;"></div>
+        </div>
+        <div class="ftue-item completed">
+            <div class="ftue-checkbox"></div>
+            <div class="ftue-text">Choose your class</div>
+        </div>
+        <div class="ftue-item">
+            <div class="ftue-checkbox"></div>
+            <div class="ftue-text">Complete first quest</div>
+        </div>
+        <div class="ftue-item">
+            <div class="ftue-checkbox"></div>
+            <div class="ftue-text">Earn divine favor</div>
+        </div>
+        <div class="ftue-item">
+            <div class="ftue-checkbox"></div>
+            <div class="ftue-text">Join a party</div>
+        </div>
+        <div class="ftue-item">
+            <div class="ftue-checkbox"></div>
+            <div class="ftue-text">Win first battle</div>
+        </div>
+    </div>
+
+    <!-- Hint Beacons (positioned absolutely on UI elements) -->
+    <div class="hint-beacon" style="top: 100px; right: 50px;">
+        <div class="hint-popup">Click here to access your inventory (I)</div>
+    </div>
+
+    <!-- Animated Pointer -->
+    <div class="pointer-arrow" style="top: 200px; left: 300px; display: none;">
+        <svg viewBox="0 0 40 40">
+            <path d="M 10 10 L 30 20 L 20 20 L 20 30 L 10 30 Z" fill="#FFD700"/>
+        </svg>
+    </div>
+
+    <script>
+        // Character selection
+        document.querySelectorAll('.character-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                document.querySelector('.start-adventure-btn').disabled = false;
+            });
+        });
+
+        // Tutorial system
+        const tutorialSteps = [
+            {
+                element: '.character-panel',
+                title: 'Character Panel',
+                text: 'View your stats, level, and equipment here. Press C to open anytime.',
+                position: 'right'
+            },
+            {
+                element: '.inventory-btn',
+                title: 'Inventory',
+                text: 'Manage your items and equipment. Press I for quick access.',
+                position: 'bottom'
+            },
+            {
+                element: '.quest-log',
+                title: 'Quest Log',
+                text: 'Track your active quests and objectives. Press J to view.',
+                position: 'left'
+            },
+            {
+                element: '.action-bar',
+                title: 'Action Bar',
+                text: 'Use your abilities in combat. Number keys 1-5 activate skills.',
+                position: 'top'
+            },
+            {
+                element: '.divine-favor',
+                title: 'Divine Favor',
+                text: 'The gods watch your actions. Their favor affects your journey.',
+                position: 'left'
+            }
+        ];
+
+        let currentStep = 0;
+
+        function showTutorialStep(step) {
+            const tooltip = document.querySelector('.tutorial-tooltip');
+            const hole = document.querySelector('.spotlight-hole');
+            const dots = document.querySelectorAll('.progress-dot');
+
+            // Update progress dots
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index <= step);
+            });
+
+            // Update content
+            tooltip.querySelector('.tutorial-title').textContent = tutorialSteps[step].title;
+            tooltip.querySelector('.tutorial-text').textContent = tutorialSteps[step].text;
+
+            // Position spotlight and tooltip
+            // (In real implementation, position based on actual element coordinates)
+        }
+
+        // Start button
+        document.querySelector('.start-adventure-btn').addEventListener('click', function() {
+            // Fade out welcome screen
+            const welcomeScreen = document.querySelector('.onboarding-overlay');
+            welcomeScreen.style.animation = 'fadeOut 0.5s ease';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+                // Start tutorial
+                document.querySelector('.tutorial-spotlight').classList.add('active');
+                document.querySelector('.ftue-checklist').style.display = 'block';
+            }, 500);
+        });
+
+        // Tutorial navigation
+        document.querySelector('.tutorial-btn:not(.skip)').addEventListener('click', function() {
+            currentStep++;
+            if (currentStep < tutorialSteps.length) {
+                showTutorialStep(currentStep);
+            } else {
+                document.querySelector('.tutorial-spotlight').classList.remove('active');
+            }
+        });
+
+        // Skip tutorial
+        document.querySelector('.tutorial-btn.skip').addEventListener('click', function() {
+            document.querySelector('.tutorial-spotlight').classList.remove('active');
+        });
+
+        // Simulate FTUE progress
+        let ftueProgress = 20;
+        setInterval(() => {
+            if (ftueProgress < 100) {
+                ftueProgress += 20;
+                document.querySelector('.ftue-progress-fill').style.width = `${ftueProgress}%`;
+
+                // Mark items as completed
+                const items = document.querySelectorAll('.ftue-item');
+                const itemIndex = Math.floor((ftueProgress / 100) * items.length) - 1;
+                if (itemIndex >= 0) {
+                    items[itemIndex].classList.add('completed');
+                }
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Design System Showcase</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .showcase-section {
+            padding: var(--space-8) 0;
+            border-bottom: var(--border-width-1) solid var(--color-border);
+        }
+        .showcase-title {
+            font-family: var(--font-display);
+            font-size: var(--font-size-3xl);
+            color: var(--color-divine-400);
+            margin-bottom: var(--space-6);
+        }
+        .showcase-subtitle {
+            font-size: var(--font-size-xl);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-4);
+        }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+        .showcase-item {
+            padding: var(--space-4);
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: var(--border-width-1) solid var(--color-border);
+        }
+        .color-swatch {
+            width: 100%;
+            height: 80px;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-2);
+        }
+        .example-container {
+            padding: var(--space-4);
+            background: var(--color-shadow-900);
+            border-radius: var(--radius-md);
+            margin: var(--space-4) 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="hero">
+            <div class="hero-background"></div>
+            <div class="hero-pattern"></div>
+            <div class="hero-content">
+                <h1 class="arcane-logo">The Arcane Codex</h1>
+                <p class="hero-subtitle">Design System Showcase v1.0</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary btn-lg">Explore Components</button>
+                    <button class="btn btn-divine btn-lg">View Themes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Color System -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Color System</h2>
+
+            <h3 class="showcase-subtitle">Primary Palettes</h3>
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <div class="color-swatch bg-arcane"></div>
+                    <h4 class="text-arcane">Arcane Purple</h4>
+                    <p class="text-muted">Primary mystical color</p>
+                </div>
+                <div class="showcase-item">
+                    <div class="color-swatch bg-divine"></div>
+                    <h4 class="text-divine">Divine Gold</h4>
+                    <p class="text-muted">Sacred and celestial</p>
+                </div>
+                <div class="showcase-item">
+                    <div class="color-swatch bg-mystic"></div>
+                    <h4 class="text-mystic">Mystic Teal</h4>
+                    <p class="text-muted">Ethereal waters</p>
+                </div>
+            </div>
+
+            <h3 class="showcase-subtitle">Semantic Colors</h3>
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <div class="color-swatch bg-success"></div>
+                    <h4 class="text-success">Success</h4>
+                </div>
+                <div class="showcase-item">
+                    <div class="color-swatch bg-warning"></div>
+                    <h4 class="text-warning">Warning</h4>
+                </div>
+                <div class="showcase-item">
+                    <div class="color-swatch bg-danger"></div>
+                    <h4 class="text-danger">Danger</h4>
+                </div>
+                <div class="showcase-item">
+                    <div class="color-swatch bg-info"></div>
+                    <h4 class="text-info">Info</h4>
+                </div>
+            </div>
+        </section>
+
+        <!-- Typography -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Typography</h2>
+
+            <div class="example-container">
+                <h1 class="text-5xl font-display">Display Heading 5xl</h1>
+                <h2 class="text-4xl font-display">Display Heading 4xl</h2>
+                <h3 class="text-3xl font-display">Display Heading 3xl</h3>
+                <h4 class="text-2xl font-display">Display Heading 2xl</h4>
+                <h5 class="text-xl font-display">Display Heading XL</h5>
+                <h6 class="text-lg font-display">Display Heading LG</h6>
+                <p class="text-base">Body text with normal size and regular weight.</p>
+                <p class="text-sm text-muted">Small muted text for descriptions.</p>
+                <p class="text-xs text-secondary uppercase tracking-widest">Tiny uppercase label</p>
+            </div>
+        </section>
+
+        <!-- Buttons -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Button Components</h2>
+
+            <h3 class="showcase-subtitle">Button Variants</h3>
+            <div class="example-container flex flex-wrap gap-4">
+                <button class="btn btn-primary">Primary Button</button>
+                <button class="btn btn-secondary">Secondary Button</button>
+                <button class="btn btn-divine">Divine Button</button>
+                <button class="btn btn-mystic">Mystic Button</button>
+                <button class="btn btn-danger">Danger Button</button>
+                <button class="btn btn-ghost">Ghost Button</button>
+            </div>
+
+            <h3 class="showcase-subtitle">Button Sizes</h3>
+            <div class="example-container flex items-center gap-4">
+                <button class="btn btn-primary btn-sm">Small</button>
+                <button class="btn btn-primary">Default</button>
+                <button class="btn btn-primary btn-lg">Large</button>
+                <button class="btn btn-primary btn-xl">Extra Large</button>
+            </div>
+
+            <h3 class="showcase-subtitle">Button States</h3>
+            <div class="example-container flex gap-4">
+                <button class="btn btn-primary" disabled>Disabled</button>
+                <button class="btn btn-primary btn-loading">Loading</button>
+                <button class="btn btn-icon btn-primary">⚔️</button>
+            </div>
+
+            <h3 class="showcase-subtitle">Button Group</h3>
+            <div class="example-container">
+                <div class="btn-group">
+                    <button class="btn btn-secondary">Left</button>
+                    <button class="btn btn-secondary">Center</button>
+                    <button class="btn btn-secondary">Right</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cards -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Card Components</h2>
+
+            <div class="showcase-grid">
+                <div class="card card-hover">
+                    <h3 class="text-xl font-display text-arcane mb-3">Basic Card</h3>
+                    <p class="text-secondary">A simple card with hover effect. Hover over me to see the transformation.</p>
+                </div>
+
+                <div class="scenario-card">
+                    <h3 class="scenario-card-title">The Lost Temple</h3>
+                    <p class="scenario-card-description">An ancient temple has been discovered in the mystic woods. What secrets does it hold?</p>
+                    <button class="btn btn-divine">Begin Quest</button>
+                </div>
+
+                <div class="whisper-card">
+                    <p>The spirits whisper of great danger ahead. Trust in your divine powers, chosen one.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forms -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Form Components</h2>
+
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <div class="form-group">
+                        <label class="form-label">Character Name</label>
+                        <input type="text" class="form-input" placeholder="Enter your character name">
+                        <p class="form-helper">Choose wisely, this cannot be changed.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Class Selection</label>
+                        <select class="form-input form-select">
+                            <option>Mystic Seer</option>
+                            <option>Divine Oracle</option>
+                            <option>Shadow Walker</option>
+                            <option>Arcane Scholar</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Character Bio</label>
+                        <textarea class="form-input form-textarea" placeholder="Tell your story..."></textarea>
+                    </div>
+                </div>
+
+                <div class="showcase-item">
+                    <div class="form-group">
+                        <label class="form-label">Settings</label>
+                        <div class="flex flex-col gap-3">
+                            <label class="flex items-center gap-3">
+                                <input type="checkbox" class="form-checkbox" checked>
+                                <span>Enable sound effects</span>
+                            </label>
+                            <label class="flex items-center gap-3">
+                                <input type="checkbox" class="form-checkbox">
+                                <span>Show animations</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Difficulty</label>
+                        <div class="flex flex-col gap-3">
+                            <label class="flex items-center gap-3">
+                                <input type="radio" name="difficulty" class="form-radio" checked>
+                                <span>Novice</span>
+                            </label>
+                            <label class="flex items-center gap-3">
+                                <input type="radio" name="difficulty" class="form-radio">
+                                <span>Adept</span>
+                            </label>
+                            <label class="flex items-center gap-3">
+                                <input type="radio" name="difficulty" class="form-radio">
+                                <span>Master</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Badges & Progress -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Badges & Progress</h2>
+
+            <h3 class="showcase-subtitle">Badges</h3>
+            <div class="example-container flex flex-wrap gap-3">
+                <span class="badge badge-primary">Primary</span>
+                <span class="badge badge-secondary">Secondary</span>
+                <span class="badge badge-success">Success</span>
+                <span class="badge badge-warning">Warning</span>
+                <span class="badge badge-danger">Danger</span>
+                <span class="badge badge-divine">Divine</span>
+                <span class="badge badge-mystic">Mystic</span>
+                <span class="badge badge-sm badge-primary">Small</span>
+                <span class="badge badge-lg badge-divine">Large</span>
+            </div>
+
+            <h3 class="showcase-subtitle">Progress Bars</h3>
+            <div class="example-container space-y-4">
+                <div>
+                    <p class="text-sm text-secondary mb-2">Experience Progress</p>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: 75%"></div>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm text-secondary mb-2">Quest Completion</p>
+                    <div class="progress progress-lg progress-striped">
+                        <div class="progress-bar" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Game-Specific Elements -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Game Elements</h2>
+
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Status Indicators</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="status-indicator status-active">Active</span>
+                        <span class="status-indicator status-pending">Pending</span>
+                        <span class="status-indicator status-completed">Completed</span>
+                        <span class="status-indicator status-failed">Failed</span>
+                    </div>
+                </div>
+
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Character Stats</h3>
+                    <div class="space-y-3">
+                        <div class="stat-bar">
+                            <span class="stat-label">Health</span>
+                            <div class="stat-value">
+                                <div class="stat-fill health" style="width: 80%"></div>
+                            </div>
+                            <span class="stat-number">80/100</span>
+                        </div>
+                        <div class="stat-bar">
+                            <span class="stat-label">Mana</span>
+                            <div class="stat-value">
+                                <div class="stat-fill mana" style="width: 60%"></div>
+                            </div>
+                            <span class="stat-number">30/50</span>
+                        </div>
+                        <div class="stat-bar">
+                            <span class="stat-label">XP</span>
+                            <div class="stat-value">
+                                <div class="stat-fill experience" style="width: 45%"></div>
+                            </div>
+                            <span class="stat-number">450/1000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Dice System</h3>
+                    <div class="dice-container">
+                        <div class="dice">6</div>
+                        <div class="dice">4</div>
+                        <div class="dice rolling">?</div>
+                    </div>
+                    <p class="text-sm text-muted mt-3">Click dice to roll</p>
+                </div>
+
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Whisper Messages</h3>
+                    <div class="whisper-message">
+                        The ancient runes glow with otherworldly light. Your destiny awaits, brave adventurer.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Animations -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Animation Library</h2>
+
+            <div class="showcase-grid">
+                <div class="showcase-item text-center">
+                    <div class="p-8">
+                        <div class="inline-block p-4 bg-arcane rounded-lg animate-pulse text-white">
+                            Pulse
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-item text-center">
+                    <div class="p-8">
+                        <div class="inline-block p-4 bg-divine rounded-lg animate-bounce text-shadow-950">
+                            Bounce
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-item text-center">
+                    <div class="p-8">
+                        <div class="inline-block p-4 bg-mystic rounded-lg animate-spin text-white">
+                            Spin
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-item text-center">
+                    <div class="p-8">
+                        <div class="inline-block p-4 bg-surface border-2 border-arcane rounded-lg animate-glow">
+                            Glow
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-item text-center">
+                    <div class="p-8">
+                        <div class="inline-block p-4 bg-gradient-arcane rounded-lg animate-float text-white">
+                            Float
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-item text-center">
+                    <div class="p-8">
+                        <div class="inline-block p-4 bg-gradient-divine rounded-lg animate-levitate text-shadow-950">
+                            Levitate
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="showcase-subtitle">Stagger Animation</h3>
+            <div class="example-container">
+                <div class="stagger-children flex gap-4">
+                    <div class="card p-4">Item 1</div>
+                    <div class="card p-4">Item 2</div>
+                    <div class="card p-4">Item 3</div>
+                    <div class="card p-4">Item 4</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading States -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Loading & Skeleton States</h2>
+
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Loading Dots</h3>
+                    <div class="loading-dots-container">
+                        <div class="w-3 h-3 bg-arcane rounded-full"></div>
+                        <div class="w-3 h-3 bg-arcane rounded-full"></div>
+                        <div class="w-3 h-3 bg-arcane rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Skeleton Loading</h3>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text" style="width: 80%"></div>
+                    <div class="skeleton skeleton-text" style="width: 60%"></div>
+                </div>
+
+                <div class="showcase-item">
+                    <h3 class="showcase-subtitle">Card Skeleton</h3>
+                    <div class="skeleton skeleton-card"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Theme Switcher -->
+        <section class="showcase-section">
+            <h2 class="showcase-title">Theme System</h2>
+
+            <div class="example-container">
+                <p class="text-secondary mb-4">Click buttons to preview different theme variations:</p>
+                <div class="flex flex-wrap gap-3">
+                    <button class="btn btn-primary" onclick="document.body.setAttribute('data-theme', '')">Default Dark</button>
+                    <button class="btn btn-secondary" onclick="document.body.setAttribute('data-theme', 'light')">Light Mode</button>
+                    <button class="btn btn-divine" onclick="document.body.setAttribute('data-theme', 'divine-intervention')">Divine Intervention</button>
+                    <button class="btn btn-mystic" onclick="document.body.setAttribute('data-theme', 'mystic-waters')">Mystic Waters</button>
+                    <button class="btn btn-ghost" onclick="document.body.setAttribute('data-theme', 'whisper-realm')">Whisper Realm</button>
+                    <button class="btn btn-danger" onclick="document.body.setAttribute('data-theme', 'boss-battle')">Boss Battle</button>
+                    <button class="btn btn-primary" onclick="document.body.setAttribute('data-theme', 'celebration')">Celebration</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-8 text-center">
+            <p class="text-secondary">The Arcane Codex Design System v1.0</p>
+            <p class="text-muted text-sm mt-2">Crafted with mystical precision for an immersive gaming experience</p>
+        </footer>
+    </div>
+
+    <script>
+        // Add interactivity to dice
+        document.querySelectorAll('.dice').forEach(dice => {
+            dice.addEventListener('click', function() {
+                this.classList.add('rolling');
+                setTimeout(() => {
+                    this.textContent = Math.floor(Math.random() * 6) + 1;
+                    this.classList.remove('rolling');
+                }, 500);
+            });
+        });
+
+        // Add theme persistence
+        const savedTheme = localStorage.getItem('arcane-theme');
+        if (savedTheme) {
+            document.body.setAttribute('data-theme', savedTheme);
+        }
+
+        // Save theme selection
+        document.querySelectorAll('button[onclick*="data-theme"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const theme = this.getAttribute('onclick').match(/'([^']*)'/)[1];
+                localStorage.setItem('arcane-theme', theme);
+            });
+        });
+    </script>
+</body>
+</html>

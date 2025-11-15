@@ -1,0 +1,565 @@
+<!-- CHARACTER SHEET OVERLAY - Complete HTML Structure -->
+<!-- Insert before </body> in arcane_codex_scenario_ui_enhanced.html -->
+
+<div id="character-overlay" class="overlay character-sheet-overlay">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content character-sheet-content">
+        <div class="overlay-header">
+            <h2>👤 Character Sheet</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="overlay-body character-sheet-body">
+            <!-- CHARACTER INFO SECTION -->
+            <div class="character-info-section">
+                <div class="character-portrait-large">
+                    ⚔️
+                </div>
+                <div class="character-header">
+                    <div class="character-name">Aldric</div>
+                    <div class="character-class-title">Fighter • Level 12</div>
+                </div>
+            </div>
+
+            <!-- XP BAR -->
+            <div class="xp-bar-container">
+                <div class="xp-bar-label">Experience</div>
+                <div class="xp-bar">
+                    <div class="xp-fill" style="width: 65%;"></div>
+                    <div class="xp-text">6,500 / 10,000 (65%)</div>
+                </div>
+            </div>
+
+            <!-- STATS SECTION -->
+            <div class="stats-section">
+                <div class="stats-header">Attributes</div>
+                <div class="stats-grid">
+                    <!-- Row 1: Strength, Dexterity, Constitution -->
+                    <div class="stat-card">
+                        <div class="stat-icon">💪</div>
+                        <div class="stat-name">Strength</div>
+                        <div class="stat-value">18</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-name">Dexterity</div>
+                        <div class="stat-value">14</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❤️</div>
+                        <div class="stat-name">Constitution</div>
+                        <div class="stat-value">16</div>
+                    </div>
+
+                    <!-- Row 2: Intelligence, Wisdom, Charisma -->
+                    <div class="stat-card">
+                        <div class="stat-icon">🧠</div>
+                        <div class="stat-name">Intelligence</div>
+                        <div class="stat-value">10</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👁️</div>
+                        <div class="stat-name">Wisdom</div>
+                        <div class="stat-value">12</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-name">Charisma</div>
+                        <div class="stat-value">13</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIVINE FAVOR SECTION -->
+            <div class="divine-favor-section">
+                <div class="divine-favor-header">Divine Favor</div>
+
+                <!-- VALDRIS - Order/Law (Blue) -->
+                <div class="divine-god">
+                    <div class="divine-name valdris-name">VALDRIS</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill valdris-bar" style="width: 60%;"></div>
+                        <div class="divine-value">+15</div>
+                    </div>
+                </div>
+
+                <!-- KAITHA - Chaos/Freedom (Orange-Red) -->
+                <div class="divine-god">
+                    <div class="divine-name kaitha-name">KAITHA</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill kaitha-bar" style="width: 40%;"></div>
+                        <div class="divine-value negative">-10</div>
+                    </div>
+                </div>
+
+                <!-- MORVANE - Survival/Pragmatism (Grey) -->
+                <div class="divine-god">
+                    <div class="divine-name morvane-name">MORVANE</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill morvane-bar" style="width: 80%;"></div>
+                        <div class="divine-value">+20</div>
+                    </div>
+                </div>
+
+                <!-- SYLARA - Nature/Life (Green) -->
+                <div class="divine-god">
+                    <div class="divine-name sylara-name">SYLARA</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill sylara-bar" style="width: 50%;"></div>
+                        <div class="divine-value">+5</div>
+                    </div>
+                </div>
+
+                <!-- KORVAN - War/Courage (Crimson) -->
+                <div class="divine-god">
+                    <div class="divine-name korvan-name">KORVAN</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill korvan-bar" style="width: 100%;"></div>
+                        <div class="divine-value">+25</div>
+                    </div>
+                </div>
+
+                <!-- ATHENA - Wisdom/Knowledge (Purple) -->
+                <div class="divine-god">
+                    <div class="divine-name athena-name">ATHENA</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill athena-bar" style="width: 67%;"></div>
+                        <div class="divine-value">+10</div>
+                    </div>
+                </div>
+
+                <!-- MERCUS - Commerce/Value (Gold) -->
+                <div class="divine-god">
+                    <div class="divine-name mercus-name">MERCUS</div>
+                    <div class="divine-bar">
+                        <div class="divine-fill mercus-bar" style="width: 33%;"></div>
+                        <div class="divine-value negative">-5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABILITIES SECTION -->
+            <div class="abilities-section">
+                <div class="abilities-header">Passive Abilities</div>
+                <div class="abilities-list">
+                    <div class="ability-item">
+                        <div class="ability-icon">🛡️</div>
+                        <div class="ability-info">
+                            <div class="ability-name">Iron Skin</div>
+                            <div class="ability-desc">Reduce all incoming damage by 10%</div>
+                        </div>
+                    </div>
+                    <div class="ability-item">
+                        <div class="ability-icon">⚔️</div>
+                        <div class="ability-info">
+                            <div class="ability-name">Veteran's Resolve</div>
+                            <div class="ability-desc">Gain +2 to all saves after each combat encounter</div>
+                        </div>
+                    </div>
+                    <div class="ability-item">
+                        <div class="ability-icon">🗡️</div>
+                        <div class="ability-info">
+                            <div class="ability-name">Weapon Mastery</div>
+                            <div class="ability-desc">Increase damage with melee weapons by 15%</div>
+                        </div>
+                    </div>
+                    <div class="ability-item">
+                        <div class="ability-icon">💪</div>
+                        <div class="ability-info">
+                            <div class="ability-name">Fortified Mind</div>
+                            <div class="ability-desc">Immunity to fear and charm effects</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- STYLES - Add to <style> section in head -->
+<style>
+    /* ========================================
+       CHARACTER SHEET OVERLAY STYLES
+       ======================================== */
+    .character-sheet-content {
+        max-width: 650px;
+        max-height: 85vh;
+    }
+
+    .character-sheet-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        overflow-y: auto;
+        max-height: calc(85vh - 60px);
+    }
+
+    /* CHARACTER INFO SECTION */
+    .character-info-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 15px;
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), transparent);
+        border: 2px solid #8B7355;
+        border-radius: 8px;
+    }
+
+    .character-portrait-large {
+        width: 100px;
+        height: 100px;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.3), transparent 60%),
+                    linear-gradient(135deg, #8B7355 0%, #2A1810 100%);
+        border: 3px solid #D4AF37;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 25px rgba(212, 175, 55, 0.4);
+        flex-shrink: 0;
+    }
+
+    .character-header {
+        flex: 1;
+    }
+
+    .character-name {
+        font-family: 'Cinzel', serif;
+        font-size: 32px;
+        font-weight: 700;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    }
+
+    .character-class-title {
+        font-size: 18px;
+        color: #D4AF37;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 5px;
+    }
+
+    /* XP BAR */
+    .xp-bar-container {
+        padding: 0 5px;
+    }
+
+    .xp-bar-label {
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        color: #D4AF37;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .xp-bar {
+        width: 100%;
+        height: 28px;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+        border: 2px solid #3E342A;
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .xp-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8B7355, #D4AF37, #FFD700, #D4AF37);
+        box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        transition: width 0.5s ease;
+    }
+
+    .xp-text {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+
+    /* STATS SECTION */
+    .stats-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .stats-header {
+        font-family: 'Cinzel', serif;
+        font-size: 16px;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #8B7355;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
+        border: 2px solid #8B7355;
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        border-color: #D4AF37;
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    }
+
+    .stat-icon {
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
+
+    .stat-name {
+        font-family: 'Cinzel', serif;
+        font-size: 12px;
+        color: #D4AF37;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .stat-value {
+        font-family: 'Cinzel', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #FFD700;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    /* DIVINE FAVOR SECTION */
+    .divine-favor-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .divine-favor-header {
+        font-family: 'Cinzel', serif;
+        font-size: 16px;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #8B7355;
+    }
+
+    .divine-god {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px;
+        border-radius: 6px;
+    }
+
+    .divine-name {
+        font-family: 'Cinzel', serif;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        width: 90px;
+        text-align: left;
+    }
+
+    /* God-specific colors for divine names */
+    .valdris-name {
+        color: #87CEEB;
+    }
+
+    .kaitha-name {
+        color: #FF8C00;
+    }
+
+    .morvane-name {
+        color: #708090;
+    }
+
+    .sylara-name {
+        color: #90EE90;
+    }
+
+    .korvan-name {
+        color: #CD5C5C;
+    }
+
+    .athena-name {
+        color: #BA55D3;
+    }
+
+    .mercus-name {
+        color: #F0E68C;
+    }
+
+    .divine-bar {
+        flex: 1;
+        height: 20px;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+        border: 1px solid #3E342A;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .divine-fill {
+        height: 100%;
+        box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
+    }
+
+    /* God-specific bar colors */
+    .valdris-bar {
+        background: linear-gradient(90deg, #4169E1, #87CEEB, #4169E1);
+    }
+
+    .kaitha-bar {
+        background: linear-gradient(90deg, #FF4500, #FF8C00, #FF4500);
+    }
+
+    .morvane-bar {
+        background: linear-gradient(90deg, #2F4F4F, #708090, #2F4F4F);
+    }
+
+    .sylara-bar {
+        background: linear-gradient(90deg, #228B22, #90EE90, #228B22);
+    }
+
+    .korvan-bar {
+        background: linear-gradient(90deg, #DC143C, #CD5C5C, #DC143C);
+    }
+
+    .athena-bar {
+        background: linear-gradient(90deg, #9370DB, #BA55D3, #9370DB);
+    }
+
+    .mercus-bar {
+        background: linear-gradient(90deg, #FFD700, #F0E68C, #FFD700);
+    }
+
+    .divine-value {
+        font-family: 'Cinzel', serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: #FFD700;
+        width: 45px;
+        text-align: right;
+        min-width: 45px;
+    }
+
+    .divine-value.negative {
+        color: #FF6B6B;
+    }
+
+    /* ABILITIES SECTION */
+    .abilities-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .abilities-header {
+        font-family: 'Cinzel', serif;
+        font-size: 16px;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #8B7355;
+    }
+
+    .abilities-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .ability-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 2px solid #8B7355;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .ability-item:hover {
+        border-color: #D4AF37;
+        background: rgba(212, 175, 55, 0.15);
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+    }
+
+    .ability-icon {
+        font-size: 28px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .ability-info {
+        flex: 1;
+    }
+
+    .ability-name {
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .ability-desc {
+        font-size: 13px;
+        color: #D4AF37;
+        line-height: 1.4;
+    }
+
+    /* Scrollbar styling for character sheet */
+    .character-sheet-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .character-sheet-body::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 3px;
+    }
+
+    .character-sheet-body::-webkit-scrollbar-thumb {
+        background: #8B7355;
+        border-radius: 3px;
+    }
+
+    .character-sheet-body::-webkit-scrollbar-thumb:hover {
+        background: #D4AF37;
+    }
+</style>
+
+<!-- SCRIPT - Initialization -->
+<script>
+    console.log('Character Sheet Overlay HTML Structure loaded');
+</script>

@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Adventure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=MedievalSharp&family=Uncial+Antiqua&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-purple: #a78bfa;
+            --primary-pink: #f472b6;
+            --primary-blue: #60a5fa;
+            --dark-bg: #0a0e27;
+            --gold: #fbbf24;
+            --health: #ef4444;
+            --mana: #3b82f6;
+            --trust-high: #10b981;
+            --trust-mid: #f59e0b;
+            --trust-low: #ef4444;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1e3c72 25%, #2a5298 50%, #7e22ce 75%, #4c1d95 100%);
+            color: #e0e7ff;
+            font-family: 'MedievalSharp', cursive;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Particle Effects Background */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Loading Overlay with Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(167, 139, 250, 0.2), rgba(10, 14, 39, 0.95));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10000;
+            transition: opacity 0.5s;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 100px;
+            height: 100px;
+            border: 4px solid rgba(167, 139, 250, 0.3);
+            border-top: 4px solid var(--primary-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 30px;
+            font-size: 28px;
+            color: var(--primary-purple);
+            text-shadow: 0 0 20px currentColor;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* Game Setup Screen (Player Count & Name) */
+        .setup-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(10, 14, 39, 0.98), rgba(30, 29, 75, 0.95));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+            backdrop-filter: blur(10px);
+        }
+
+        .setup-screen.hidden {
+            display: none;
+        }
+
+        .setup-container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid var(--primary-purple);
+            border-radius: 20px;
+            padding: 60px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(167, 139, 250, 0.5);
+            animation: setupAppear 0.5s ease-out;
+        }
+
+        @keyframes setupAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .setup-title {
+            font-family: 'Cinzel', serif;
+            font-size: 42px;
+            background: linear-gradient(180deg, var(--primary-blue), var(--primary-purple), var(--primary-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+            text-shadow: 0 0 40px rgba(167, 139, 250, 0.8);
+        }
+
+        .player-count-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .count-btn {
+            width: 100px;
+            height: 100px;
+            font-size: 36px;
+            background: linear-gradient(135deg, #1e1b4b, #0f0a3c);
+            border: 3px solid var(--primary-blue);
+            color: white;
+            cursor: pointer;
+            border-radius: 15px;
+            transition: all 0.3s;
+            font-family: 'Cinzel', serif;
+        }
+
+        .count-btn:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 30px rgba(96, 165, 250, 0.5);
+            background: linear-gradient(135deg, #312e81, #1e1b4b);
+        }
+
+        .count-btn.selected {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+            border-color: var(--gold);
+            box-shadow: 0 0 30px var(--gold);
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--primary-purple);
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            font-family: 'MedievalSharp', cursive;
+        }
+
+        .name-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .start-adventure-btn {
+            padding: 20px 60px;
+            font-size: 28px;
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            font-family: 'Cinzel', serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(244, 114, 182, 0.5);
+        }
+
+        .start-adventure-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 40px rgba(244, 114, 182, 0.8);
+        }
+
+        .start-adventure-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Divine Interrogation Screen */
+        .interrogation-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(124, 34, 206, 0.3), rgba(10, 14, 39, 0.98));
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 8000;
+            padding: 40px;
+        }
+
+        .interrogation-screen.active {
+            display: flex;
+        }
+
+        .interrogation-container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            animation: divineAppear 1s ease-out;
+        }
+
+        @keyframes divineAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.5) rotateY(90deg);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) rotateY(0);
+            }
+        }
+
+        .god-avatar {
+            font-size: 120px;
+            margin-bottom: 20px;
+            animation: godGlow 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes godGlow {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 30px currentColor);
+            }
+            50% {
+                transform: scale(1.1);
+                filter: drop-shadow(0 0 60px currentColor);
+            }
+        }
+
+        .god-name {
+            font-family: 'Uncial Antiqua', cursive;
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            animation: divineText 2s ease-in-out infinite;
+        }
+
+        @keyframes divineText {
+            0%, 100% { text-shadow: 0 0 30px currentColor; }
+            50% { text-shadow: 0 0 60px currentColor, 0 0 90px currentColor; }
+        }
+
+        .god-domain {
+            font-size: 20px;
+            color: #9ca3af;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .question-number {
+            font-size: 18px;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .divine-question {
+            font-size: 28px;
+            line-height: 1.6;
+            margin-bottom: 50px;
+            color: #f0f9ff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .answer-options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .answer-btn {
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 29, 75, 0.6));
+            border: 2px solid var(--primary-purple);
+            color: #e0e7ff;
+            font-size: 20px;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 10px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .answer-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .answer-btn:hover::before {
+            left: 100%;
+        }
+
+        .answer-btn:hover {
+            transform: translateX(10px);
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(244, 114, 182, 0.2));
+            box-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
+        }
+
+        .interrogation-progress {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .progress-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+        .progress-dot.completed {
+            background: var(--gold);
+            box-shadow: 0 0 20px var(--gold);
+        }
+
+        .progress-dot.active {
+            background: var(--primary-purple);
+            animation: activeDot 1s infinite;
+        }
+
+        @keyframes activeDot {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Class Assignment Screen */
+        .class-reveal-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2), rgba(10, 14, 39, 0.98));
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 7500;
+        }
+
+        .class-reveal-screen.active {
+            display: flex;
+        }
+
+        .class-reveal-container {
+            text-align: center;
+            animation: classReveal 2s ease-out;
+        }
+
+        @keyframes classReveal {
+            0% {
+                opacity: 0;
+                transform: scale(3) rotate(720deg);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.5) rotate(360deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0);
+            }
+        }
+
+        .class-icon {
+            font-size: 150px;
+            margin-bottom: 30px;
+            animation: classGlow 2s ease-in-out infinite;
+        }
+
+        .class-name {
+            font-family: 'Cinzel', serif;
+            font-size: 64px;
+            background: linear-gradient(180deg, var(--gold), var(--primary-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        .class-description {
+            font-size: 24px;
+            color: #e0e7ff;
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .continue-btn {
+            padding: 20px 60px;
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--gold), var(--primary-pink));
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            font-family: 'Cinzel', serif;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .continue-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(251, 191, 36, 0.6);
+        }
+
+        /* Main Game UI */
+        .game-ui {
+            display: none;
+            position: relative;
+            z-index: 100;
+        }
+
+        .game-ui.active {
+            display: block;
+        }
+
+        /* Enhanced Game Header */
+        .game-header {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.7));
+            padding: 25px 40px;
+            border-bottom: 3px solid var(--primary-purple);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .player-info {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .player-portrait {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2), rgba(0, 0, 0, 0.8));
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+        }
+
+        .player-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .player-name {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: var(--gold);
+        }
+
+        .player-class {
+            font-size: 18px;
+            color: var(--primary-purple);
+            text-transform: uppercase;
+        }
+
+        .stat-bars {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-bar {
+            width: 200px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+
+        .bar-container {
+            height: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid currentColor;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .health-bar .bar-fill {
+            background: linear-gradient(90deg, var(--health), #ef4444);
+            border-color: var(--health);
+        }
+
+        .mana-bar .bar-fill {
+            background: linear-gradient(90deg, var(--mana), #60a5fa);
+            border-color: var(--mana);
+        }
+
+        .bar-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Trust Meter */
+        .trust-meter {
+            text-align: center;
+        }
+
+        .trust-label {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            color: var(--primary-purple);
+            margin-bottom: 10px;
+        }
+
+        .trust-display {
+            position: relative;
+            width: 250px;
+            height: 250px;
+        }
+
+        .trust-circle {
+            width: 100%;
+            height: 100%;
+        }
+
+        .trust-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+        }
+
+        /* Main Game Content Area */
+        .game-content {
+            display: flex;
+            gap: 30px;
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Left Panel - Main Scene */
+        .main-panel {
+            flex: 1;
+        }
+
+        .scene-container {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 29, 75, 0.4));
+            border: 3px solid var(--primary-blue);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            animation: sceneAppear 1s ease-out;
+        }
+
+        @keyframes sceneAppear {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .scene-title {
+            font-family: 'Cinzel', serif;
+            font-size: 36px;
+            background: linear-gradient(180deg, var(--primary-blue), var(--primary-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-shadow: 0 0 30px rgba(96, 165, 250, 0.5);
+        }
+
+        .scene-description {
+            font-size: 20px;
+            line-height: 1.8;
+            color: #f0f9ff;
+            margin-bottom: 30px;
+        }
+
+        /* Whisper Container */
+        .whisper-container {
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(244, 114, 182, 0.15));
+            border: 2px solid var(--primary-purple);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            animation: whisperPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes whisperPulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(244, 114, 182, 0.8);
+            }
+        }
+
+        .whisper-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at center, transparent, rgba(167, 139, 250, 0.1), transparent);
+            animation: whisperRotate 20s linear infinite;
+        }
+
+        @keyframes whisperRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .whisper-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .whisper-icon {
+            font-size: 32px;
+            animation: whisperIcon 2s ease-in-out infinite;
+        }
+
+        @keyframes whisperIcon {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(5deg); }
+        }
+
+        .whisper-title {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: var(--primary-pink);
+            font-style: italic;
+        }
+
+        .whisper-text {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #f0f9ff;
+            position: relative;
+            z-index: 1;
+            font-style: italic;
+        }
+
+        /* Choice Container */
+        .choices-container {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--primary-purple);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .choices-header {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: var(--gold);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .choice-options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .choice-btn {
+            padding: 25px 30px;
+            background: linear-gradient(135deg, rgba(30, 29, 75, 0.8), rgba(0, 0, 0, 0.8));
+            border: 2px solid var(--primary-blue);
+            color: #e0e7ff;
+            font-size: 18px;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 10px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .choice-icon {
+            font-size: 32px;
+        }
+
+        .choice-text {
+            flex: 1;
+        }
+
+        .choice-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .choice-btn:hover::before {
+            left: 100%;
+        }
+
+        .choice-btn:hover {
+            transform: translateX(10px);
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(167, 139, 250, 0.2));
+            border-color: var(--primary-purple);
+            box-shadow: 0 5px 30px rgba(167, 139, 250, 0.4);
+        }
+
+        .choice-btn.selected {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(244, 114, 182, 0.2));
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+        }
+
+        /* Right Panel - Party Info */
+        .side-panel {
+            width: 350px;
+        }
+
+        .party-container {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 29, 75, 0.4));
+            border: 3px solid var(--primary-purple);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .party-header {
+            font-family: 'Cinzel', serif;
+            font-size: 28px;
+            color: var(--primary-purple);
+            margin-bottom: 25px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .party-members {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .party-member {
+            background: rgba(96, 165, 250, 0.1);
+            border-left: 4px solid var(--primary-blue);
+            padding: 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .party-member:hover {
+            background: rgba(96, 165, 250, 0.2);
+            transform: translateX(5px);
+        }
+
+        .member-icon {
+            font-size: 36px;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f0f9ff;
+        }
+
+        .member-class {
+            font-size: 14px;
+            color: var(--primary-purple);
+            text-transform: uppercase;
+        }
+
+        .member-status {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        .member-status.waiting {
+            color: var(--gold);
+            animation: waitingPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes waitingPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .member-status.ready {
+            color: var(--trust-high);
+        }
+
+        /* Action Log */
+        .action-log-container {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 29, 75, 0.4));
+            border: 3px solid var(--primary-blue);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .action-log-header {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .action-log {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .log-entry {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 3px solid var(--primary-purple);
+            border-radius: 5px;
+            font-size: 14px;
+            color: #e0e7ff;
+            animation: logAppear 0.5s ease-out;
+        }
+
+        @keyframes logAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-purple);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-pink);
+        }
+
+        /* Multiplayer Lobby */
+        .multiplayer-lobby {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(10, 14, 39, 0.98), rgba(30, 29, 75, 0.95));
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 8500;
+        }
+
+        .multiplayer-lobby.active {
+            display: flex;
+        }
+
+        .lobby-container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid var(--primary-purple);
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(167, 139, 250, 0.5);
+        }
+
+        .lobby-title {
+            font-family: 'Cinzel', serif;
+            font-size: 36px;
+            color: var(--primary-purple);
+            margin-bottom: 30px;
+        }
+
+        .game-code-display {
+            background: rgba(96, 165, 250, 0.1);
+            border: 2px solid var(--primary-blue);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .code-label {
+            font-size: 18px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+
+        .game-code {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            color: var(--gold);
+            letter-spacing: 10px;
+            text-shadow: 0 0 20px var(--gold);
+        }
+
+        .connected-players {
+            margin-bottom: 30px;
+        }
+
+        .connected-player {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 30px;
+            background: rgba(167, 139, 250, 0.1);
+            border: 2px solid var(--primary-purple);
+            border-radius: 10px;
+            font-size: 20px;
+            color: #f0f9ff;
+        }
+
+        .waiting-text {
+            font-size: 20px;
+            color: #9ca3af;
+            animation: pulse 1.5s ease-in-out infinite;
+            margin-bottom: 30px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            z-index: 20000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(30, 29, 75, 0.9));
+            border: 2px solid var(--primary-purple);
+            border-radius: 10px;
+            padding: 20px 30px;
+            min-width: 300px;
+            animation: toastSlide 0.5s ease-out;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            border-color: var(--trust-high);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 0, 0, 0.9));
+        }
+
+        .toast.error {
+            border-color: var(--health);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(0, 0, 0, 0.9));
+        }
+
+        .toast.info {
+            border-color: var(--primary-blue);
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(0, 0, 0, 0.9));
+        }
+
+        .toast-message {
+            font-size: 16px;
+            color: #f0f9ff;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .game-content {
+                flex-direction: column;
+            }
+
+            .side-panel {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .player-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .trust-display {
+                width: 150px;
+                height: 150px;
+            }
+
+            .trust-value {
+                font-size: 36px;
+            }
+
+            .scene-title {
+                font-size: 28px;
+            }
+
+            .scene-description {
+                font-size: 16px;
+            }
+
+            .choice-btn {
+                padding: 20px;
+                font-size: 16px;
+            }
+
+            .god-avatar {
+                font-size: 80px;
+            }
+
+            .god-name {
+                font-size: 36px;
+            }
+
+            .divine-question {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas for particle effects -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Awakening the Ancient Powers...</div>
+    </div>
+
+    <!-- Game Setup Screen -->
+    <div class="setup-screen" id="setupScreen">
+        <div class="setup-container">
+            <h1 class="setup-title">Begin Your Journey</h1>
+
+            <p style="font-size: 20px; color: #9ca3af; margin-bottom: 30px;">
+                How many heroes will answer the call?
+            </p>
+
+            <div class="player-count-buttons">
+                <button class="count-btn" onclick="selectPlayerCount(1)">1</button>
+                <button class="count-btn" onclick="selectPlayerCount(2)">2</button>
+                <button class="count-btn" onclick="selectPlayerCount(3)">3</button>
+                <button class="count-btn" onclick="selectPlayerCount(4)">4</button>
+            </div>
+
+            <input type="text" class="name-input" id="playerNameInput"
+                   placeholder="Enter your hero's name..." maxlength="20">
+
+            <button class="start-adventure-btn" id="startBtn" disabled onclick="startAdventure()">
+                Begin Adventure
+            </button>
+        </div>
+    </div>
+
+    <!-- Multiplayer Lobby -->
+    <div class="multiplayer-lobby" id="multiplayerLobby">
+        <div class="lobby-container">
+            <h1 class="lobby-title">Gathering Heroes</h1>
+
+            <div class="game-code-display">
+                <div class="code-label">Share this code with your party:</div>
+                <div class="game-code" id="gameCode">ABC123</div>
+            </div>
+
+            <div class="connected-players" id="connectedPlayers">
+                <!-- Players will be added here -->
+            </div>
+
+            <div class="waiting-text">Waiting for players to join...</div>
+
+            <button class="start-adventure-btn" id="startMultiplayerBtn" onclick="startMultiplayerGame()">
+                Start Game (All Players Ready)
+            </button>
+        </div>
+    </div>
+
+    <!-- Divine Interrogation Screen -->
+    <div class="interrogation-screen" id="interrogationScreen">
+        <div class="interrogation-progress">
+            <!-- Progress dots will be added dynamically -->
+        </div>
+
+        <div class="interrogation-container">
+            <div class="god-avatar" id="godAvatar">⚡</div>
+            <h2 class="god-name" id="godName">VALDRIS</h2>
+            <p class="god-domain" id="godDomain">God of Order and Justice</p>
+
+            <div class="question-number" id="questionNumber">Question 1 of 10</div>
+
+            <div class="divine-question" id="divineQuestion">
+                Loading divine wisdom...
+            </div>
+
+            <div class="answer-options" id="answerOptions">
+                <!-- Answer options will be added dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Assignment Screen -->
+    <div class="class-reveal-screen" id="classRevealScreen">
+        <div class="class-reveal-container">
+            <div class="class-icon" id="classIcon">⚔️</div>
+            <h1 class="class-name" id="className">WARRIOR</h1>
+            <p class="class-description" id="classDescription">
+                The gods have chosen. You are a mighty Warrior,
+                defender of the weak and champion of justice.
+            </p>
+            <button class="continue-btn" onclick="enterGame()">
+                Enter the Realm
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Game UI -->
+    <div class="game-ui" id="gameUI">
+        <!-- Game Header -->
+        <header class="game-header">
+            <div class="player-info">
+                <div class="player-portrait" id="playerPortrait">⚔️</div>
+                <div class="player-stats">
+                    <div class="player-name" id="playerNameDisplay">Hero</div>
+                    <div class="player-class" id="playerClassDisplay">Warrior</div>
+                    <div class="stat-bars">
+                        <div class="stat-bar health-bar">
+                            <div class="stat-label">Health</div>
+                            <div class="bar-container">
+                                <div class="bar-fill" id="healthBar" style="width: 100%"></div>
+                                <span class="bar-text">100/100</span>
+                            </div>
+                        </div>
+                        <div class="stat-bar mana-bar">
+                            <div class="stat-label">Mana</div>
+                            <div class="bar-container">
+                                <div class="bar-fill" id="manaBar" style="width: 100%"></div>
+                                <span class="bar-text">50/50</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trust-meter">
+                <div class="trust-label">Party Trust</div>
+                <div class="trust-display">
+                    <svg class="trust-circle" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(167, 139, 250, 0.2)" stroke-width="8"/>
+                        <circle id="trustCircle" cx="50" cy="50" r="45" fill="none" stroke="url(#trustGradient)"
+                                stroke-width="8" stroke-linecap="round"
+                                stroke-dasharray="283" stroke-dashoffset="0"
+                                transform="rotate(-90 50 50)"/>
+                        <defs>
+                            <linearGradient id="trustGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#60a5fa;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="trust-value" id="trustValue">100</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Content -->
+        <div class="game-content">
+            <!-- Left Panel - Main Scene -->
+            <div class="main-panel">
+                <!-- Scene Container -->
+                <div class="scene-container">
+                    <h2 class="scene-title" id="sceneTitle">The Mysterious Tavern</h2>
+                    <div class="scene-description" id="sceneDescription">
+                        The ancient tavern stands before you, its weathered sign creaking in the wind.
+                        Through the grimy windows, you can see shadowy figures hunched over their drinks.
+                        The air is thick with tension and unspoken secrets...
+                    </div>
+                </div>
+
+                <!-- Whisper Container -->
+                <div class="whisper-container" id="whisperContainer">
+                    <div class="whisper-header">
+                        <span class="whisper-icon">🔮</span>
+                        <h3 class="whisper-title">Your Secret Knowledge</h3>
+                    </div>
+                    <div class="whisper-text" id="whisperText">
+                        You recognize the tavern keeper from your past - he owes you a life debt.
+                        You could call it in now, but doing so might reveal your true identity to the party...
+                    </div>
+                </div>
+
+                <!-- Choices Container -->
+                <div class="choices-container">
+                    <h3 class="choices-header">What Will You Do?</h3>
+                    <div class="choice-options" id="choiceOptions">
+                        <!-- Choices will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Party Info -->
+            <div class="side-panel">
+                <!-- Party Container -->
+                <div class="party-container">
+                    <h3 class="party-header">Your Party</h3>
+                    <div class="party-members" id="partyMembers">
+                        <!-- Party members will be added dynamically -->
+                    </div>
+                </div>
+
+                <!-- Action Log -->
+                <div class="action-log-container">
+                    <h3 class="action-log-header">Chronicle of Events</h3>
+                    <div class="action-log" id="actionLog">
+                        <!-- Log entries will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Game State
+        const gameState = {
+            playerCount: 1,
+            playerName: '',
+            playerClass: null,
+            isMultiplayer: false,
+            gameCode: null,
+            currentQuestion: 0,
+            divineAnswers: [],
+            trust: 100,
+            health: 100,
+            mana: 50,
+            partyMembers: [],
+            currentScenario: null,
+            scenarioHistory: []
+        };
+
+        // Seven Gods Configuration
+        const SEVEN_GODS = [
+            { name: 'VALDRIS', domain: 'Order and Justice', avatar: '⚡', color: '#60a5fa' },
+            { name: 'MORGANTHA', domain: 'Chaos and Freedom', avatar: '🌙', color: '#f472b6' },
+            { name: 'ZEPHYROS', domain: 'Knowledge and Secrets', avatar: '📚', color: '#a78bfa' },
+            { name: 'SYLTHAR', domain: 'Nature and Balance', avatar: '🌿', color: '#10b981' },
+            { name: 'KYRONIS', domain: 'War and Honor', avatar: '⚔️', color: '#ef4444' },
+            { name: 'LUMARIA', domain: 'Light and Truth', avatar: '☀️', color: '#fbbf24' },
+            { name: 'UMBRAK', domain: 'Shadow and Deception', avatar: '🌑', color: '#6b7280' }
+        ];
+
+        // Class Configurations
+        const CLASSES = {
+            WARRIOR: { icon: '⚔️', color: '#ef4444', description: 'Master of combat and protector of the weak' },
+            PALADIN: { icon: '🛡️', color: '#fbbf24', description: 'Holy warrior blessed by divine light' },
+            ROGUE: { icon: '🗡️', color: '#6b7280', description: 'Master of shadows and deception' },
+            MAGE: { icon: '🔮', color: '#a78bfa', description: 'Wielder of arcane powers' },
+            RANGER: { icon: '🏹', color: '#10b981', description: 'Guardian of nature and master tracker' },
+            CLERIC: { icon: '✨', color: '#60a5fa', description: 'Channel of divine healing' },
+            BARD: { icon: '🎵', color: '#f472b6', description: 'Weaver of tales and inspiration' }
+        };
+
+        // Initialize particle effects
+        function initParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const particleCount = 50;
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.radius = Math.random() * 2 + 1;
+                    this.opacity = Math.random() * 0.5 + 0.3;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(167, 139, 250, ${this.opacity})`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // Player Count Selection
+        function selectPlayerCount(count) {
+            gameState.playerCount = count;
+
+            // Update UI
+            document.querySelectorAll('.count-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // Enable start button if name is entered
+            checkStartButton();
+        }
+
+        // Check if start button should be enabled
+        function checkStartButton() {
+            const nameInput = document.getElementById('playerNameInput');
+            const startBtn = document.getElementById('startBtn');
+
+            if (nameInput.value.trim().length >= 2 && gameState.playerCount > 0) {
+                startBtn.disabled = false;
+            } else {
+                startBtn.disabled = true;
+            }
+        }
+
+        // Start Adventure
+        function startAdventure() {
+            gameState.playerName = document.getElementById('playerNameInput').value.trim();
+
+            if (gameState.playerCount > 1) {
+                // Show multiplayer lobby
+                showMultiplayerLobby();
+            } else {
+                // Start single player
+                startSinglePlayer();
+            }
+        }
+
+        // Show Multiplayer Lobby
+        function showMultiplayerLobby() {
+            gameState.isMultiplayer = true;
+            gameState.gameCode = generateGameCode();
+
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('multiplayerLobby').classList.add('active');
+            document.getElementById('gameCode').textContent = gameState.gameCode;
+
+            // Simulate players joining
+            simulateMultiplayerJoin();
+        }
+
+        // Generate Game Code
+        function generateGameCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Simulate Multiplayer Join
+        function simulateMultiplayerJoin() {
+            const playerNames = ['Aldric', 'Lyra', 'Zephyr'];
+            const container = document.getElementById('connectedPlayers');
+
+            // Add current player
+            container.innerHTML = `<div class="connected-player">${gameState.playerName} (You)</div>`;
+
+            // Simulate other players joining
+            let joinedCount = 1;
+            const joinInterval = setInterval(() => {
+                if (joinedCount < gameState.playerCount) {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'connected-player';
+                    playerDiv.textContent = playerNames[joinedCount - 1] || `Player ${joinedCount + 1}`;
+                    container.appendChild(playerDiv);
+
+                    gameState.partyMembers.push({
+                        name: playerNames[joinedCount - 1] || `Player ${joinedCount + 1}`,
+                        class: null,
+                        isPlayer: false
+                    });
+
+                    joinedCount++;
+
+                    if (joinedCount >= gameState.playerCount) {
+                        document.getElementById('startMultiplayerBtn').disabled = false;
+                        document.querySelector('.waiting-text').textContent = 'All players connected!';
+                        clearInterval(joinInterval);
+                    }
+                }
+            }, 2000);
+        }
+
+        // Start Multiplayer Game
+        function startMultiplayerGame() {
+            document.getElementById('multiplayerLobby').classList.remove('active');
+            startDivineInterrogation();
+        }
+
+        // Start Single Player
+        function startSinglePlayer() {
+            document.getElementById('setupScreen').classList.add('hidden');
+
+            // Add AI companions for single player
+            if (gameState.playerCount === 1) {
+                gameState.partyMembers = [
+                    { name: 'Aldric', class: 'PALADIN', isPlayer: false },
+                    { name: 'Lyra', class: 'ROGUE', isPlayer: false },
+                    { name: 'Zephyr', class: 'MAGE', isPlayer: false }
+                ];
+            }
+
+            startDivineInterrogation();
+        }
+
+        // Start Divine Interrogation
+        function startDivineInterrogation() {
+            document.getElementById('interrogationScreen').classList.add('active');
+
+            // Create progress dots
+            const progressContainer = document.querySelector('.interrogation-progress');
+            progressContainer.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                if (i === 0) dot.classList.add('active');
+                progressContainer.appendChild(dot);
+            }
+
+            // Load first question
+            loadDivineQuestion();
+        }
+
+        // Load Divine Question
+        function loadDivineQuestion() {
+            const questionNum = gameState.currentQuestion + 1;
+
+            // Rotate through gods
+            const godIndex = gameState.currentQuestion % SEVEN_GODS.length;
+            const god = SEVEN_GODS[godIndex];
+
+            // Update UI
+            document.getElementById('godAvatar').textContent = god.avatar;
+            document.getElementById('godName').textContent = god.name;
+            document.getElementById('godName').style.color = god.color;
+            document.getElementById('godDomain').textContent = `God of ${god.domain}`;
+            document.getElementById('questionNumber').textContent = `Question ${questionNum} of 10`;
+
+            // Generate question (in real app, this would come from AI)
+            const question = generateDivineQuestion(god);
+            document.getElementById('divineQuestion').textContent = question.text;
+
+            // Generate answer options
+            const optionsContainer = document.getElementById('answerOptions');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = option;
+                btn.onclick = () => answerDivineQuestion(index);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // Generate Divine Question (Mock - would use AI)
+        function generateDivineQuestion(god) {
+            const questions = {
+                'VALDRIS': {
+                    text: 'A merchant overcharges desperate families during famine. They steal his bread. Who bears the greater guilt?',
+                    options: [
+                        'The families - theft is never justified',
+                        'The merchant - exploitation is the greater evil',
+                        'Both equally - wrong does not excuse wrong',
+                        'Neither - survival transcends morality'
+                    ]
+                },
+                'MORGANTHA': {
+                    text: 'You find a spell that could save many lives but requires breaking ancient laws. What do you do?',
+                    options: [
+                        'Follow the law - order must be maintained',
+                        'Break the law - lives matter more than rules',
+                        'Seek permission first - work within the system',
+                        'Find another way - there is always an alternative'
+                    ]
+                },
+                'ZEPHYROS': {
+                    text: 'You discover a friend\'s dark secret that could destroy them. They don\'t know you know. What do you do?',
+                    options: [
+                        'Confront them privately - honesty builds trust',
+                        'Keep it secret - some knowledge is a burden',
+                        'Use it as leverage - knowledge is power',
+                        'Tell others - truth should be known'
+                    ]
+                }
+            };
+
+            return questions[god.name] || {
+                text: `${god.name} asks: In times of trial, what guides your actions?`,
+                options: [
+                    'Honor and duty above all else',
+                    'The needs of the many',
+                    'Personal freedom and choice',
+                    'Balance and harmony'
+                ]
+            };
+        }
+
+        // Answer Divine Question
+        function answerDivineQuestion(answerIndex) {
+            gameState.divineAnswers.push(answerIndex);
+
+            // Update progress
+            const dots = document.querySelectorAll('.progress-dot');
+            dots[gameState.currentQuestion].classList.remove('active');
+            dots[gameState.currentQuestion].classList.add('completed');
+
+            gameState.currentQuestion++;
+
+            if (gameState.currentQuestion >= 10) {
+                // Calculate class based on answers
+                calculatePlayerClass();
+            } else {
+                // Next question
+                dots[gameState.currentQuestion].classList.add('active');
+                setTimeout(() => loadDivineQuestion(), 500);
+            }
+        }
+
+        // Calculate Player Class
+        function calculatePlayerClass() {
+            // Simple calculation (in real app, would be more complex)
+            const classOptions = Object.keys(CLASSES);
+            const scores = {};
+
+            classOptions.forEach(cls => scores[cls] = 0);
+
+            // Score based on answers
+            gameState.divineAnswers.forEach((answer, index) => {
+                // Mock scoring logic
+                if (answer === 0) scores.PALADIN += 2;
+                if (answer === 1) scores.ROGUE += 2;
+                if (answer === 2) scores.MAGE += 2;
+                if (answer === 3) scores.RANGER += 2;
+            });
+
+            // Find highest scoring class
+            let maxScore = 0;
+            let selectedClass = 'WARRIOR';
+
+            for (const [cls, score] of Object.entries(scores)) {
+                if (score > maxScore) {
+                    maxScore = score;
+                    selectedClass = cls;
+                }
+            }
+
+            gameState.playerClass = selectedClass;
+            showClassReveal();
+        }
+
+        // Show Class Reveal
+        function showClassReveal() {
+            const classData = CLASSES[gameState.playerClass];
+
+            document.getElementById('interrogationScreen').classList.remove('active');
+            document.getElementById('classRevealScreen').classList.add('active');
+
+            document.getElementById('classIcon').textContent = classData.icon;
+            document.getElementById('className').textContent = gameState.playerClass;
+            document.getElementById('classDescription').textContent =
+                `The gods have chosen. You are a ${gameState.playerClass}, ${classData.description}.`;
+        }
+
+        // Enter Game
+        function enterGame() {
+            document.getElementById('classRevealScreen').classList.remove('active');
+            document.getElementById('gameUI').classList.add('active');
+
+            // Initialize game UI
+            initializeGameUI();
+
+            // Load first scenario
+            loadScenario();
+        }
+
+        // Initialize Game UI
+        function initializeGameUI() {
+            const classData = CLASSES[gameState.playerClass];
+
+            // Update player info
+            document.getElementById('playerPortrait').textContent = classData.icon;
+            document.getElementById('playerNameDisplay').textContent = gameState.playerName;
+            document.getElementById('playerClassDisplay').textContent = gameState.playerClass;
+
+            // Update party members
+            updatePartyDisplay();
+
+            // Add initial log entry
+            addLogEntry(`${gameState.playerName} the ${gameState.playerClass} begins their journey...`);
+        }
+
+        // Update Party Display
+        function updatePartyDisplay() {
+            const container = document.getElementById('partyMembers');
+            container.innerHTML = '';
+
+            // Add player
+            const playerDiv = createPartyMemberElement(
+                gameState.playerName,
+                gameState.playerClass,
+                true,
+                'ready'
+            );
+            container.appendChild(playerDiv);
+
+            // Add party members
+            gameState.partyMembers.forEach(member => {
+                const memberDiv = createPartyMemberElement(
+                    member.name,
+                    member.class || 'WARRIOR',
+                    false,
+                    'waiting'
+                );
+                container.appendChild(memberDiv);
+            });
+        }
+
+        // Create Party Member Element
+        function createPartyMemberElement(name, className, isPlayer, status) {
+            const div = document.createElement('div');
+            div.className = 'party-member';
+
+            const classData = CLASSES[className] || CLASSES.WARRIOR;
+
+            div.innerHTML = `
+                <span class="member-icon">${classData.icon}</span>
+                <div class="member-info">
+                    <div class="member-name">${name} ${isPlayer ? '(You)' : ''}</div>
+                    <div class="member-class">${className}</div>
+                    <div class="member-status ${status}">${status === 'waiting' ? 'Deciding...' : 'Ready'}</div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Load Scenario
+        function loadScenario() {
+            // In real app, this would fetch from backend
+            const scenario = generateMockScenario();
+            gameState.currentScenario = scenario;
+
+            // Update UI
+            document.getElementById('sceneTitle').textContent = scenario.title;
+            document.getElementById('sceneDescription').textContent = scenario.description;
+            document.getElementById('whisperText').textContent = scenario.whisper;
+
+            // Add choices
+            const choicesContainer = document.getElementById('choiceOptions');
+            choicesContainer.innerHTML = '';
+
+            scenario.choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerHTML = `
+                    <span class="choice-icon">${choice.icon}</span>
+                    <span class="choice-text">${choice.text}</span>
+                `;
+                btn.onclick = () => makeChoice(index);
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        // Generate Mock Scenario
+        function generateMockScenario() {
+            const scenarios = [
+                {
+                    title: 'The Cursed Warehouse',
+                    description: 'You stand before an abandoned warehouse on the outskirts of Valdria. The merchant Grimsby wrings his hands nervously beside you. "Please," he begs, "my daughter\'s cries echo from within. The bandits demand gold I don\'t have!" The moon casts long shadows through broken windows.',
+                    whisper: 'Your warrior instincts scream danger. This is an ambush. You count at least six figures hiding in the shadows, weapons drawn. Grimsby\'s nervous twitch reveals his deception.',
+                    choices: [
+                        { icon: '⚔️', text: 'Charge in immediately - spring the trap on your terms' },
+                        { icon: '🗣️', text: 'Confront Grimsby about the ambush' },
+                        { icon: '🌙', text: 'Pretend ignorance and suggest waiting for backup' },
+                        { icon: '👁️', text: 'Quietly share your suspicions with the party' }
+                    ]
+                },
+                {
+                    title: 'The Whispering Woods',
+                    description: 'Deep in the ancient forest, your party discovers a circle of standing stones. Strange symbols glow with an eerie light, and the air hums with power. A hooded figure awaits in the center.',
+                    whisper: 'You recognize the symbols - they mark a portal to the Shadow Realm. The figure is a cultist preparing a summoning ritual. In one hour, something terrible will emerge.',
+                    choices: [
+                        { icon: '⚔️', text: 'Attack immediately before the ritual completes' },
+                        { icon: '📚', text: 'Study the symbols to understand the ritual' },
+                        { icon: '🗣️', text: 'Attempt to negotiate with the cultist' },
+                        { icon: '🏃', text: 'Retreat and return with reinforcements' }
+                    ]
+                }
+            ];
+
+            return scenarios[Math.floor(Math.random() * scenarios.length)];
+        }
+
+        // Make Choice
+        function makeChoice(choiceIndex) {
+            const choice = gameState.currentScenario.choices[choiceIndex];
+
+            // Mark choice as selected
+            const buttons = document.querySelectorAll('.choice-btn');
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            buttons[choiceIndex].classList.add('selected');
+
+            // Add to log
+            addLogEntry(`${gameState.playerName} chose: ${choice.text}`);
+
+            // Update trust based on choice
+            updateTrust(choiceIndex === 3 ? 10 : -5);
+
+            // Simulate party members making choices
+            setTimeout(() => {
+                gameState.partyMembers.forEach(member => {
+                    const randomChoice = Math.floor(Math.random() * 4);
+                    addLogEntry(`${member.name} made their choice...`);
+                });
+
+                // Process outcome
+                setTimeout(() => {
+                    processScenarioOutcome();
+                }, 2000);
+            }, 1500);
+        }
+
+        // Process Scenario Outcome
+        function processScenarioOutcome() {
+            // Show loading
+            showToast('The gods weigh your choices...', 'info');
+
+            // Simulate processing
+            setTimeout(() => {
+                // Update game state
+                if (Math.random() > 0.5) {
+                    updateHealth(-10);
+                    showToast('The ambush was sprung! You take damage.', 'error');
+                } else {
+                    updateTrust(15);
+                    showToast('Your wisdom impressed the party!', 'success');
+                }
+
+                // Load next scenario
+                setTimeout(() => {
+                    loadScenario();
+                }, 2000);
+            }, 2000);
+        }
+
+        // Update Trust
+        function updateTrust(change) {
+            gameState.trust = Math.max(0, Math.min(100, gameState.trust + change));
+            document.getElementById('trustValue').textContent = gameState.trust;
+
+            // Update trust circle
+            const circle = document.getElementById('trustCircle');
+            const circumference = 283;
+            const offset = circumference - (circumference * gameState.trust / 100);
+            circle.style.strokeDashoffset = offset;
+
+            // Update color based on trust level
+            if (gameState.trust < 30) {
+                document.getElementById('trustValue').style.color = 'var(--trust-low)';
+            } else if (gameState.trust < 70) {
+                document.getElementById('trustValue').style.color = 'var(--trust-mid)';
+            } else {
+                document.getElementById('trustValue').style.color = 'var(--trust-high)';
+            }
+        }
+
+        // Update Health
+        function updateHealth(change) {
+            gameState.health = Math.max(0, Math.min(100, gameState.health + change));
+            const healthBar = document.getElementById('healthBar');
+            healthBar.style.width = gameState.health + '%';
+            healthBar.parentElement.querySelector('.bar-text').textContent = `${gameState.health}/100`;
+        }
+
+        // Add Log Entry
+        function addLogEntry(text) {
+            const log = document.getElementById('actionLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            log.insertBefore(entry, log.firstChild);
+
+            // Keep only last 10 entries
+            while (log.children.length > 10) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<div class="toast-message">${message}</div>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => container.removeChild(toast), 500);
+            }, 3000);
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            initParticles();
+
+            // Hide loading after initial load
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('setupScreen').classList.remove('hidden');
+            }, 2000);
+
+            // Setup input listener
+            document.getElementById('playerNameInput').addEventListener('input', checkStartButton);
+
+            // Check for multiplayer mode from localStorage
+            if (localStorage.getItem('multiplayer_mode') === 'true') {
+                localStorage.removeItem('multiplayer_mode');
+                gameState.playerCount = 2;
+                document.querySelectorAll('.count-btn')[1].classList.add('selected');
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+        # Generate a unique programmatic question
+        import random
+        import json
+        
+        # Unique question templates (different each time)
+        question_templates = [
+            {
+                "theme": "justice",
+                "text": "A merchant has been falsely accused of theft by a corrupt noble. The evidence is fabricated, but the noble has the king's ear. You know the truth.",
+                "options": [
+                    {"id": 1, "text": "Expose the noble publicly, risking your own position", "favor": {"VALDRIS": 25, "ATHENA": 20, "MERCUS": -15}},
+                    {"id": 2, "text": "Blackmail the noble privately to drop charges", "favor": {"KAITHA": 30, "MERCUS": 15, "VALDRIS": -20}},
+                    {"id": 3, "text": "Do nothing - survival matters more than justice", "favor": {"MORVANE": 20, "VALDRIS": -25}},
+                    {"id": 4, "text": "Help the merchant escape and start anew", "favor": {"SYLARA": 25, "KAITHA": 10}}
+                ]
+            },
+            {
+                "theme": "sacrifice",
+                "text": "A plague ravages your village. The priest claims only a sacrifice to the old gods will end it. Your child was chosen by lottery.",
+                "options": [
+                    {"id": 1, "text": "Sacrifice your child as the ritual demands", "favor": {"MORVANE": 30, "VALDRIS": 15, "SYLARA": -25}},
+                    {"id": 2, "text": "Offer yourself instead", "favor": {"VALDRIS": 25, "MORVANE": 10}},
+                    {"id": 3, "text": "Flee with your child, abandoning the village", "favor": {"SYLARA": 20, "VALDRIS": -20}},
+                    {"id": 4, "text": "Kill the priest and end the madness", "favor": {"KAITHA": 25, "KORVAN": 20, "MORVANE": -30}}
+                ]
+            },
+            {
+                "theme": "betrayal",
+                "text": "Your closest ally has been secretly undermining you for years. You discovered their treachery only after they saved your life in battle yesterday.",
+                "options": [
+                    {"id": 1, "text": "Execute them for betrayal despite their recent heroism", "favor": {"VALDRIS": 20, "KORVAN": 15}},
+                    {"id": 2, "text": "Forgive them and bind them closer", "favor": {"ATHENA": 25, "SYLARA": 15, "KAITHA": -15}},
+                    {"id": 3, "text": "Use their guilt to control them", "favor": {"KAITHA": 30, "MERCUS": 20, "ATHENA": -20}},
+                    {"id": 4, "text": "Stage their death and send them away", "favor": {"MERCUS": 15, "MORVANE": 10}}
+                ]
+            }
+        ]
+        
+        # Select template based on question number to ensure variety
+        template = question_templates[(question_number - 1 + hash(player_id)) % len(question_templates)]
+        
+        question = {
+            "question_number": question_number,
+            "total_questions": 10,
+            "god": random.choice(gods) if gods else "VALDRIS",
+            "question_text": template["text"],
+            "options": template["options"]
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(question)
+        )]

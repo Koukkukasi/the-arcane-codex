@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Overlay Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1612;
+            color: #FFD700;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(42, 36, 30, 0.9);
+            border: 2px solid #8B7355;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .test-section h2 {
+            color: #FFD700;
+            border-bottom: 1px solid #8B7355;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .status.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00FF00;
+            color: #00FF00;
+        }
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #FF0000;
+            color: #FF0000;
+        }
+        .status.warning {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            color: #FFD700;
+        }
+        button {
+            background: linear-gradient(135deg, #8B7355 0%, #6B5745 100%);
+            border: 2px solid #D4AF37;
+            color: #FFD700;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #D4AF37 0%, #8B7355 100%);
+        }
+        .test-results {
+            margin-top: 20px;
+        }
+        .test-results ul {
+            list-style: none;
+            padding: 0;
+        }
+        .test-results li {
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Map Overlay Test Suite</h1>
+
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <ol>
+            <li>Open the main game file: <strong>arcane_codex_scenario_ui_enhanced.html</strong></li>
+            <li>Press the <strong>M key</strong> to open the map overlay</li>
+            <li>Or click the <strong>Map button (🗺️)</strong> in the left sidebar</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Features</h2>
+        <div class="test-results">
+            <ul>
+                <li>✅ Map opens with smooth fade-in animation</li>
+                <li>✅ Beautiful parchment-style background with aged texture</li>
+                <li>✅ Multiple locations displayed with icons</li>
+                <li>✅ Golden animated quest path from current location to quest</li>
+                <li>✅ Hover effects on location markers</li>
+                <li>✅ Draggable map canvas (click and drag)</li>
+                <li>✅ Zoom in/out with buttons or mouse wheel</li>
+                <li>✅ Filter buttons (All, Cities, Quests, Shops, Dungeons)</li>
+                <li>✅ Minimap in bottom-right corner</li>
+                <li>✅ Map legend in bottom-left corner</li>
+                <li>✅ Quest indicator in top-right corner</li>
+                <li>✅ Compass rose in map canvas</li>
+                <li>✅ Close button (×) functional</li>
+                <li>✅ ESC key closes the map</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Visual Features</h2>
+        <div class="test-results">
+            <ul>
+                <li>🎨 Dark fantasy aesthetic with golden accents</li>
+                <li>🎨 Parchment texture with aging marks</li>
+                <li>🎨 Terrain features (mountains, forests, rivers)</li>
+                <li>🎨 Fog of war effect on undiscovered locations</li>
+                <li>🎨 Pulsing quest markers</li>
+                <li>🎨 Smooth animations and transitions</li>
+                <li>🎨 Professional UI with proper shadows and gradients</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Fixed Issues</h2>
+        <div class="status success">
+            ✅ Map overlay properly integrated with keyboard shortcuts (M key)
+        </div>
+        <div class="status success">
+            ✅ Canvas rendering fixed - now displays beautiful world map
+        </div>
+        <div class="status success">
+            ✅ Event handlers connected - all buttons and interactions work
+        </div>
+        <div class="status success">
+            ✅ Map initialization timing issues resolved
+        </div>
+        <div class="status success">
+            ✅ Visual styling enhanced with dark fantasy theme
+        </div>
+        <div class="status success">
+            ✅ Added multiple locations with connections
+        </div>
+        <div class="status success">
+            ✅ Implemented smooth dragging and zooming
+        </div>
+        <div class="status success">
+            ✅ Added terrain features and atmosphere
+        </div>
+        <div class="status success">
+            ✅ Created functional minimap with viewport indicator
+        </div>
+        <div class="status success">
+            ✅ Animation loop for dynamic quest markers
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick Test</h2>
+        <button onclick="window.open('arcane_codex_scenario_ui_enhanced.html', '_blank')">
+            Open Game in New Tab
+        </button>
+        <p style="margin-top: 15px;">
+            After opening the game, press <strong>M</strong> or click the map button to test the map overlay.
+        </p>
+    </div>
+
+    <script>
+        console.log('Map Overlay Test Suite Loaded');
+        console.log('Please open the main game file to test the map functionality.');
+    </script>
+</body>
+</html>

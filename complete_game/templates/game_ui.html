@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Game</title>
+    <link rel="stylesheet" href="/static/css/design-system.css">
+    <link rel="stylesheet" href="/static/css/ux_enhancements.css">
+    <style>
+        /* Game-specific layout */
+        .game-container {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            grid-template-rows: 60px 1fr 100px;
+            height: 100vh;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--gradient-dark);
+        }
+
+        /* Header */
+        .game-header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+        }
+
+        /* Left Panel - Character */
+        .character-panel {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        /* Main Game Area */
+        .game-main {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Right Panel - Party/Quest */
+        .info-panel {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Character Stats */
+        .stat-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-bar {
+            margin: 0.5rem 0;
+        }
+
+        .health-bar {
+            background: linear-gradient(90deg, #ff4444, #ff6666);
+        }
+
+        .mana-bar {
+            background: linear-gradient(90deg, #4444ff, #6666ff);
+        }
+
+        .xp-bar {
+            background: linear-gradient(90deg, #44ff44, #66ff66);
+        }
+
+        /* Inventory Grid */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .inventory-slot {
+            aspect-ratio: 1;
+            background: var(--surface-elevated);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            position: relative;
+        }
+
+        .inventory-slot:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .item-quantity {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.75rem;
+            background: var(--surface-dark);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        /* Quest List */
+        .quest-item {
+            background: var(--surface-elevated);
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+
+        .quest-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .quest-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        /* Combat UI */
+        .combat-area {
+            display: none;
+        }
+
+        body[data-phase="combat"] .combat-area {
+            display: block;
+        }
+
+        body[data-phase="combat"] .exploration-area {
+            display: none;
+        }
+
+        .enemy-list {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .enemy-card {
+            background: var(--surface-elevated);
+            border: 2px solid var(--danger);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .enemy-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--danger-alpha);
+        }
+
+        .enemy-card.defeated {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Dialogue Box */
+        .dialogue-box {
+            background: var(--surface-elevated);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .dialogue-speaker {
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Whisper Messages */
+        .whisper-message {
+            background: linear-gradient(135deg, var(--surface-elevated), var(--primary-alpha));
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: var(--radius-md);
+            animation: whisperGlow 2s infinite;
+        }
+
+        @keyframes whisperGlow {
+            0%, 100% { box-shadow: 0 0 5px var(--primary-alpha); }
+            50% { box-shadow: 0 0 15px var(--primary); }
+        }
+
+        /* Town Menu */
+        .town-menu {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .town-option {
+            background: var(--surface-elevated);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .town-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .town-option-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto auto;
+            }
+
+            .character-panel,
+            .info-panel {
+                display: none;
+            }
+
+            .game-main {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body data-phase="town">
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <div class="location-info">
+                <span class="text-muted">Location:</span>
+                <strong id="current-location">Valdria Town Square</strong>
+            </div>
+            <div class="party-trust">
+                <span class="text-muted">Trust:</span>
+                <div class="trust-meter" style="display: inline-block; width: 100px;">
+                    <div class="trust-fill" style="width: 50%"></div>
+                </div>
+                <span id="trust-value">50</span>
+            </div>
+            <div class="turn-info">
+                <span class="text-muted">Turn:</span>
+                <strong id="turn-count">0</strong>
+            </div>
+        </header>
+
+        <!-- Character Panel -->
+        <aside class="character-panel">
+            <h3 id="character-name">Character</h3>
+            <div class="text-muted mb-1" id="character-class">Fighter • Level 1</div>
+
+            <div class="stat-group">
+                <div class="stat-bar">
+                    <div class="stat-label">Health</div>
+                    <div class="stat-value">
+                        <div class="stat-fill health-bar" style="width: 100%"></div>
+                    </div>
+                    <span class="stat-number" id="hp-text">20/20</span>
+                </div>
+
+                <div class="stat-bar">
+                    <div class="stat-label">Mana</div>
+                    <div class="stat-value">
+                        <div class="stat-fill mana-bar" style="width: 100%"></div>
+                    </div>
+                    <span class="stat-number" id="mp-text">10/10</span>
+                </div>
+
+                <div class="stat-bar">
+                    <div class="stat-label">XP</div>
+                    <div class="stat-value">
+                        <div class="stat-fill xp-bar" style="width: 0%"></div>
+                    </div>
+                    <span class="stat-number" id="xp-text">0/100</span>
+                </div>
+            </div>
+
+            <div class="stat-group">
+                <h4>Stats</h4>
+                <div class="text-sm">
+                    <div>⚔️ Attack: <span id="stat-attack">2</span></div>
+                    <div>🛡️ Defense: <span id="stat-defense">1</span></div>
+                    <div>🔮 Magic: <span id="stat-magic">0</span></div>
+                    <div>👟 Speed: <span id="stat-speed">1</span></div>
+                </div>
+            </div>
+
+            <div class="stat-group">
+                <h4>Inventory</h4>
+                <div class="text-sm mb-1">💰 Gold: <span id="gold-amount">50</span></div>
+                <div class="inventory-grid" id="inventory-grid">
+                    <!-- Inventory slots will be populated here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Game Area -->
+        <main class="game-main">
+            <!-- Town Phase -->
+            <div class="town-area" id="town-area">
+                <h2>Welcome to Valdria</h2>
+                <p class="text-muted mb-3">The town square bustles with activity. Where would you like to go?</p>
+
+                <div class="town-menu">
+                    <div class="town-option" onclick="visitLocation('merchant')">
+                        <div class="town-option-icon">🛍️</div>
+                        <h3>Market</h3>
+                        <p class="text-sm text-muted">Buy and sell items</p>
+                    </div>
+
+                    <div class="town-option" onclick="visitLocation('inn')">
+                        <div class="town-option-icon">🏨</div>
+                        <h3>Inn</h3>
+                        <p class="text-sm text-muted">Rest and recover (10g)</p>
+                    </div>
+
+                    <div class="town-option" onclick="visitLocation('questboard')">
+                        <div class="town-option-icon">📜</div>
+                        <h3>Quest Board</h3>
+                        <p class="text-sm text-muted">View available quests</p>
+                    </div>
+
+                    <div class="town-option" onclick="startExploration()">
+                        <div class="town-option-icon">⚔️</div>
+                        <h3>Adventure</h3>
+                        <p class="text-sm text-muted">Leave town to explore</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exploration Phase -->
+            <div class="exploration-area" id="exploration-area" style="display: none;">
+                <div class="scenario-narration" id="scenario-text">
+                    <!-- Scenario narration appears here -->
+                </div>
+
+                <div class="whisper-container" id="whisper-container">
+                    <!-- Private whispers appear here -->
+                </div>
+
+                <div class="choice-container" id="choice-container">
+                    <!-- Choices appear here -->
+                </div>
+            </div>
+
+            <!-- Combat Phase -->
+            <div class="combat-area" id="combat-area">
+                <h2>⚔️ Combat!</h2>
+
+                <div class="enemy-list" id="enemy-list">
+                    <!-- Enemies appear here -->
+                </div>
+
+                <div class="combat-log" id="combat-log">
+                    <!-- Combat messages appear here -->
+                </div>
+            </div>
+
+            <!-- Dialogue -->
+            <div class="dialogue-container" id="dialogue-container" style="display: none;">
+                <!-- NPC dialogue appears here -->
+            </div>
+        </main>
+
+        <!-- Info Panel -->
+        <aside class="info-panel">
+            <h3>Party</h3>
+            <div id="party-list" class="mb-3">
+                <!-- Party members listed here -->
+            </div>
+
+            <h3>Active Quests</h3>
+            <div id="quest-list">
+                <!-- Active quests listed here -->
+            </div>
+
+            <h3>Chat</h3>
+            <div id="chat-messages" style="height: 200px; overflow-y: auto; background: var(--surface-dark); padding: 0.5rem; border-radius: var(--radius-sm);">
+                <!-- Chat messages here -->
+            </div>
+            <input type="text" id="chat-input" class="form-input mt-2" placeholder="Type message..." onkeydown="if(event.key=='Enter') sendChatMessage()">
+        </aside>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <button class="btn btn-primary" id="action-btn-1" onclick="performAction(1)">
+                Action 1
+            </button>
+            <button class="btn btn-secondary" id="action-btn-2" onclick="performAction(2)">
+                Action 2
+            </button>
+            <button class="btn btn-secondary" id="action-btn-3" onclick="performAction(3)">
+                Action 3
+            </button>
+            <button class="btn btn-outline" onclick="openInventory()">
+                📦 Inventory
+            </button>
+            <button class="btn btn-outline" onclick="openCharacterSheet()">
+                📊 Character
+            </button>
+            <button class="btn btn-outline" onclick="saveGame()">
+                💾 Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container"></div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Game state
+        let gameState = {
+            gameId: null,
+            playerId: null,
+            phase: 'town',
+            character: {},
+            inventory: {},
+            currentBattle: null
+        };
+
+        // Initialize Socket.IO
+        const socket = io();
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            // Join game room
+            if (gameState.gameId) {
+                socket.emit('join_game_room', {
+                    game_id: gameState.gameId,
+                    player_id: gameState.playerId
+                });
+            }
+        });
+
+        socket.on('scenario_update', (data) => {
+            displayScenario(data);
+        });
+
+        socket.on('private_whisper', (data) => {
+            displayWhisper(data);
+        });
+
+        socket.on('battle_start', (data) => {
+            startBattle(data);
+        });
+
+        socket.on('combat_action', (data) => {
+            updateCombat(data);
+        });
+
+        socket.on('chat_message', (data) => {
+            displayChatMessage(data);
+        });
+
+        // UI Functions
+        function visitLocation(location) {
+            fetch(`/api/game/${gameState.gameId}/town_action`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    player_id: gameState.playerId,
+                    action: location === 'questboard' ? 'quest_board' : 'talk',
+                    target: location
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.dialogue) {
+                    showDialogue(location, data.dialogue);
+                } else if (data.shop_inventory) {
+                    showShop(data.shop_inventory);
+                } else if (data.active_quests) {
+                    showQuestBoard(data.active_quests);
+                }
+            });
+        }
+
+        function startExploration() {
+            fetch(`/api/game/${gameState.gameId}/explore`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    player_id: gameState.playerId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.phase === 'exploration') {
+                    document.body.dataset.phase = 'exploration';
+                    document.getElementById('town-area').style.display = 'none';
+                    document.getElementById('exploration-area').style.display = 'block';
+                    displayScenario(data.scenario);
+                } else if (data.phase === 'combat') {
+                    startBattle(data.battle);
+                }
+            });
+        }
+
+        function displayScenario(scenario) {
+            const scenarioEl = document.getElementById('scenario-text');
+            scenarioEl.innerHTML = `
+                <div class="scenario-card">
+                    <p>${scenario.narration || scenario.public}</p>
+                </div>
+            `;
+
+            // Display whispers
+            if (scenario.whispers && scenario.whispers[gameState.playerId]) {
+                displayWhisper({
+                    content: scenario.whispers[gameState.playerId],
+                    type: 'visual'
+                });
+            }
+
+            // Display choices
+            if (scenario.choices) {
+                displayChoices(scenario.choices);
+            }
+        }
+
+        function displayWhisper(whisper) {
+            const container = document.getElementById('whisper-container');
+            const whisperEl = document.createElement('div');
+            whisperEl.className = 'whisper-message animate-fadeIn';
+            whisperEl.innerHTML = `
+                <div class="whisper-header">
+                    <span class="whisper-type">🔮 ${whisper.type || 'Whisper'}</span>
+                    <button class="btn btn-sm" onclick="shareWhisper(this)">Share</button>
+                </div>
+                <div class="whisper-content">${whisper.content}</div>
+            `;
+            container.appendChild(whisperEl);
+        }
+
+        function displayChoices(choices) {
+            const container = document.getElementById('choice-container');
+            container.innerHTML = '<h3>What do you do?</h3>';
+
+            choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline mb-2 w-full';
+                btn.textContent = choice.text;
+                btn.onclick = () => makeChoice(choice.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function makeChoice(choiceId) {
+            socket.emit('submit_action', {
+                game_id: gameState.gameId,
+                player_id: gameState.playerId,
+                action: {
+                    type: 'choice',
+                    choice_id: choiceId
+                }
+            });
+        }
+
+        function startBattle(battleData) {
+            document.body.dataset.phase = 'combat';
+            gameState.currentBattle = battleData;
+
+            const enemyList = document.getElementById('enemy-list');
+            enemyList.innerHTML = '';
+
+            battleData.enemies.forEach(enemy => {
+                const enemyCard = document.createElement('div');
+                enemyCard.className = 'enemy-card';
+                enemyCard.dataset.enemyId = enemy.id;
+                enemyCard.innerHTML = `
+                    <div class="enemy-name">${enemy.name}</div>
+                    <div class="enemy-hp">HP: ${enemy.hp}/${enemy.max_hp}</div>
+                `;
+                enemyCard.onclick = () => targetEnemy(enemy.id);
+                enemyList.appendChild(enemyCard);
+            });
+
+            updateActionButtons(['Attack', 'Defend', 'Ability', 'Item']);
+        }
+
+        function targetEnemy(enemyId) {
+            // Visual feedback
+            document.querySelectorAll('.enemy-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-enemy-id="${enemyId}"]`).classList.add('selected');
+
+            gameState.selectedTarget = enemyId;
+        }
+
+        function performCombatAction(action) {
+            if (!gameState.selectedTarget && action === 'Attack') {
+                alert('Select a target first!');
+                return;
+            }
+
+            socket.emit('combat_action', {
+                game_id: gameState.gameId,
+                player_id: gameState.playerId,
+                action: {
+                    type: action.toLowerCase(),
+                    target: gameState.selectedTarget
+                }
+            });
+        }
+
+        function updateCombat(data) {
+            const log = document.getElementById('combat-log');
+            const entry = document.createElement('div');
+            entry.className = 'combat-entry';
+            entry.textContent = data.result.message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+
+            // Update enemy HP if needed
+            if (data.result.target_hp !== undefined) {
+                // Update enemy card HP display
+            }
+        }
+
+        function showDialogue(npc, text) {
+            const container = document.getElementById('dialogue-container');
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div class="dialogue-box">
+                    <div class="dialogue-speaker">${npc}:</div>
+                    <div class="dialogue-text">${text}</div>
+                    <button class="btn btn-primary mt-2" onclick="closeDialogue()">Continue</button>
+                </div>
+            `;
+        }
+
+        function closeDialogue() {
+            document.getElementById('dialogue-container').style.display = 'none';
+        }
+
+        function updateActionButtons(actions) {
+            actions.forEach((action, index) => {
+                const btn = document.getElementById(`action-btn-${index + 1}`);
+                if (btn) {
+                    btn.textContent = action;
+                    btn.onclick = () => performCombatAction(action);
+                }
+            });
+        }
+
+        function displayChatMessage(data) {
+            const chat = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.innerHTML = `<strong>${data.player_name}:</strong> ${data.message}`;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            if (input.value.trim()) {
+                socket.emit('send_message', {
+                    game_id: gameState.gameId,
+                    player_id: gameState.playerId,
+                    message: input.value
+                });
+                input.value = '';
+            }
+        }
+
+        function saveGame() {
+            fetch(`/api/game/${gameState.gameId}/save`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({player_id: gameState.playerId})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Game saved!');
+                }
+            });
+        }
+
+        function updateCharacterDisplay() {
+            // Update character panel with latest stats
+            document.getElementById('character-name').textContent = gameState.character.name;
+            document.getElementById('character-class').textContent =
+                `${gameState.character.class_type} • Level ${gameState.character.level}`;
+
+            // Update HP/MP/XP bars
+            // Update stats display
+            // Update inventory grid
+        }
+
+        // Initialize game on load
+        window.onload = () => {
+            // Get game ID from URL or session
+            const urlParams = new URLSearchParams(window.location.search);
+            gameState.gameId = urlParams.get('game_id') || localStorage.getItem('game_id');
+            gameState.playerId = urlParams.get('player_id') || localStorage.getItem('player_id');
+
+            if (gameState.gameId && gameState.playerId) {
+                // Load game state
+                fetch(`/api/game/${gameState.gameId}/state`)
+                    .then(res => res.json())
+                    .then(data => {
+                        gameState.character = data.character;
+                        gameState.inventory = data.inventory;
+                        updateCharacterDisplay();
+                    });
+            } else {
+                // Redirect to lobby
+                window.location.href = '/';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - TRUE ASCII</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            color: #00ff00;
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        /* PURE ASCII DISPLAY */
+        #ascii-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000000;
+            position: relative;
+        }
+
+        #ascii-display {
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.2;
+            letter-spacing: 2px;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            animation: flicker 0.1s infinite;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* CRT SCREEN EFFECT */
+        #ascii-display::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* SCREEN SHAKE EFFECT */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-2px, -1px); }
+            20% { transform: translate(2px, -2px); }
+            30% { transform: translate(-1px, 2px); }
+            40% { transform: translate(1px, -1px); }
+            50% { transform: translate(-2px, 1px); }
+            60% { transform: translate(2px, 1px); }
+            70% { transform: translate(-1px, -2px); }
+            80% { transform: translate(1px, 2px); }
+            90% { transform: translate(2px, -1px); }
+        }
+
+        .shaking {
+            animation: shake 0.5s infinite;
+        }
+
+        /* FLICKER EFFECT */
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.98; }
+            100% { opacity: 1; }
+        }
+
+        /* RHYTHM PULSE */
+        @keyframes pulse {
+            0% { color: #00ff00; }
+            50% { color: #00ff88; text-shadow: 0 0 10px #00ff88; }
+            100% { color: #00ff00; }
+        }
+
+        .rhythm-beat {
+            animation: pulse 0.5s;
+        }
+
+        /* ASCII COLORS */
+        .ascii-red { color: #ff0000; text-shadow: 0 0 5px #ff0000; }
+        .ascii-blue { color: #0088ff; text-shadow: 0 0 5px #0088ff; }
+        .ascii-gold { color: #ffaa00; text-shadow: 0 0 5px #ffaa00; }
+        .ascii-purple { color: #aa00ff; text-shadow: 0 0 5px #aa00ff; }
+        .ascii-white { color: #ffffff; text-shadow: 0 0 5px #ffffff; }
+
+        /* INPUT STYLING */
+        #ascii-input {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: 16px;
+            padding: 10px;
+            width: 80%;
+            max-width: 600px;
+            outline: none;
+        }
+
+        #ascii-input:focus {
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        /* PARTICLE CONTAINER */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            color: #ffaa00;
+            font-size: 20px;
+            animation: particle-fall 2s linear;
+        }
+
+        @keyframes particle-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="ascii-container">
+        <div class="particles" id="particle-container"></div>
+        <pre id="ascii-display"></pre>
+        <input type="text" id="ascii-input" placeholder="> Enter command..." style="display:none;">
+    </div>
+
+    <script>
+        class ArcaneCodexASCII {
+            constructor() {
+                this.display = document.getElementById('ascii-display');
+                this.input = document.getElementById('ascii-input');
+                this.particleContainer = document.getElementById('particle-container');
+                this.currentScreen = 'title';
+                this.gameCode = null;
+                this.playerName = null;
+                this.bpm = 120;
+                this.rhythmInterval = null;
+
+                this.init();
+            }
+
+            init() {
+                this.showTitleScreen();
+                this.startRhythmEngine();
+                this.bindEvents();
+            }
+
+            showTitleScreen() {
+                const title = `
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║  ████████╗██╗  ██╗███████╗                                  ║
+║  ╚══██╔══╝██║  ██║██╔════╝                                  ║
+║     ██║   ███████║█████╗                                    ║
+║     ██║   ██╔══██║██╔══╝                                    ║
+║     ██║   ██║  ██║███████╗                                  ║
+║     ╚═╝   ╚═╝  ╚═╝╚══════╝                                  ║
+║                                                              ║
+║   █████╗ ██████╗  ██████╗ █████╗ ███╗   ██╗███████╗        ║
+║  ██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║██╔════╝        ║
+║  ███████║██████╔╝██║     ███████║██╔██╗ ██║█████╗          ║
+║  ██╔══██║██╔══██╗██║     ██╔══██║██║╚██╗██║██╔══╝          ║
+║  ██║  ██║██║  ██║╚██████╗██║  ██║██║ ╚████║███████╗        ║
+║  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝        ║
+║                                                              ║
+║   ██████╗ ██████╗ ██████╗ ███████╗██╗  ██╗                 ║
+║  ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚██╗██╔╝                 ║
+║  ██║     ██║   ██║██║  ██║█████╗   ╚███╔╝                  ║
+║  ██║     ██║   ██║██║  ██║██╔══╝   ██╔██╗                  ║
+║  ╚██████╗╚██████╔╝██████╔╝███████╗██╔╝ ██╗                 ║
+║   ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝                 ║
+║                                                              ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║     🎮 MULTIPLAYER ASCII RPG WITH RHYTHM COMBAT 🎮          ║
+║                                                              ║
+║     • Real-time ASCII graphics at 30 FPS                    ║
+║     • Every entity has its own rhythm (BPM)                 ║
+║     • Screen shake, particles, explosions!                  ║
+║     • Asymmetric information per player                     ║
+║     • 1-4 players supported                                 ║
+║                                                              ║
+║              Press [1] CREATE GAME                          ║
+║              Press [2] JOIN GAME                            ║
+║              Press [3] VIEW DEMO                            ║
+║                                                              ║
+║     ░░░░░░░░░░████████████░░░░░░░░░░                       ║
+║     BPM: ${this.bpm} | FPS: 30 | PLAYERS: 0/4                    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+                `;
+
+                this.display.innerHTML = title;
+                this.input.style.display = 'block';
+                this.currentScreen = 'title';
+            }
+
+            showGameScreen() {
+                const gameScreen = `
+╔══════════════════════════════════════════════════════════════╗
+║                    GAME CODE: ${this.gameCode || 'GENERATING...'}                     ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  BATTLEFIELD:                                                ║
+║  ~~~~~~~~~~~~                                                ║
+║                                                              ║
+║     @  ←── You                      👹 ←── Enemy            ║
+║     │                                │                       ║
+║  ████████░░░░░░░░░░  VS  ░░░░░░░░░░████████                ║
+║   HP: 100/100              HP: 100/100                      ║
+║                                                              ║
+║  RHYTHM BAR:                                                 ║
+║  [████....████....████....████....]  60 BPM                ║
+║                                                              ║
+║  YOUR WHISPER (Secret - Don't share!):                      ║
+║  ┌─────────────────────────────────────────┐                ║
+║  │ You sense danger from the left path...  │                ║
+║  └─────────────────────────────────────────┘                ║
+║                                                              ║
+║  PUBLIC SCENE:                                               ║
+║  "You stand at a crossroads. Three paths diverge."          ║
+║                                                              ║
+║  PARTY TRUST: [██████████░░░░░░░░░░] 50/100                 ║
+║                                                              ║
+║  Commands: [A]ttack | [D]efend | [W]ait | [S]hare           ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+                `;
+
+                this.display.innerHTML = gameScreen;
+            }
+
+            startRhythmEngine() {
+                // Pulse effect based on BPM
+                const beatInterval = 60000 / this.bpm; // ms per beat
+
+                this.rhythmInterval = setInterval(() => {
+                    this.display.classList.add('rhythm-beat');
+                    setTimeout(() => {
+                        this.display.classList.remove('rhythm-beat');
+                    }, 100);
+
+                    // Random particle generation
+                    if (Math.random() > 0.7) {
+                        this.createParticle();
+                    }
+                }, beatInterval);
+            }
+
+            createParticle() {
+                const particles = ['*', '✦', '•', '°', '▪', '▫'];
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = '0';
+
+                this.particleContainer.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 2000);
+            }
+
+            triggerScreenShake() {
+                this.display.classList.add('shaking');
+                setTimeout(() => {
+                    this.display.classList.remove('shaking');
+                }, 500);
+            }
+
+            bindEvents() {
+                this.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.handleCommand(this.input.value);
+                        this.input.value = '';
+                    }
+                });
+
+                // Handle number key presses
+                document.addEventListener('keypress', (e) => {
+                    if (this.currentScreen === 'title') {
+                        if (e.key === '1') {
+                            this.createGame();
+                        } else if (e.key === '2') {
+                            this.joinGame();
+                        } else if (e.key === '3') {
+                            this.showDemo();
+                        }
+                    }
+                });
+            }
+
+            handleCommand(command) {
+                const cmd = command.toLowerCase().trim();
+
+                if (cmd === 'attack' || cmd === 'a') {
+                    this.triggerScreenShake();
+                    this.showAttackEffect();
+                } else if (cmd === 'demo') {
+                    this.showDemo();
+                }
+            }
+
+            showAttackEffect() {
+                // Create explosion of particles
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        this.createParticle();
+                    }, i * 50);
+                }
+
+                // Flash effect
+                this.display.style.color = '#ff0000';
+                setTimeout(() => {
+                    this.display.style.color = '#00ff00';
+                }, 200);
+            }
+
+            createGame() {
+                this.gameCode = this.generateGameCode();
+                this.showGameScreen();
+
+                // API call would go here
+                fetch('/api/create_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({player_name: this.playerName || 'Player'})
+                }).then(r => r.json()).then(data => {
+                    if (data.game_code) {
+                        this.gameCode = data.game_code;
+                        this.showGameScreen();
+                    }
+                }).catch(e => console.log('Using demo mode'));
+            }
+
+            joinGame() {
+                // Show join screen
+                this.input.placeholder = "> Enter 6-character game code...";
+                this.input.focus();
+            }
+
+            generateGameCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return code;
+            }
+
+            showDemo() {
+                // Show all effects at once
+                this.triggerScreenShake();
+                this.showAttackEffect();
+
+                const demo = `
+╔══════════════════════════════════════════════════════════════╗
+║                    DEMO MODE ACTIVE                         ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  SHOWING ALL ASCII EFFECTS:                                 ║
+║                                                              ║
+║  💥 EXPLOSION EFFECT:                                       ║
+║     *  ✦  *                                                 ║
+║    ✦  💥  ✦                                                ║
+║     *  ✦  *                                                 ║
+║                                                              ║
+║  🌊 WAVE EFFECT:                                           ║
+║  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                          ║
+║                                                              ║
+║  ⚡ LIGHTNING STRIKE:                                       ║
+║       ║                                                      ║
+║      ╱║╲                                                     ║
+║     ╱ ║ ╲                                                    ║
+║    ⚡  ║  ⚡                                                 ║
+║                                                              ║
+║  🔥 FIRE ANIMATION:                                         ║
+║  🔥🔥🔥🔥🔥🔥🔥🔥🔥                                      ║
+║                                                              ║
+║  RHYTHM: [████░░░░████░░░░████░░░░]                        ║
+║  PARTICLES: ${this.particleContainer.children.length} ACTIVE                               ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+                `;
+
+                this.display.innerHTML = demo;
+            }
+        }
+
+        // Initialize game
+        const game = new ArcaneCodexASCII();
+    </script>
+</body>
+</html>

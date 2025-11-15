@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcane Codex - Design System Style Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Yrsa:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="arcane_codex_design_system.css">
+    <link rel="stylesheet" href="arcane_codex_components.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, #0A0812 0%, #1A1425 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            font-family: var(--font-family-body);
+        }
+
+        .style-guide-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .guide-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px;
+            background: linear-gradient(135deg, rgba(42, 36, 30, 0.95), rgba(26, 22, 18, 0.95));
+            border: 3px solid var(--color-gold-600);
+            border-radius: var(--border-radius-lg);
+        }
+
+        .guide-title {
+            font-family: var(--font-family-display);
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(180deg, var(--color-gold-300), var(--color-gold-500), var(--color-gold-300));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .guide-subtitle {
+            font-size: 20px;
+            color: var(--color-gold-400);
+        }
+
+        .section {
+            margin-bottom: 60px;
+            padding: 30px;
+            background: rgba(26, 22, 18, 0.95);
+            border: 2px solid var(--color-gold-700);
+            border-radius: var(--border-radius-lg);
+        }
+
+        .section-title {
+            font-family: var(--font-family-display);
+            font-size: 32px;
+            color: var(--color-gold-300);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--color-gold-600);
+        }
+
+        .subsection {
+            margin-bottom: 40px;
+        }
+
+        .subsection-title {
+            font-family: var(--font-family-display);
+            font-size: 24px;
+            color: var(--color-gold-400);
+            margin-bottom: 20px;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .color-swatch {
+            padding: 20px;
+            border-radius: var(--border-radius-md);
+            border: 2px solid var(--color-gold-700);
+            text-align: center;
+            transition: transform var(--duration-normal) var(--ease-out);
+        }
+
+        .color-swatch:hover {
+            transform: translateY(-4px);
+        }
+
+        .color-value {
+            font-family: var(--font-family-mono);
+            font-size: 12px;
+            margin-top: 10px;
+            color: var(--color-gold-400);
+        }
+
+        .example-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .example-item {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--border-radius-md);
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-gold-700);
+            border-radius: var(--border-radius-sm);
+            padding: 15px;
+            margin-top: 10px;
+            font-family: var(--font-family-mono);
+            font-size: 14px;
+            color: var(--color-gold-400);
+            overflow-x: auto;
+        }
+
+        .spacing-demo {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px dashed var(--color-gold-600);
+            display: inline-block;
+            margin-right: 20px;
+        }
+
+        .animation-demo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--color-gold-600), var(--color-gold-400));
+            border-radius: var(--border-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-dark-900);
+            font-weight: bold;
+        }
+
+        .rarity-demo {
+            width: 150px;
+            height: 150px;
+            border: 3px solid;
+            border-radius: var(--border-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .navigation {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 22, 18, 0.98);
+            border: 2px solid var(--color-gold-600);
+            border-radius: var(--border-radius-md);
+            padding: 15px;
+            z-index: 100;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 5px 10px;
+            color: var(--color-gold-400);
+            text-decoration: none;
+            transition: all var(--duration-fast) var(--ease-out);
+        }
+
+        .nav-link:hover {
+            color: var(--color-gold-300);
+            transform: translateX(5px);
+        }
+
+        @media (max-width: 768px) {
+            .navigation {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navigation">
+        <a href="#colors" class="nav-link">Colors</a>
+        <a href="#typography" class="nav-link">Typography</a>
+        <a href="#spacing" class="nav-link">Spacing</a>
+        <a href="#buttons" class="nav-link">Buttons</a>
+        <a href="#cards" class="nav-link">Cards</a>
+        <a href="#forms" class="nav-link">Forms</a>
+        <a href="#progress" class="nav-link">Progress Bars</a>
+        <a href="#animations" class="nav-link">Animations</a>
+        <a href="#utilities" class="nav-link">Utilities</a>
+    </nav>
+
+    <div class="style-guide-container">
+        <!-- Header -->
+        <div class="guide-header">
+            <h1 class="guide-title">The Arcane Codex</h1>
+            <p class="guide-subtitle">Design System Style Guide v1.0.0</p>
+        </div>
+
+        <!-- Colors Section -->
+        <section id="colors" class="section">
+            <h2 class="section-title">Color System</h2>
+
+            <!-- Primary Palette -->
+            <div class="subsection">
+                <h3 class="subsection-title">Primary Palette - Gold & Bronze</h3>
+                <div class="example-grid">
+                    <div class="color-swatch" style="background: var(--color-gold-100);">
+                        <span style="color: #000;">Gold 100</span>
+                        <div class="color-value">#FFF9E6</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-gold-300);">
+                        <span style="color: #000;">Gold 300</span>
+                        <div class="color-value">#FFD700</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-gold-400);">
+                        <span>Gold 400</span>
+                        <div class="color-value">#D4AF37</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-gold-500);">
+                        <span>Gold 500</span>
+                        <div class="color-value">#B8860B</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-gold-600);">
+                        <span>Gold 600</span>
+                        <div class="color-value">#8B6914</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-gold-700);">
+                        <span>Gold 700</span>
+                        <div class="color-value">#6B5010</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- God Colors -->
+            <div class="subsection">
+                <h3 class="subsection-title">Divine Council - God Colors</h3>
+                <div class="example-grid">
+                    <div class="color-swatch" style="background: var(--color-god-solaris);">
+                        <span style="color: #000;">Solaris</span>
+                        <div class="color-value">Sun God</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-god-lunara);">
+                        <span style="color: #000;">Lunara</span>
+                        <div class="color-value">Moon Goddess</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-god-tempest);">
+                        <span>Tempest</span>
+                        <div class="color-value">Storm God</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-god-verdant);">
+                        <span>Verdant</span>
+                        <div class="color-value">Nature Goddess</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-god-pyronis);">
+                        <span>Pyronis</span>
+                        <div class="color-value">Fire God</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-god-glacius);">
+                        <span style="color: #000;">Glacius</span>
+                        <div class="color-value">Ice God</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-god-umbral);">
+                        <span>Umbral</span>
+                        <div class="color-value">Shadow God</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rarity Colors -->
+            <div class="subsection">
+                <h3 class="subsection-title">Item Rarity Tiers</h3>
+                <div class="example-grid">
+                    <div class="rarity-demo rarity-common">
+                        <span>Common</span>
+                    </div>
+                    <div class="rarity-demo rarity-uncommon">
+                        <span>Uncommon</span>
+                    </div>
+                    <div class="rarity-demo rarity-rare">
+                        <span>Rare</span>
+                    </div>
+                    <div class="rarity-demo rarity-epic">
+                        <span>Epic</span>
+                    </div>
+                    <div class="rarity-demo rarity-legendary">
+                        <span>Legendary</span>
+                    </div>
+                    <div class="rarity-demo rarity-mythic">
+                        <span>Mythic</span>
+                    </div>
+                    <div class="rarity-demo rarity-divine">
+                        <span>Divine</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Colors -->
+            <div class="subsection">
+                <h3 class="subsection-title">Status Colors</h3>
+                <div class="example-grid">
+                    <div class="color-swatch" style="background: var(--color-success);">
+                        <span>Success</span>
+                        <div class="color-value">#4CAF50</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-warning);">
+                        <span style="color: #000;">Warning</span>
+                        <div class="color-value">#FFA726</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-error);">
+                        <span>Error</span>
+                        <div class="color-value">#EF5350</div>
+                    </div>
+                    <div class="color-swatch" style="background: var(--color-info);">
+                        <span>Info</span>
+                        <div class="color-value">#42A5F5</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Typography Section -->
+        <section id="typography" class="section">
+            <h2 class="section-title">Typography</h2>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Display Text</h3>
+                <div class="example-item">
+                    <h1 class="text-display-lg text-gradient-gold">Display Large (48px)</h1>
+                    <div class="code-block">class="text-display-lg text-gradient-gold"</div>
+                </div>
+                <div class="example-item">
+                    <h2 class="text-display-md text-glow-gold">Display Medium (36px)</h2>
+                    <div class="code-block">class="text-display-md text-glow-gold"</div>
+                </div>
+                <div class="example-item">
+                    <h3 class="text-display-sm">Display Small (28px)</h3>
+                    <div class="code-block">class="text-display-sm"</div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Headings</h3>
+                <div class="example-item">
+                    <h4 class="text-heading-lg">Heading Large (24px)</h4>
+                    <h5 class="text-heading-md">Heading Medium (20px)</h5>
+                    <h6 class="text-heading-sm">Heading Small (18px)</h6>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Body Text</h3>
+                <div class="example-item">
+                    <p class="text-body-xl">Extra large body text for emphasis (20px)</p>
+                    <p class="text-body-lg">Large body text for readability (18px)</p>
+                    <p class="text-body-md">Standard body text for content (16px)</p>
+                    <p class="text-body-sm">Small body text for secondary information (14px)</p>
+                    <p class="text-caption">Caption text for labels and notes (12px)</p>
+                    <p class="text-tiny">Tiny text for badges and micro copy (10px)</p>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Text Effects</h3>
+                <div class="example-item">
+                    <p class="text-body-lg text-shadow-lg">Text with large shadow effect</p>
+                    <p class="text-body-lg text-glow-gold">Text with golden glow effect</p>
+                    <p class="text-body-lg text-gradient-gold">Text with gradient effect</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Spacing Section -->
+        <section id="spacing" class="section">
+            <h2 class="section-title">Spacing System</h2>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Spacing Scale</h3>
+                <div class="example-item">
+                    <div class="spacing-demo p-2xs">2xs (2px)</div>
+                    <div class="spacing-demo p-xs">xs (4px)</div>
+                    <div class="spacing-demo p-sm">sm (8px)</div>
+                    <div class="spacing-demo p-md">md (12px)</div>
+                    <div class="spacing-demo p-lg">lg (16px)</div>
+                    <div class="spacing-demo p-xl">xl (24px)</div>
+                    <div class="spacing-demo p-2xl">2xl (32px)</div>
+                    <div class="spacing-demo p-3xl">3xl (48px)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Buttons Section -->
+        <section id="buttons" class="section">
+            <h2 class="section-title">Button Components</h2>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Button Variants</h3>
+                <div class="example-row">
+                    <button class="btn btn-primary">Primary</button>
+                    <button class="btn btn-secondary">Secondary</button>
+                    <button class="btn btn-danger">Danger</button>
+                    <button class="btn btn-ghost">Ghost</button>
+                    <button class="btn btn-primary" disabled>Disabled</button>
+                    <button class="btn btn-primary btn-loading">Loading</button>
+                </div>
+                <div class="code-block">
+&lt;button class="btn btn-primary"&gt;Primary&lt;/button&gt;
+&lt;button class="btn btn-secondary"&gt;Secondary&lt;/button&gt;
+&lt;button class="btn btn-danger"&gt;Danger&lt;/button&gt;
+&lt;button class="btn btn-ghost"&gt;Ghost&lt;/button&gt;
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Button Sizes</h3>
+                <div class="example-row">
+                    <button class="btn btn-primary btn-sm">Small</button>
+                    <button class="btn btn-primary">Default</button>
+                    <button class="btn btn-primary btn-lg">Large</button>
+                    <button class="btn btn-primary btn-xl">Extra Large</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cards Section -->
+        <section id="cards" class="section">
+            <h2 class="section-title">Card Components</h2>
+
+            <div class="example-grid">
+                <div class="card">
+                    <div class="card-header">Basic Card</div>
+                    <div class="card-body">
+                        <p>This is a basic card with header and body.</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary btn-sm">Action</button>
+                    </div>
+                </div>
+
+                <div class="card card-quest">
+                    <div class="card-header">Quest Card</div>
+                    <div class="card-body">
+                        <p class="text-body-sm">Special quest card variant with golden accent.</p>
+                    </div>
+                </div>
+
+                <div class="card card-item rarity-epic">
+                    <div class="card-header">Epic Item</div>
+                    <div class="card-body">
+                        <p class="text-caption">Item card with epic rarity glow.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forms Section -->
+        <section id="forms" class="section">
+            <h2 class="section-title">Form Components</h2>
+
+            <div class="subsection">
+                <div class="form-group">
+                    <label class="form-label">Text Input</label>
+                    <input type="text" class="form-input" placeholder="Enter text...">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Select Dropdown</label>
+                    <select class="form-input form-select">
+                        <option>Warrior</option>
+                        <option>Mage</option>
+                        <option>Rogue</option>
+                        <option>Cleric</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="flex items-center gap-sm">
+                        <input type="checkbox" class="form-checkbox">
+                        <span>Enable notifications</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Volume Control</label>
+                    <input type="range" class="form-slider" min="0" max="100" value="50">
+                </div>
+            </div>
+        </section>
+
+        <!-- Progress Bars Section -->
+        <section id="progress" class="section">
+            <h2 class="section-title">Progress Bars</h2>
+
+            <div class="subsection">
+                <div class="progress-bar progress-health">
+                    <div class="progress-fill" style="width: 75%"></div>
+                    <div class="progress-text">75/100 HP</div>
+                </div>
+                <br>
+                <div class="progress-bar progress-mana">
+                    <div class="progress-fill" style="width: 60%"></div>
+                    <div class="progress-text">60/100 MP</div>
+                </div>
+                <br>
+                <div class="progress-bar progress-exp">
+                    <div class="progress-fill" style="width: 40%"></div>
+                    <div class="progress-text">400/1000 XP</div>
+                </div>
+                <br>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 55%"></div>
+                    <div class="progress-text">55% Complete</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Animations Section -->
+        <section id="animations" class="section">
+            <h2 class="section-title">Animation Library</h2>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Entrance Animations</h3>
+                <div class="example-grid">
+                    <div class="animation-demo animate-fadeIn">Fade In</div>
+                    <div class="animation-demo animate-fadeInUp">Fade Up</div>
+                    <div class="animation-demo animate-slideInLeft">Slide Left</div>
+                    <div class="animation-demo animate-scaleIn">Scale In</div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Celebration Animations</h3>
+                <div class="example-grid">
+                    <div class="animation-demo animate-victory">Victory</div>
+                    <div class="animation-demo animate-levelUp">Level Up</div>
+                    <div class="animation-demo animate-float">Floating</div>
+                    <div class="animation-demo animate-shimmer">Shimmer</div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Loading Animations</h3>
+                <div class="example-row">
+                    <div class="spinner spinner-sm"></div>
+                    <div class="spinner"></div>
+                    <div class="spinner spinner-lg"></div>
+                </div>
+                <br>
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+
+        <!-- Utilities Section -->
+        <section id="utilities" class="section">
+            <h2 class="section-title">Utility Classes</h2>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Shadows & Glows</h3>
+                <div class="example-grid">
+                    <div class="card shadow-sm p-lg">Small Shadow</div>
+                    <div class="card shadow-md p-lg">Medium Shadow</div>
+                    <div class="card shadow-lg p-lg">Large Shadow</div>
+                    <div class="card shadow-xl p-lg">XL Shadow</div>
+                </div>
+                <br>
+                <div class="example-grid">
+                    <div class="card glow-gold p-lg">Gold Glow</div>
+                    <div class="card glow-purple p-lg">Purple Glow</div>
+                    <div class="card glow-success p-lg">Success Glow</div>
+                    <div class="card glow-error p-lg">Error Glow</div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Badges</h3>
+                <div class="example-row">
+                    <span class="badge badge-level">15</span>
+                    <span class="badge badge-success">Active</span>
+                    <span class="badge badge-warning">Pending</span>
+                    <span class="badge badge-error">Failed</span>
+                    <span class="badge badge-info">New</span>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">Tooltips</h3>
+                <div class="example-row">
+                    <div class="tooltip-trigger tooltip-top">
+                        <button class="btn btn-ghost">Top</button>
+                        <div class="tooltip-content">Top tooltip</div>
+                    </div>
+                    <div class="tooltip-trigger tooltip-bottom">
+                        <button class="btn btn-ghost">Bottom</button>
+                        <div class="tooltip-content">Bottom tooltip</div>
+                    </div>
+                    <div class="tooltip-trigger tooltip-left">
+                        <button class="btn btn-ghost">Left</button>
+                        <div class="tooltip-content">Left tooltip</div>
+                    </div>
+                    <div class="tooltip-trigger tooltip-right">
+                        <button class="btn btn-ghost">Right</button>
+                        <div class="tooltip-content">Right tooltip</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modal Example -->
+        <section class="section">
+            <h2 class="section-title">Modal/Overlay Example</h2>
+            <button class="btn btn-primary" onclick="document.getElementById('example-modal').classList.add('active')">
+                Open Modal
+            </button>
+        </section>
+
+        <!-- Notification Examples -->
+        <section class="section">
+            <h2 class="section-title">Notifications</h2>
+            <div class="example-row">
+                <button class="btn btn-success" onclick="showNotification('success')">Success</button>
+                <button class="btn btn-warning" onclick="showNotification('warning')">Warning</button>
+                <button class="btn btn-danger" onclick="showNotification('error')">Error</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Example -->
+    <div class="modal-overlay" id="example-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Example Modal</span>
+                <button class="modal-close" onclick="document.getElementById('example-modal').classList.remove('active')">×</button>
+            </div>
+            <div class="modal-body">
+                <h3 class="text-heading-md">Modal Content</h3>
+                <p class="text-body-md">This is an example modal window using the design system components.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="document.getElementById('example-modal').classList.remove('active')">Cancel</button>
+                <button class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <script>
+        // Example notification function
+        function showNotification(type) {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type} show`;
+
+            const messages = {
+                success: { title: 'Success!', message: 'Action completed successfully.' },
+                warning: { title: 'Warning', message: 'Please review your action.' },
+                error: { title: 'Error', message: 'Something went wrong.' }
+            };
+
+            notification.innerHTML = `
+                <div class="notification-title">${messages[type].title}</div>
+                <div class="notification-message">${messages[type].message}</div>
+            `;
+
+            container.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>

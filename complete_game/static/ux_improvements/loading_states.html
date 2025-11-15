@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading States - Arcane Codex</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
+
+        body {
+            background: #0A0812;
+            color: #D4AF37;
+            font-family: 'Cinzel', serif;
+            padding: 40px;
+        }
+
+        /* Mystical Loading Spinner */
+        .loading-container {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .arcane-spinner {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .spinner-ring {
+            position: absolute;
+            inset: 0;
+            border: 3px solid transparent;
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .spinner-ring:nth-child(2) {
+            inset: 10px;
+            border-top-color: #D4AF37;
+            animation-duration: 1.2s;
+            animation-direction: reverse;
+        }
+
+        .spinner-ring:nth-child(3) {
+            inset: 20px;
+            border-top-color: #B8860B;
+            animation-duration: 1s;
+        }
+
+        .spinner-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #FFD700, #D4AF37);
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+        }
+
+        .loading-text {
+            margin-top: 30px;
+            font-size: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: fadeInOut 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .loading-tips {
+            position: absolute;
+            bottom: 60px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .tip-label {
+            font-size: 12px;
+            color: #8B7355;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .tip-text {
+            font-size: 16px;
+            color: #D4AF37;
+            font-style: italic;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Inline Progress Bar */
+        .inline-loader {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: rgba(42, 36, 30, 0.9);
+            border: 2px solid #8B7355;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .loader-icon {
+            width: 24px;
+            height: 24px;
+            border: 2px solid transparent;
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loader-text {
+            font-size: 14px;
+            color: #D4AF37;
+        }
+
+        /* Skeleton Loading for Content */
+        .skeleton-container {
+            background: rgba(26, 22, 18, 0.95);
+            border: 3px solid #8B7355;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                rgba(139, 115, 85, 0.1) 0%,
+                rgba(212, 175, 55, 0.2) 50%,
+                rgba(139, 115, 85, 0.1) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .skeleton-title {
+            height: 24px;
+            width: 60%;
+            margin-bottom: 15px;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-text:last-child {
+            width: 80%;
+        }
+
+        /* Success Animation */
+        .success-pulse {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 10000;
+        }
+
+        .success-ring {
+            position: absolute;
+            inset: 0;
+            border: 3px solid #00FF00;
+            border-radius: 50%;
+            opacity: 0;
+            animation: successPulse 1s ease-out;
+        }
+
+        @keyframes successPulse {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .success-check {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            color: #00FF00;
+            animation: checkmark 0.5s ease-out 0.3s both;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-45deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Full Screen Loading -->
+    <div class="loading-container">
+        <div class="arcane-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-center"></div>
+        </div>
+        <div class="loading-text">Channeling the Arcane...</div>
+        <div class="loading-tips">
+            <div class="tip-label">Did you know?</div>
+            <div class="tip-text" id="loading-tip">The gods watch your every choice...</div>
+        </div>
+    </div>
+
+    <!-- Inline Loading Example -->
+    <div class="inline-loader">
+        <div class="loader-icon"></div>
+        <div class="loader-text">Processing divine judgment...</div>
+    </div>
+
+    <!-- Skeleton Loading Example -->
+    <div class="skeleton-container">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+    </div>
+
+    <!-- Success Animation -->
+    <div class="success-pulse" style="display: none;">
+        <div class="success-ring"></div>
+        <div class="success-check">✓</div>
+    </div>
+
+    <script>
+        // Rotate loading tips
+        const tips = [
+            "The gods watch your every choice...",
+            "Divine favor determines your fate...",
+            "Trust binds your party together...",
+            "Every whisper holds ancient power...",
+            "Your choices echo through eternity..."
+        ];
+
+        let tipIndex = 0;
+        setInterval(() => {
+            tipIndex = (tipIndex + 1) % tips.length;
+            const tipElement = document.getElementById('loading-tip');
+            tipElement.style.animation = 'none';
+            setTimeout(() => {
+                tipElement.textContent = tips[tipIndex];
+                tipElement.style.animation = 'fadeIn 0.5s ease';
+            }, 50);
+        }, 3000);
+
+        // Example: Show success animation
+        function showSuccess() {
+            const successEl = document.querySelector('.success-pulse');
+            successEl.style.display = 'block';
+            setTimeout(() => {
+                successEl.style.display = 'none';
+            }, 1000);
+        }
+
+        // Demo success after 5 seconds
+        setTimeout(showSuccess, 5000);
+    </script>
+</body>
+</html>
