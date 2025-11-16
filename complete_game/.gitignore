@@ -51,8 +51,10 @@ logs/
 # Database files
 *.db
 *.db-journal
+*.db.backup*
 *.sqlite
 *.sqlite3
+*.sqlite.backup*
 
 # Build outputs
 dist/
