@@ -30,6 +30,33 @@ import logging
 from logging.handlers import RotatingFileHandler
 import traceback
 import time
+import threading
+from collections import defaultdict
+
+# ============================================================================
+# RACE CONDITION PROTECTION - Thread Safety
+# ============================================================================
+
+# Thread locks for game operations
+game_locks = defaultdict(threading.Lock)
+
+def with_game_lock(game_code: str):
+    """Context manager for game-specific operations requiring atomicity"""
+    class GameLock:
+        def __enter__(self):
+            game_locks[game_code].acquire()
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            game_locks[game_code].release()
+            return False
+
+    return GameLock()
+
+# Usage in endpoints:
+# with with_game_lock(game_code):
+#     # Critical section - atomic operations only
+#     game_session.game.resolve_turn()
 
 # MCP Client for dynamic scenario generation (REQUIRED - NO MOCK FALLBACK)
 try:
@@ -62,6 +89,19 @@ else:
     print(f"[OK] Generated and saved new secret key to {SECRET_KEY_FILE}")
 
 CORS(app)
+
+# ============================================================================
+# SESSION SECURITY CONFIGURATION
+# ============================================================================
+from datetime import timedelta
+
+# Session security configuration
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=4)
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True for HTTPS in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XSS access to cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # Extend session on activity
+print("[OK] Session security configured (4-hour lifetime, httponly, samesite)")
 
 # CSRF Protection
 csrf = CSRFProtect(app)
@@ -177,6 +217,82 @@ def handle_caching(response):
     return response
 
 # ============================================================================
+# INPUT VALIDATION HELPERS - XSS and Injection Prevention
+# ============================================================================
+
+import re
+from html import escape
+from typing import Optional, Tuple
+
+# Input validation constants
+MAX_USERNAME_LENGTH = 50
+MAX_CHOICE_LENGTH = 500
+MAX_GAME_CODE_LENGTH = 20
+FORBIDDEN_PATTERNS = ['<script', 'javascript:', 'onerror=', 'onclick=', 'onload=', '<iframe']
+
+def validate_username(username: str) -> Tuple[bool, Optional[str]]:
+    """Validate username input. Returns (is_valid, error_message)"""
+    if not username or not username.strip():
+        return False, 'Username cannot be empty'
+
+    username = username.strip()
+
+    if len(username) > MAX_USERNAME_LENGTH:
+        return False, f'Username too long (max {MAX_USERNAME_LENGTH} characters)'
+
+    # Check for injection patterns
+    username_lower = username.lower()
+    if any(pattern in username_lower for pattern in FORBIDDEN_PATTERNS):
+        return False, 'Username contains invalid characters'
+
+    # Alphanumeric + spaces + limited special chars only
+    if not re.match(r'^[a-zA-Z0-9\s\-_\.]+$', username):
+        return False, 'Username can only contain letters, numbers, spaces, hyphens, underscores, and periods'
+
+    return True, None
+
+def sanitize_text(text: str, max_length: int = 1000) -> str:
+    """Sanitize user input text for XSS prevention"""
+    if not text:
+        return ''
+
+    # Truncate to max length
+    text = text[:max_length]
+
+    # HTML escape
+    text = escape(text)
+
+    return text.strip()
+
+def validate_choice(choice: str) -> Tuple[bool, Optional[str]]:
+    """Validate player choice input"""
+    if not choice or not choice.strip():
+        return False, 'Choice cannot be empty'
+
+    choice = choice.strip()
+
+    if len(choice) > MAX_CHOICE_LENGTH:
+        return False, f'Choice too long (max {MAX_CHOICE_LENGTH} characters)'
+
+    return True, None
+
+def validate_game_code(code: str) -> Tuple[bool, Optional[str]]:
+    """Validate game code format"""
+    if not code or not code.strip():
+        return False, 'Game code cannot be empty'
+
+    code = code.strip().upper()
+
+    if len(code) > MAX_GAME_CODE_LENGTH:
+        return False, f'Game code too long (max {MAX_GAME_CODE_LENGTH} characters)'
+
+    # Alphanumeric only
+    if not re.match(r'^[A-Z0-9\-]+$', code):
+        return False, 'Game code can only contain letters, numbers, and hyphens'
+
+    return True, None
+
+# ============================================================================
 # RATE LIMIT ERROR HANDLER
 # ============================================================================
 
@@ -189,6 +305,94 @@ def ratelimit_handler(e):
         'error': 'Rate limit exceeded',
         'message': 'Too many requests. Please try again later.'
     }), 429
+
+# ============================================================================
+# AUTHENTICATION & AUTHORIZATION DECORATORS
+# ============================================================================
+
+from functools import wraps
+
+def require_authentication(f):
+    """Decorator to ensure user is authenticated"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        player_id = session.get('player_id')
+        username = session.get('username')
+
+        if not player_id or not username:
+            logger.warning(f"[AUTH] Unauthorized access attempt to {request.endpoint} from {request.remote_addr}")
+            return jsonify({'status': 'error', 'message': 'Authentication required'}), 401
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+def require_game_session(f):
+    """Decorator to ensure user is in a valid game"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        player_id = session.get('player_id')
+        username = session.get('username')
+        game_code = session.get('game_code')
+
+        if not player_id or not username:
+            return jsonify({'status': 'error', 'message': 'Authentication required'}), 401
+
+        if not game_code:
+            return jsonify({'status': 'error', 'message': 'Not in a game session'}), 400
+
+        # Verify game exists
+        game_session = game_sessions.get(game_code)
+        if not game_session:
+            logger.warning(f"[AUTH] Player {username} tried to access non-existent game {game_code}")
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
+
+        # Verify player is in this game
+        if username not in game_session.players:
+            logger.warning(f"[AUTH] Player {username} tried to access game {game_code} they are not part of")
+            return jsonify({'status': 'error', 'message': 'Not authorized for this game'}), 403
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+def verify_game_ownership(game_code: str, username: str) -> bool:
+    """Verify that username is a player in the specified game"""
+    game_session = game_sessions.get(game_code)
+    if not game_session:
+        return False
+
+    return username in game_session.players
+
+# ============================================================================
+# TRANSACTION LOGGING - Audit Trail for Security
+# ============================================================================
+
+def log_transaction(player_id: str, game_code: str, transaction_type: str,
+                   details: dict, success: bool = True):
+    """Log all critical game transactions for audit trail"""
+    try:
+        transaction = {
+            'timestamp': datetime.now().isoformat(),
+            'player_id': player_id,
+            'game_code': game_code,
+            'type': transaction_type,
+            'details': details,
+            'success': success,
+            'ip_address': request.remote_addr if request else 'unknown'
+        }
+
+        # Log to file
+        logger.info(f"[TRANSACTION] {json.dumps(transaction)}")
+
+        # Optionally: Store in database for persistent audit trail
+        # db.execute("INSERT INTO transactions (...) VALUES (...)", ...)
+
+    except Exception as e:
+        logger.error(f"[TRANSACTION_LOG] Failed to log transaction: {e}")
+
+# Usage examples:
+# log_transaction(player_id, game_code, 'ITEM_EQUIPPED', {'item_id': item_id, 'slot': slot})
+# log_transaction(player_id, game_code, 'SKILL_UNLOCKED', {'skill_id': skill_id, 'cost': cost})
+# log_transaction(player_id, game_code, 'ITEM_DROPPED', {'item_id': item_id, 'quantity': qty})
 
 # ============================================================================
 # DATA STRUCTURES
@@ -334,44 +538,68 @@ print("[OK] Database and Divine Council systems initialized")
 # SOCKETIO EVENT HANDLERS - PHASE H: Real-Time Multiplayer
 # ============================================================================
 
+# ============================================================================
+# SOCKETIO SECURITY - Rate Limiting for Connections
+# ============================================================================
+
+# Rate limiting for SocketIO connections
+connection_attempts = defaultdict(list)
+MAX_CONNECTIONS_PER_IP = 5
+CONNECTION_WINDOW = 60  # seconds
+
 @socketio.on('connect')
 def handle_connect():
-    """Handle new client connection"""
+    """Secured connect handler with validation and rate limiting"""
     player_id = session.get('player_id')
+    username = session.get('username')
     game_code = session.get('game_code')
+    client_ip = request.remote_addr
 
-    if not player_id:
-        logger.warning(f"[SocketIO] Connection rejected - no player_id: {request.sid}")
-        return False  # Reject connection
+    # Rate limit connections per IP
+    now = time.time()
+    connection_attempts[client_ip] = [t for t in connection_attempts[client_ip] if now - t < CONNECTION_WINDOW]
 
-    # Store connection info
-    connected_clients[request.sid] = {
-        'player_id': player_id,
-        'game_code': game_code,
-        'connected_at': datetime.now().isoformat()
-    }
+    if len(connection_attempts[client_ip]) >= MAX_CONNECTIONS_PER_IP:
+        logger.warning(f"[SECURITY] Rate limit exceeded for IP {client_ip}")
+        return False
 
-    logger.info(f"[SocketIO] Client connected: {request.sid} (player: {player_id[:8]}...)")
+    connection_attempts[client_ip].append(now)
 
-    # If player is in a game, join the room and announce presence
-    if game_code and game_code in game_sessions:
+    # Validate authentication
+    if not player_id or not username:
+        logger.warning(f"[SOCKETIO] Connection rejected - no credentials: {request.sid}")
+        return False
+
+    # Verify player is in a valid game
+    if game_code:
+        game_session = game_sessions.get(game_code)
+        if not game_session:
+            logger.warning(f"[SOCKETIO] Connection rejected - invalid game: {game_code}")
+            return False
+
+        if username not in game_session.players:
+            logger.warning(f"[SOCKETIO] Connection rejected - player {username} not in game {game_code}")
+            return False
+
         join_room(game_code)
+        logger.info(f"[SOCKETIO] {username} connected to game {game_code} (sid={request.sid})")
+
+        # Store connection info
+        connected_clients[request.sid] = {
+            'player_id': player_id,
+            'game_code': game_code,
+            'connected_at': datetime.now().isoformat()
+        }
 
         # Track presence
         if game_code not in player_presence:
             player_presence[game_code] = set()
         player_presence[game_code].add(player_id)
 
-        # Get player info
-        game_session = game_sessions[game_code]
-        player_name = game_session.players.get(player_id, 'Unknown')
-
-        logger.info(f"[SocketIO] Player {player_name} joined room {game_code}")
-
         # Notify others in the room
         emit('player_connected', {
             'player_id': player_id,
-            'player_name': player_name,
+            'player_name': username,
             'timestamp': datetime.now().isoformat()
         }, room=game_code, skip_sid=request.sid)
 
@@ -380,6 +608,14 @@ def handle_connect():
             'online_players': list(player_presence[game_code]),
             'total_players': len(game_session.players)
         })
+    else:
+        logger.info(f"[SOCKETIO] {username} connected (no game) (sid={request.sid})")
+        # Store connection info even if no game
+        connected_clients[request.sid] = {
+            'player_id': player_id,
+            'game_code': None,
+            'connected_at': datetime.now().isoformat()
+        }
 
     return True
 
@@ -647,17 +883,27 @@ def set_username():
     data = request.json or {}
     username = data.get('username', '').strip()
 
-    if not username:
-        return jsonify({'status': 'error', 'message': 'Username required'}), 400
+    # Validate username using security validator
+    is_valid, error_message = validate_username(username)
+    if not is_valid:
+        logger.warning(f"[SECURITY] Invalid username attempt from {request.remote_addr}: {error_message}")
+        return jsonify({'status': 'error', 'message': error_message}), 400
 
+    # Additional minimum length check
     if len(username) < 2:
         return jsonify({'status': 'error', 'message': 'Username must be at least 2 characters'}), 400
 
-    if len(username) > 20:
-        return jsonify({'status': 'error', 'message': 'Username must be at most 20 characters'}), 400
+    # Sanitize username
+    username = sanitize_text(username, max_length=MAX_USERNAME_LENGTH)
 
     # Store username in session
     session['username'] = username
+
+    # Generate player_id if not exists
+    if 'player_id' not in session:
+        session['player_id'] = secrets.token_hex(16)
+
+    logger.info(f"[AUTH] Username set: {username} (player_id: {session['player_id'][:8]}...)")
 
     return jsonify({
         'status': 'success',
@@ -684,6 +930,7 @@ def get_username():
 
 @app.route('/api/create_game', methods=['POST'])
 @limiter.limit("10 per hour")  # Prevent game spam
+@require_authentication
 def create_game():
     """Create new multiplayer game session"""
     try:
@@ -756,6 +1003,7 @@ def create_game():
 
 @app.route('/api/join_game', methods=['POST'])
 @limiter.limit("20 per hour")  # Prevent join spam
+@require_authentication
 def join_game():
     """Join existing game session"""
     try:
@@ -770,12 +1018,14 @@ def join_game():
             return jsonify({'status': 'error', 'message': 'Username required. Please set username first.'}), 400
 
         data = request.json or {}
-        game_code = data.get('game_code', '').upper()
+        game_code = data.get('game_code', '').strip().upper()
         player_name = username  # Use session username
 
-        if not game_code:
-            logger.warning(f"[JOIN_GAME] Game code required. Player: {player_id[:8]}...")
-            return jsonify({'status': 'error', 'message': 'Game code required'}), 400
+        # Validate game code
+        is_valid, error_message = validate_game_code(game_code)
+        if not is_valid:
+            logger.warning(f"[SECURITY] Invalid game code from {username} ({request.remote_addr}): {error_message}")
+            return jsonify({'status': 'error', 'message': error_message}), 400
 
         logger.info(f"[JOIN_GAME] Player {player_name} attempting to join game {game_code}")
 
@@ -1015,6 +1265,7 @@ def my_whisper():
 
 @app.route('/api/make_choice', methods=['POST'])
 @limiter.limit("30 per minute")  # Reasonable gameplay rate
+@require_game_session
 def make_choice():
     """Submit player's choice for current turn"""
     try:
@@ -1054,18 +1305,14 @@ def make_choice():
         data = request.json or {}
         choice = data.get('choice', '').strip()
 
-        if not choice:
-            logger.warning(f"[MAKE_CHOICE] Empty choice from player {player_id[:8]}... in game {game_code}")
-            return jsonify({'status': 'error', 'message': 'Choice required'}), 400
+        # Validate choice using security validator
+        is_valid, error_message = validate_choice(choice)
+        if not is_valid:
+            logger.warning(f"[SECURITY] Invalid choice from {player_id[:8]}... in game {game_code}: {error_message}")
+            return jsonify({'status': 'error', 'message': error_message}), 400
 
-        # FIXED: Validate choice length (prevent DOS attacks)
-        if len(choice) > 1000:
-            logger.warning(f"[MAKE_CHOICE] Choice too long ({len(choice)} chars) from player {player_id[:8]}...")
-            return jsonify({'status': 'error', 'message': 'Choice too long (max 1000 characters)'}), 400
-
-        # FIXED: Sanitize HTML to prevent XSS
-        import html
-        choice = html.escape(choice)
+        # Sanitize choice to prevent XSS
+        choice = sanitize_text(choice, max_length=MAX_CHOICE_LENGTH)
 
         # Record choice
         player_choice = PlayerChoice(
@@ -1157,59 +1404,65 @@ def resolve_turn():
     if not game_code:
         return jsonify({'status': 'error', 'message': 'Not in a game'}), 400
 
-    game_session = get_game_session(game_code)
+    # SECURITY FIX: Wrap critical section with race condition lock
+    with with_game_lock(game_code):
+        game_session = get_game_session(game_code)
 
-    if not game_session:
-        return jsonify({'status': 'error', 'message': 'Game not found'}), 404
+        if not game_session:
+            return jsonify({'status': 'error', 'message': 'Game not found'}), 404
 
-    if not game_session.current_scenario:
-        return jsonify({'status': 'error', 'message': 'No active scenario'}), 404
+        if not game_session.current_scenario:
+            return jsonify({'status': 'error', 'message': 'No active scenario'}), 404
 
-    if not game_session.all_choices_submitted():
-        return jsonify({
-            'status': 'error',
-            'message': 'Not all players have submitted choices',
-            'waiting_for': game_session.get_waiting_players()
-        }), 400
+        # Double-check after acquiring lock to prevent race conditions
+        if game_session.current_scenario.resolved:
+            return jsonify({'status': 'error', 'message': 'Scenario already resolved'}), 400
 
-    scenario = game_session.current_scenario
+        if not game_session.all_choices_submitted():
+            return jsonify({
+                'status': 'error',
+                'message': 'Not all players have submitted choices',
+                'waiting_for': game_session.get_waiting_players()
+            }), 400
 
-    # Mark as resolved
-    scenario.resolved = True
+        scenario = game_session.current_scenario
 
-    # Gather choices for MCP resolution
-    choices_summary = {}
-    for pid, pchoice in scenario.choices_submitted.items():
-        player_name = game_session.players[pid]
-        player_class = game_session.player_classes[pid]
-        whisper = scenario.whispers.get(pid, "")
-        choices_summary[player_name] = {
-            'class': player_class,
-            'choice': pchoice.choice,
-            'whisper_received': whisper
-        }
+        # Mark as resolved immediately after lock acquisition
+        scenario.resolved = True
 
-    # Send to MCP for resolution (100% dynamic outcome)
-    # TODO: Create resolve_turn_via_mcp() similar to generate_scenario_via_mcp()
-    # For now: Basic resolution with trust calculation
+        # Gather choices for MCP resolution
+        choices_summary = {}
+        for pid, pchoice in scenario.choices_submitted.items():
+            player_name = game_session.players[pid]
+            player_class = game_session.player_classes[pid]
+            whisper = scenario.whispers.get(pid, "")
+            choices_summary[player_name] = {
+                'class': player_class,
+                'choice': pchoice.choice,
+                'whisper_received': whisper
+            }
 
-    # Calculate trust change based on choice alignment
-    choices = [c.choice.lower() for c in scenario.choices_submitted.values()]
+        # Send to MCP for resolution (100% dynamic outcome)
+        # TODO: Create resolve_turn_via_mcp() similar to generate_scenario_via_mcp()
+        # For now: Basic resolution with trust calculation
 
-    # Simple heuristic: aligned choices = trust increase
-    unique_choices = len(set(choices))
-    if unique_choices == 1:
-        trust_change = 10  # Perfect alignment
-    elif unique_choices == 2:
-        trust_change = 0   # Some disagreement
-    else:
-        trust_change = -10  # Major conflict
+        # Calculate trust change based on choice alignment
+        choices = [c.choice.lower() for c in scenario.choices_submitted.values()]
 
-    if game_session.game.game_state:
-        game_session.game.update_trust(trust_change, f"Turn {scenario.turn_number} resolution")
+        # Simple heuristic: aligned choices = trust increase
+        unique_choices = len(set(choices))
+        if unique_choices == 1:
+            trust_change = 10  # Perfect alignment
+        elif unique_choices == 2:
+            trust_change = 0   # Some disagreement
+        else:
+            trust_change = -10  # Major conflict
 
-    # Placeholder outcome (MCP resolution integration needed)
-    outcome = f"""
+        if game_session.game.game_state:
+            game_session.game.update_trust(trust_change, f"Turn {scenario.turn_number} resolution")
+
+        # Placeholder outcome (MCP resolution integration needed)
+        outcome = f"""
 TURN {scenario.turn_number} RESOLVED
 
 The party's choices have consequences...
@@ -1219,14 +1472,14 @@ Trust: {trust_change:+d} (now {game_session.game.game_state.party_trust if game_
 [Full narrative outcome will be generated by MCP in future update]
 """
 
-    return jsonify({
-        'status': 'success',
-        'resolved': True,
-        'outcome': outcome,
-        'choices_made': choices_summary,
-        'trust_change': trust_change,
-        'message': 'Turn resolved! Generate next scenario when ready.'
-    })
+        return jsonify({
+            'status': 'success',
+            'resolved': True,
+            'outcome': outcome,
+            'choices_made': choices_summary,
+            'trust_change': trust_change,
+            'message': 'Turn resolved! Generate next scenario when ready.'
+        })
 
 # ============================================================================
 # EXISTING ENDPOINTS (Divine Interrogation + Game State)
@@ -1727,6 +1980,7 @@ def get_divine_favor():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/inventory/all', methods=['GET'])
 def get_inventory():
     """Get character's full inventory"""
@@ -1773,6 +2027,7 @@ def get_inventory():
 
 
 
+@require_game_session
 @app.route('/api/inventory/equip', methods=['POST'])
 @limiter.limit("30 per minute")
 def equip_item():
@@ -1808,6 +2063,15 @@ def equip_item():
         result = inv_manager.equip_item(item_id, slot)
 
         if result['success']:
+            # Transaction logging for security audit
+            log_transaction(
+                player_id=session.get('player_id', 'unknown'),
+                game_code=game_code,
+                transaction_type='ITEM_EQUIPPED',
+                details={'item_id': item_id, 'slot': slot, 'username': username},
+                success=True
+            )
+
             # Emit SocketIO event to all players in the game
             socketio.emit('item_equipped', {
                 'username': username,
@@ -1824,6 +2088,7 @@ def equip_item():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/inventory/unequip', methods=['POST'])
 @limiter.limit("30 per minute")
 def unequip_item():
@@ -1873,6 +2138,7 @@ def unequip_item():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/inventory/use', methods=['POST'])
 @limiter.limit("30 per minute")
 def use_item():
@@ -1907,6 +2173,15 @@ def use_item():
         result = inv_manager.use_item(item_id)
 
         if result['success']:
+            # Transaction logging for security audit
+            log_transaction(
+                player_id=session.get('player_id', 'unknown'),
+                game_code=game_code,
+                transaction_type='ITEM_USED',
+                details={'item_id': item_id, 'username': username, 'effect': result.get('effect')},
+                success=True
+            )
+
             # Emit SocketIO event
             socketio.emit('item_used', {
                 'username': username,
@@ -1925,6 +2200,7 @@ def use_item():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/inventory/drop', methods=['POST'])
 @limiter.limit("30 per minute")
 def drop_item():
@@ -1960,6 +2236,15 @@ def drop_item():
         success = inv_manager.remove_item(item_id, quantity)
 
         if success:
+            # Transaction logging for security audit
+            log_transaction(
+                player_id=session.get('player_id', 'unknown'),
+                game_code=game_code,
+                transaction_type='ITEM_DROPPED',
+                details={'item_id': item_id, 'quantity': quantity, 'username': username},
+                success=True
+            )
+
             # Emit SocketIO event
             socketio.emit('item_dropped', {
                 'username': username,
@@ -1984,6 +2269,7 @@ def drop_item():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/inventory/move', methods=['POST'])
 @limiter.limit("60 per minute")
 def move_item():
@@ -2031,6 +2317,7 @@ def move_item():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/inventory/add', methods=['POST'])
 @limiter.limit("30 per minute")
 def add_item():
@@ -2421,6 +2708,7 @@ def get_active_divine_effects():
 # SKILLS & ABILITIES ENDPOINTS - PHASE J
 # ============================================================================
 
+@require_game_session
 @app.route('/api/skills/tree', methods=['GET'])
 @limiter.limit("100 per minute")
 def get_skill_tree():
@@ -2459,6 +2747,7 @@ def get_skill_tree():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/skills/unlock', methods=['POST'])
 @limiter.limit("30 per minute")
 def unlock_skill():
@@ -2494,6 +2783,15 @@ def unlock_skill():
         result = character.skills_manager.unlock_ability(ability_id)
 
         if result['success']:
+            # Transaction logging for security audit
+            log_transaction(
+                player_id=session.get('player_id', 'unknown'),
+                game_code=game_code,
+                transaction_type='SKILL_UNLOCKED',
+                details={'ability_id': ability_id, 'username': username, 'cost': result.get('cost', 0)},
+                success=True
+            )
+
             logger.info(f"{username} unlocked ability {ability_id}")
 
         return jsonify(result)
@@ -2503,6 +2801,7 @@ def unlock_skill():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/skills/rankup', methods=['POST'])
 @limiter.limit("30 per minute")
 def rank_up_skill():
@@ -2538,6 +2837,15 @@ def rank_up_skill():
         result = character.skills_manager.rank_up_ability(ability_id)
 
         if result['success']:
+            # Transaction logging for security audit
+            log_transaction(
+                player_id=session.get('player_id', 'unknown'),
+                game_code=game_code,
+                transaction_type='SKILL_RANKED_UP',
+                details={'ability_id': ability_id, 'username': username, 'new_rank': result.get('rank', 0)},
+                success=True
+            )
+
             logger.info(f"{username} ranked up ability {ability_id}")
 
         return jsonify(result)
@@ -2547,6 +2855,7 @@ def rank_up_skill():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/skills/assign_hotkey', methods=['POST'])
 @limiter.limit("30 per minute")
 def assign_hotkey():
@@ -2592,6 +2901,7 @@ def assign_hotkey():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/skills/use', methods=['POST'])
 @limiter.limit("60 per minute")
 def use_skill():
@@ -2644,6 +2954,7 @@ def use_skill():
         return jsonify({'error': str(e)}), 500
 
 
+@require_game_session
 @app.route('/api/skills/cooldowns', methods=['GET'])
 @limiter.limit("100 per minute")
 def get_cooldowns():
@@ -2739,6 +3050,414 @@ def level_up_character():
 
     except Exception as e:
         logger.error(f"Error leveling up: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# MISSING ENDPOINTS - PHASE M INTEGRATION
+# ============================================================================
+
+@app.route('/api/inventory', methods=['GET'])
+@limiter.limit("100 per minute")
+def get_inventory_alias():
+    """
+    Generic inventory endpoint (alias for /api/inventory/all)
+    Provides backward compatibility for frontend that calls /api/inventory
+    """
+    return get_all_inventory()
+
+
+@app.route('/api/inventory/destroy', methods=['POST'])
+@limiter.limit("30 per minute")
+@require_game_session
+def destroy_item():
+    """
+    Permanently delete an item from inventory
+    Unlike drop (which puts item on ground), destroy removes it from game entirely
+
+    Request: {
+        "item_id": "sword_of_truth",
+        "quantity": 1
+    }
+    """
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        quantity = data.get('quantity', 1)
+
+        if not item_id:
+            return jsonify({'error': 'Missing item_id'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Import inventory manager
+        from inventory_manager import InventoryManager
+
+        inv_manager = InventoryManager(character)
+        success = inv_manager.remove_item(item_id, quantity)
+
+        if success:
+            # Transaction logging for security audit
+            log_transaction(
+                player_id=session.get('player_id', 'unknown'),
+                game_code=game_code,
+                transaction_type='ITEM_DESTROYED',
+                details={'item_id': item_id, 'quantity': quantity, 'username': username},
+                success=True
+            )
+
+            # Emit SocketIO event
+            socketio.emit('item_destroyed', {
+                'username': username,
+                'item_id': item_id,
+                'quantity': quantity
+            }, room=game_code)
+
+            logger.info(f"{username} destroyed {quantity}x {item_id}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Destroyed {quantity} item(s) permanently'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to destroy item'
+            }), 400
+
+    except Exception as e:
+        logger.error(f"Error destroying item: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/divine_council/vote', methods=['POST'])
+@limiter.limit("10 per hour")
+def divine_council_vote_alias():
+    """
+    Alias for /api/divine_council/convene
+    Provides backward compatibility for frontend that calls /api/divine_council/vote
+    """
+    return convene_divine_council()
+
+
+@app.route('/api/npcs', methods=['GET'])
+@limiter.limit("100 per minute")
+@require_game_session
+def get_all_npcs():
+    """
+    Get all NPC companions in the current game
+
+    Response: {
+        "success": true,
+        "npcs": [
+            {
+                "id": "npc_001",
+                "name": "Eldrin the Wise",
+                "approval": 75,
+                "status": "alive",
+                "personality": {...},
+                "hp": {...}
+            }
+        ]
+    }
+    """
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        # Get NPCs from game state
+        npcs = []
+        if game.game_state and hasattr(game.game_state, 'npc_companions'):
+            for npc in game.game_state.npc_companions:
+                npcs.append({
+                    'id': npc.id if hasattr(npc, 'id') else '',
+                    'name': npc.name if hasattr(npc, 'name') else '',
+                    'approval': npc.approval if hasattr(npc, 'approval') else 50,
+                    'status': npc.status if hasattr(npc, 'status') else 'alive',
+                    'personality': npc.personality if hasattr(npc, 'personality') else {},
+                    'hp': npc.hp if hasattr(npc, 'hp') else {'current': 100, 'max': 100}
+                })
+
+        logger.info(f"{username} requested NPC list in game {game_code}, found {len(npcs)} NPCs")
+
+        return jsonify({
+            'success': True,
+            'npcs': npcs
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting NPCs: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/party/trust', methods=['GET'])
+@limiter.limit("100 per minute")
+@require_game_session
+def get_party_trust():
+    """
+    Get current party trust level
+
+    Response: {
+        "success": true,
+        "trust": 75,
+        "trust_level": "High",
+        "description": "The party trusts each other deeply"
+    }
+    """
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        # Get party trust from game state
+        trust = 50  # Default
+        if game.game_state and hasattr(game.game_state, 'party_trust'):
+            trust = game.game_state.party_trust
+
+        # Calculate trust level description
+        if trust >= 80:
+            trust_level = "Very High"
+            description = "The party trusts each other completely"
+        elif trust >= 60:
+            trust_level = "High"
+            description = "The party trusts each other deeply"
+        elif trust >= 40:
+            trust_level = "Moderate"
+            description = "The party has reasonable trust"
+        elif trust >= 20:
+            trust_level = "Low"
+            description = "The party has some doubts about each other"
+        else:
+            trust_level = "Very Low"
+            description = "The party barely trusts each other"
+
+        logger.info(f"{username} requested party trust in game {game_code}: {trust}")
+
+        return jsonify({
+            'success': True,
+            'trust': trust,
+            'trust_level': trust_level,
+            'description': description
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting party trust: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/quests', methods=['GET'])
+@limiter.limit("100 per minute")
+@require_game_session
+def get_all_quests():
+    """
+    Get all quests (both active and completed)
+
+    Response: {
+        "success": true,
+        "active": [...],
+        "completed": [...]
+    }
+    """
+    try:
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Get active quests
+        active_quests = []
+        if hasattr(character, 'active_quests'):
+            for quest in character.active_quests:
+                active_quests.append({
+                    'id': quest.get('id', ''),
+                    'name': quest.get('name', ''),
+                    'description': quest.get('description', ''),
+                    'objectives': quest.get('objectives', []),
+                    'progress': quest.get('progress', 0),
+                    'reward': quest.get('reward', '')
+                })
+
+        # Get completed quests
+        completed_quests = []
+        if hasattr(character, 'completed_quests'):
+            for quest in character.completed_quests:
+                completed_quests.append({
+                    'id': quest.get('id', ''),
+                    'name': quest.get('name', ''),
+                    'description': quest.get('description', ''),
+                    'completed_date': quest.get('completed_date', '')
+                })
+
+        logger.info(f"{username} requested all quests: {len(active_quests)} active, {len(completed_quests)} completed")
+
+        return jsonify({
+            'success': True,
+            'active': active_quests,
+            'completed': completed_quests,
+            'total_active': len(active_quests),
+            'total_completed': len(completed_quests)
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting all quests: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/skills/refund', methods=['POST'])
+@limiter.limit("10 per minute")
+@require_game_session
+def refund_skill():
+    """
+    Refund a skill point (costs gold as a penalty)
+
+    Request: {
+        "skill_id": "fireball"
+    }
+
+    Response: {
+        "success": true,
+        "skill_points_refunded": 1,
+        "gold_cost": 50,
+        "skill_points": 3,
+        "gold": 100
+    }
+    """
+    try:
+        data = request.json
+        skill_id = data.get('skill_id')
+
+        if not skill_id:
+            return jsonify({'error': 'Missing skill_id'}), 400
+
+        game_code = session.get('game_code')
+        username = session.get('username')
+
+        if not game_code or not username:
+            return jsonify({'error': 'Not in game'}), 400
+
+        game = games.get(game_code)
+        if not game:
+            return jsonify({'error': 'Game not found'}), 404
+
+        player = game.players.get(username)
+        if not player:
+            return jsonify({'error': 'Player not found'}), 404
+
+        character = player.character
+
+        # Initialize skills manager if not already done
+        if not hasattr(character, 'skills_manager'):
+            character.skills_manager = SkillsManager(character)
+
+        # Check if skill is unlocked
+        if skill_id not in character.skills_manager.unlocked_skills:
+            return jsonify({
+                'success': False,
+                'error': 'Skill not unlocked'
+            }), 400
+
+        # Calculate refund cost (50 gold per skill point)
+        refund_cost = 50
+        current_gold = getattr(character, 'gold', 0)
+
+        if current_gold < refund_cost:
+            return jsonify({
+                'success': False,
+                'error': f'Not enough gold (need {refund_cost}, have {current_gold})'
+            }), 400
+
+        # Get skill info to determine points invested
+        skill_info = character.skills_manager.get_skill_info(skill_id)
+        if not skill_info:
+            return jsonify({
+                'success': False,
+                'error': 'Skill not found'
+            }), 400
+
+        # Refund the skill point
+        points_refunded = skill_info.get('rank', 1)  # Refund based on rank
+
+        # Remove skill from unlocked skills
+        character.skills_manager.unlocked_skills.remove(skill_id)
+
+        # Refund skill points
+        character.skill_points += points_refunded
+
+        # Deduct gold
+        character.gold -= refund_cost
+
+        # Transaction logging
+        log_transaction(
+            player_id=session.get('player_id', 'unknown'),
+            game_code=game_code,
+            transaction_type='SKILL_REFUNDED',
+            details={
+                'skill_id': skill_id,
+                'points_refunded': points_refunded,
+                'gold_cost': refund_cost,
+                'username': username
+            },
+            success=True
+        )
+
+        # Emit SocketIO event
+        socketio.emit('skill_refunded', {
+            'username': username,
+            'skill_id': skill_id,
+            'points_refunded': points_refunded
+        }, room=game_code)
+
+        logger.info(f"{username} refunded skill {skill_id}, got {points_refunded} points back for {refund_cost} gold")
+
+        return jsonify({
+            'success': True,
+            'skill_points_refunded': points_refunded,
+            'gold_cost': refund_cost,
+            'skill_points': character.skill_points,
+            'gold': character.gold,
+            'message': f'Refunded {points_refunded} skill point(s) for {refund_cost} gold'
+        })
+
+    except Exception as e:
+        logger.error(f"Error refunding skill: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 
