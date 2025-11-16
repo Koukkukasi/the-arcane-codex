@@ -1,0 +1,54 @@
+[Unit]
+Description=The Arcane Codex - Fantasy Text RPG Game Server
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+RuntimeDirectory=arcane-codex
+WorkingDirectory=/opt/arcane-codex
+Environment="PATH=/opt/arcane-codex/venv/bin"
+EnvironmentFile=/opt/arcane-codex/.env.production
+
+# Main process
+ExecStart=/opt/arcane-codex/venv/bin/gunicorn \
+    --config /opt/arcane-codex/gunicorn.conf.py \
+    --log-level info \
+    --access-logfile /var/log/arcane-codex/access.log \
+    --error-logfile /var/log/arcane-codex/error.log \
+    web_game:app
+
+# Reload configuration without downtime
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Graceful shutdown
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=5min
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-codex /var/log/arcane-codex /var/run/arcane-codex
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=arcane-codex
+
+[Install]
+WantedBy=multi-user.target
