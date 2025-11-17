@@ -363,21 +363,33 @@
         // Get CSRF token on page load
         async function getCsrfToken() {
             try {
+                console.log('Fetching CSRF token...');
                 const response = await fetch(`${API_URL}/api/csrf-token`);
                 const data = await response.json();
                 csrfToken = data.csrf_token;
+                console.log('CSRF token received:', csrfToken ? 'YES' : 'NO');
+                return csrfToken;
             } catch (error) {
                 console.error('Failed to get CSRF token:', error);
+                return null;
             }
         }
 
         // Utility Functions
         function hideAll() {
+            console.log('hideAll() called');
             document.querySelectorAll('.card, #game-screen').forEach(el => el.classList.add('hidden'));
         }
 
         function show(elementId) {
-            document.getElementById(elementId).classList.remove('hidden');
+            console.log('show() called for:', elementId);
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('hidden');
+                console.log('  Element shown successfully');
+            } else {
+                console.error('  Element not found:', elementId);
+            }
         }
 
         function showMessage(message, type = 'info') {
@@ -397,8 +409,13 @@
             };
 
             // Add CSRF token for POST requests
-            if (method === 'POST' && csrfToken) {
-                options.headers['X-CSRFToken'] = csrfToken;
+            if (method === 'POST') {
+                if (csrfToken) {
+                    options.headers['X-CSRFToken'] = csrfToken;
+                    console.log('Using CSRF token for POST request');
+                } else {
+                    console.warn('No CSRF token available for POST request!');
+                }
             }
 
             if (data) options.body = JSON.stringify(data);
@@ -456,8 +473,11 @@
         // Multiplayer Functions
         async function createMultiplayerGame() {
             // Ensure CSRF token is loaded
+            console.log('createMultiplayerGame: Current CSRF token:', csrfToken);
             if (!csrfToken) {
+                console.log('No token, fetching...');
                 await getCsrfToken();
+                console.log('After fetch, token:', csrfToken);
             }
 
             // Step 1: Set username
@@ -587,24 +607,35 @@
         }
 
         function displayQuestion(questionData) {
-            currentQuestionIndex = questionData.question_number - 1;
-            const progress = (questionData.question_number / questionData.total_questions) * 100;
+            try {
+                console.log('displayQuestion called with:', questionData);
 
-            document.getElementById('progress-fill').style.width = progress + '%';
-            document.getElementById('god-speaker').textContent = getGodIcon(questionData.god) + ' ' + questionData.god;
-            document.getElementById('question-number').textContent = `Question ${questionData.question_number} of ${questionData.total_questions}`;
-            document.getElementById('question-text').textContent = questionData.question_text;
+                currentQuestionIndex = questionData.question_number - 1;
+                const progress = (questionData.question_number / questionData.total_questions) * 100;
 
-            const optionsContainer = document.getElementById('options-container');
-            optionsContainer.innerHTML = '';
+                document.getElementById('progress-fill').style.width = progress + '%';
+                document.getElementById('god-speaker').textContent = getGodIcon(questionData.god) + ' ' + questionData.god;
+                document.getElementById('question-number').textContent = `Question ${questionData.question_number} of ${questionData.total_questions}`;
+                document.getElementById('question-text').textContent = questionData.question_text;
 
-            questionData.options.forEach(option => {
-                const optionDiv = document.createElement('button');
-                optionDiv.className = 'option-button';
-                optionDiv.innerHTML = `<span class="option-number">${option.id}</span>${option.text}`;
-                optionDiv.onclick = () => answerQuestion(option.id);
-                optionsContainer.appendChild(optionDiv);
-            });
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = '';
+
+                questionData.options.forEach((option, index) => {
+                    const optionDiv = document.createElement('button');
+                    optionDiv.className = 'option-button';
+                    // Use index if option.id doesn't exist
+                    const optionId = option.id !== undefined ? option.id : index;
+                    optionDiv.innerHTML = `<span class="option-number">${optionId + 1}</span>${option.text || option}`;
+                    optionDiv.onclick = () => answerQuestion(optionId);
+                    optionsContainer.appendChild(optionDiv);
+                });
+
+                console.log('Question displayed successfully');
+            } catch (error) {
+                console.error('Error in displayQuestion:', error);
+                showMessage('Error displaying question: ' + error.message, 'error');
+            }
         }
 
         async function answerQuestion(answerId) {
