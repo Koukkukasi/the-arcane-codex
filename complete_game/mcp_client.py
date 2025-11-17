@@ -5,11 +5,86 @@ Connects web game to MCP server → Claude Desktop for dynamic scenario generati
 
 import asyncio
 import json
-from typing import Dict, List, Optional
+import re
+import secrets
+from typing import Dict, List, Optional, Any
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client, StdioServerParameters
 import subprocess
 import sys
+
+def validate_scenario(scenario: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Validate and sanitize AI-generated scenario data to prevent security issues.
+
+    Protects against:
+    - XSS attacks (script tags in text)
+    - SQL injection (malicious scenario_ids)
+    - DoS attacks (excessively large arrays/text)
+    - Prompt injection (malicious whispers)
+    """
+
+    # Validate scenario_id (alphanumeric + underscore/hyphen only, max 64 chars)
+    scenario_id = scenario.get('scenario_id', 'unknown')
+    if not re.match(r'^[a-zA-Z0-9_-]{1,64}$', str(scenario_id)):
+        scenario['scenario_id'] = f"gen_{secrets.token_hex(8)}"
+
+    # Sanitize text fields (remove script tags, limit length)
+    def sanitize_text(text: Any, max_length: int = 5000) -> str:
+        """Remove dangerous content and limit text length"""
+        if not isinstance(text, str):
+            return str(text)[:max_length] if text else ""
+
+        # Remove script tags and other dangerous HTML
+        text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.IGNORECASE | re.DOTALL)
+        text = re.sub(r'<iframe[^>]*>.*?</iframe>', '', text, flags=re.IGNORECASE | re.DOTALL)
+        text = re.sub(r'javascript:', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'on\w+\s*=', '', text, flags=re.IGNORECASE)  # Remove event handlers
+
+        # Limit length
+        return text[:max_length]
+
+    # Sanitize main text fields
+    scenario['theme'] = sanitize_text(scenario.get('theme', 'exploration'), 100)
+    scenario['public_scene'] = sanitize_text(scenario.get('public_scene', ''))
+
+    # Validate and sanitize whispers dict
+    if 'player_whispers' in scenario:
+        validated_whispers = {}
+        whispers = scenario['player_whispers']
+        if isinstance(whispers, dict):
+            for key, value in list(whispers.items())[:10]:  # Max 10 whispers
+                clean_key = sanitize_text(str(key), 50)
+                clean_value = sanitize_text(str(value))
+                validated_whispers[clean_key] = clean_value
+        scenario['player_whispers'] = validated_whispers
+
+    # Validate choices array (limit to 10 choices)
+    if 'choices' in scenario and isinstance(scenario['choices'], list):
+        validated_choices = []
+        for choice in scenario['choices'][:10]:
+            if isinstance(choice, dict):
+                validated_choice = {
+                    'id': choice.get('id', len(validated_choices) + 1),
+                    'text': sanitize_text(choice.get('text', ''), 500),
+                    'skill': sanitize_text(choice.get('skill', ''), 50)
+                }
+                validated_choices.append(validated_choice)
+        scenario['choices'] = validated_choices
+
+    # Validate NPC behaviors array (limit to 10 NPCs)
+    if 'npc_behaviors' in scenario and isinstance(scenario['npc_behaviors'], list):
+        scenario['npc_behaviors'] = scenario['npc_behaviors'][:10]
+
+    # Validate environmental tactics (limit to 15)
+    if 'environmental_tactics' in scenario and isinstance(scenario['environmental_tactics'], list):
+        scenario['environmental_tactics'] = scenario['environmental_tactics'][:15]
+
+    # Validate solution paths (limit to 10)
+    if 'solution_paths' in scenario and isinstance(scenario['solution_paths'], list):
+        scenario['solution_paths'] = scenario['solution_paths'][:10]
+
+    return scenario
 
 class ArcaneCodexMCPClient:
     """
@@ -110,11 +185,17 @@ class ArcaneCodexMCPClient:
                     "difficulty": difficulty
                 }
 
-                # Call MCP tool
-                result = await session.call_tool(
-                    "generate_scenario",
-                    arguments=request_data
-                )
+                # Call MCP tool with timeout (60 seconds)
+                try:
+                    result = await asyncio.wait_for(
+                        session.call_tool(
+                            "generate_scenario",
+                            arguments=request_data
+                        ),
+                        timeout=60.0  # 60 second timeout
+                    )
+                except asyncio.TimeoutError:
+                    raise RuntimeError("Scenario generation timed out after 60 seconds")
 
                 # Parse response
                 if result and result.content:
@@ -134,10 +215,12 @@ class ArcaneCodexMCPClient:
                     # Parse response (MCP server should return properly formatted content)
                     try:
                         scenario = json.loads(scenario_text)
+                        # Validate and sanitize AI-generated content for security
+                        scenario = validate_scenario(scenario)
                         return scenario
                     except json.JSONDecodeError:
                         # If response is not JSON, create basic structure
-                        return {
+                        fallback_scenario = {
                             "scenario_id": f"manual_{hash(scenario_text)}",
                             "theme": "dynamic",
                             "public_scene": scenario_text,
@@ -146,6 +229,8 @@ class ArcaneCodexMCPClient:
                             "environmental_tactics": [],
                             "solution_paths": []
                         }
+                        # Validate fallback scenario too
+                        return validate_scenario(fallback_scenario)
 
                 raise RuntimeError("Failed to generate scenario via MCP")
 
@@ -174,11 +259,17 @@ class ArcaneCodexMCPClient:
                     "gods": ["VALDRIS", "KAITHA", "MORVANE", "SYLARA", "KORVAN", "ATHENA", "MERCUS"]
                 }
 
-                # Call MCP tool
-                result = await session.call_tool(
-                    "generate_interrogation_question",
-                    arguments=request_data
-                )
+                # Call MCP tool with timeout (30 seconds for questions)
+                try:
+                    result = await asyncio.wait_for(
+                        session.call_tool(
+                            "generate_interrogation_question",
+                            arguments=request_data
+                        ),
+                        timeout=30.0  # 30 second timeout
+                    )
+                except asyncio.TimeoutError:
+                    raise RuntimeError("Interrogation question generation timed out after 30 seconds")
 
                 # Parse response (MCP server should return properly formatted content)
                 if result and result.content:

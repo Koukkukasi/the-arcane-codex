@@ -14,7 +14,7 @@ from threading import Thread
 import time
 
 from database import ArcaneDatabase
-from mcp_client import MCPClient, SyncMCPClient
+from mcp_client import SyncMCPClient
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,9 @@ class AIGameMaster:
         self.running = False
         self.active_games = {}
         self.processing = {}  # Track which games are being processed
+        self.processing_lock = None  # Will be initialized in start() - asyncio.Lock()
+        self.active_tasks = set()  # Track running tasks for graceful shutdown
+        self.shutdown_event = None  # Will be initialized in start()
 
         # Connect to Claude Desktop on init
         self.connect_to_claude()
@@ -58,9 +61,21 @@ class AIGameMaster:
             return False
 
     async def start(self):
-        """Start the AI GM main loop"""
+        """Start the AI GM main loop with graceful shutdown support"""
         self.running = True
+        self.processing_lock = asyncio.Lock()
+        self.shutdown_event = asyncio.Event()
         logger.info("🤖 AI Game Master starting...")
+
+        # Register signal handlers for graceful shutdown
+        import signal
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            try:
+                loop.add_signal_handler(sig, lambda: asyncio.create_task(self.shutdown()))
+            except NotImplementedError:
+                # Signal handlers not supported on Windows, skip
+                pass
 
         while self.running:
             try:
@@ -75,20 +90,31 @@ class AIGameMaster:
                 for game in games:
                     game_id = game['id']
 
-                    # Skip if already processing
-                    if game_id in self.processing:
-                        continue
+                    # Atomic check-and-set to prevent race condition
+                    async with self.processing_lock:
+                        # Skip if already processing
+                        if game_id in self.processing:
+                            continue
 
-                    # Check if game needs processing
-                    if self.needs_processing(game_id):
-                        self.processing[game_id] = True
-                        asyncio.create_task(self.process_game_turn(game_id))
+                        # Check if game needs processing
+                        if self.needs_processing(game_id):
+                            self.processing[game_id] = True
+                            task = asyncio.create_task(self.process_game_turn(game_id))
+                            self.active_tasks.add(task)
+                            task.add_done_callback(self.active_tasks.discard)
 
-                await asyncio.sleep(2)  # Check every 2 seconds
+                # Interruptible sleep - allows quick shutdown
+                try:
+                    await asyncio.wait_for(self.shutdown_event.wait(), timeout=2.0)
+                    break  # Shutdown requested
+                except asyncio.TimeoutError:
+                    pass  # Normal - continue loop
 
             except Exception as e:
-                logger.error(f"Error in AI GM main loop: {e}")
+                logger.error(f"Error in AI GM main loop: {e}", exc_info=True)
                 await asyncio.sleep(5)
+
+        logger.info("AI GM main loop stopped")
 
     def needs_processing(self, game_id: str) -> bool:
         """Check if a game needs AI GM processing"""
@@ -420,19 +446,56 @@ class AIGameMaster:
             council_reason=None
         )
 
-    def stop(self):
-        """Stop the AI GM"""
+    async def shutdown(self):
+        """Graceful shutdown of AI Game Master"""
+        logger.info("Shutting down AI Game Master...")
         self.running = False
+        self.shutdown_event.set()
+
+        # Wait for active tasks to complete (with timeout)
+        if self.active_tasks:
+            logger.info(f"Waiting for {len(self.active_tasks)} active tasks to complete...")
+            try:
+                await asyncio.wait(self.active_tasks, timeout=30.0)
+            except asyncio.TimeoutError:
+                logger.warning("Some tasks did not complete within timeout")
+
+        # Close MCP connection
+        if hasattr(self.mcp_client, 'close'):
+            try:
+                self.mcp_client.close()
+            except Exception as e:
+                logger.error(f"Error closing MCP client: {e}")
+
+        logger.info("AI Game Master shutdown complete")
+
+    def stop(self):
+        """Stop the AI GM (legacy sync method)"""
+        self.running = False
+        if self.shutdown_event:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop and loop.is_running():
+                    loop.call_soon_threadsafe(self.shutdown_event.set)
+            except:
+                pass
         logger.info("AI Game Master stopping...")
 
 # Async wrapper for running in thread
 def run_ai_gm_async(socketio):
-    """Run AI GM in async loop"""
+    """Run AI GM in async loop with proper cleanup"""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     gm = AIGameMaster(socketio)
-    loop.run_until_complete(gm.start())
+    try:
+        loop.run_until_complete(gm.start())
+    finally:
+        # Cleanup: close the loop after use to prevent resource leaks
+        try:
+            loop.close()
+        except Exception as e:
+            logger.error(f"Error closing event loop: {e}")
 
 def start_ai_gm_thread(socketio):
     """Start AI GM in background thread"""

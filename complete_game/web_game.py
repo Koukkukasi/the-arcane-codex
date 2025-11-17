@@ -73,7 +73,7 @@ try:
     AI_GM_AVAILABLE = True
 except ImportError:
     AI_GM_AVAILABLE = False
-    print("⚠️  AI GM auto-generation not available (ai_gm_auto.py not found)")
+    print("WARNING: AI GM auto-generation not available (ai_gm_auto.py not found)")
 
 # TEST MODE: Set environment variable ARCANE_TEST_MODE=1 for Playwright testing
 # This enables mock interrogation questions when MCP is not available
@@ -1502,8 +1502,8 @@ def get_csrf_token():
 
 @app.route('/')
 def index():
-    """RPG Game Main Menu - Enhanced UI with SVG Graphics"""
-    return send_from_directory('static', 'actual_game.html')
+    """RPG Game Main Menu - AI-Powered Divine Interrogation"""
+    return send_from_directory('static', 'index.html')
 
 @app.route('/boring')
 def boring_version():
@@ -3526,14 +3526,14 @@ Game State:
     # Start AI Game Master in background thread for automatic scenario generation
     if AI_GM_AVAILABLE:
         try:
-            print("🤖 Starting AI Game Master automation...")
+            print("[AI GM] Starting AI Game Master automation...")
             ai_gm_thread = start_ai_gm_thread(socketio)
-            print("✅ AI GM running in background - will auto-generate scenarios")
+            print("[AI GM] AI GM running in background - will auto-generate scenarios")
         except Exception as e:
-            print(f"⚠️  Failed to start AI GM: {e}")
+            print(f"[AI GM] WARNING: Failed to start AI GM: {e}")
             print("   Game will still work but requires manual scenario generation")
     else:
-        print("⚠️  AI GM not available - scenarios must be generated manually")
+        print("[AI GM] WARNING: AI GM not available - scenarios must be generated manually")
 
     # Disable auto-reload to prevent game sessions from being wiped
     # PHASE H: Use socketio.run() instead of app.run() for real-time support

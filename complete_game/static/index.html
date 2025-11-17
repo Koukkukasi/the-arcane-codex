@@ -384,9 +384,9 @@
 
         // Divine Interrogation Functions
         async function startInterrogation() {
-            const result = await apiCall('/api/interrogation/start', 'POST', {player_id: playerId});
+            const result = await apiCall('/api/start_interrogation', 'POST', {});
 
-            if (result && result.status === 'started') {
+            if (result && result.status === 'success' && result.question) {
                 interrogationData = result;
                 hideAll();
                 show('interrogation-screen');
@@ -416,15 +416,15 @@
         }
 
         async function answerQuestion(answerId) {
-            const result = await apiCall('/api/interrogation/answer', 'POST', {
-                player_id: playerId,
-                answer_id: answerId
+            const result = await apiCall('/api/answer_question', 'POST', {
+                answer_index: answerId,
+                choice_text: ''  // Optional
             });
 
             if (result) {
-                if (result.status === 'continue') {
+                if (result.status === 'success' && result.next_question) {
                     displayQuestion(result.next_question);
-                } else if (result.status === 'complete') {
+                } else if (result.status === 'success' && result.complete) {
                     displayVerdict(result);
                 }
             }
