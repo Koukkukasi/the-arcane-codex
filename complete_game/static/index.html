@@ -358,6 +358,18 @@
         let playerId = 'player_' + Math.random().toString(36).substr(2, 9);
         let currentQuestionIndex = 0;
         let interrogationData = null;
+        let csrfToken = null;
+
+        // Get CSRF token on page load
+        async function getCsrfToken() {
+            try {
+                const response = await fetch(`${API_URL}/api/csrf-token`);
+                const data = await response.json();
+                csrfToken = data.csrf_token;
+            } catch (error) {
+                console.error('Failed to get CSRF token:', error);
+            }
+        }
 
         // Utility Functions
         function hideAll() {
@@ -379,8 +391,16 @@
         async function apiCall(endpoint, method = 'GET', data = null) {
             const options = {
                 method,
-                headers: {'Content-Type': 'application/json'}
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             };
+
+            // Add CSRF token for POST requests
+            if (method === 'POST' && csrfToken) {
+                options.headers['X-CSRFToken'] = csrfToken;
+            }
+
             if (data) options.body = JSON.stringify(data);
 
             try {
@@ -626,6 +646,8 @@
             };
             return icons[god] || '✨';
         }
+        // Initialize on page load
+        getCsrfToken();
     </script>
 </body>
 </html>
