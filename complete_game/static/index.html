@@ -455,6 +455,11 @@
 
         // Multiplayer Functions
         async function createMultiplayerGame() {
+            // Ensure CSRF token is loaded
+            if (!csrfToken) {
+                await getCsrfToken();
+            }
+
             // Step 1: Set username
             let username = prompt("Enter your name:");
             if (!username || username.trim() === '') {
@@ -478,6 +483,11 @@
         }
 
         async function joinGameWithCode() {
+            // Ensure CSRF token is loaded
+            if (!csrfToken) {
+                await getCsrfToken();
+            }
+
             const gameCode = document.getElementById('gameCodeInput').value.trim().toUpperCase();
 
             if (!gameCode) {
@@ -536,6 +546,11 @@
 
         // Divine Interrogation Functions (original, now sets up solo game)
         async function startInterrogation() {
+            // Ensure CSRF token is loaded
+            if (!csrfToken) {
+                await getCsrfToken();
+            }
+
             // Step 1: Set username
             let username = prompt("Enter your name:");
             if (!username || username.trim() === '') {
