@@ -54,10 +54,10 @@ class AIGameMaster:
         """Initialize connection to Claude Desktop via MCP"""
         try:
             if self.mcp_client.connect():
-                logger.info("✅ AI GM connected to Claude Desktop")
+                logger.info("[OK] AI GM connected to Claude Desktop")
                 return True
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Claude: {e}")
+            logger.error(f"[ERROR] Failed to connect to Claude: {e}")
             return False
 
     async def start(self):
@@ -65,7 +65,7 @@ class AIGameMaster:
         self.running = True
         self.processing_lock = asyncio.Lock()
         self.shutdown_event = asyncio.Event()
-        logger.info("🤖 AI Game Master starting...")
+        logger.info("[AI GM] AI Game Master starting...")
 
         # Register signal handlers for graceful shutdown
         import signal
@@ -160,7 +160,7 @@ class AIGameMaster:
             self.db.clear_pending_actions(game_id)
             self.db.advance_turn(game_id)
 
-            logger.info(f"✅ Turn processed for game {game_id}")
+            logger.info(f"[OK] Turn processed for game {game_id}")
 
         except Exception as e:
             logger.error(f"Error processing turn for game {game_id}: {e}")
@@ -559,7 +559,7 @@ if __name__ == "__main__":
 
     # Test connection to Claude
     if gm.connect_to_claude():
-        print("✅ Connected to Claude Desktop")
+        print("[OK] Connected to Claude Desktop")
 
         # Test scenario generation
         test_state = {
@@ -588,5 +588,5 @@ if __name__ == "__main__":
         print(f"Whispers: {len(scenario.whispers)}")
         print(f"Choices: {len(scenario.choices)}")
     else:
-        print("❌ Failed to connect to Claude Desktop")
+        print("[ERROR] Failed to connect to Claude Desktop")
         print("Make sure Claude Desktop is running and MCP is configured")

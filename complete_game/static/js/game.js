@@ -22,8 +22,26 @@ class ArcaneCodexGame {
         this.API_BASE = '/api';
         this.POLLING_DELAY = 1000; // 1 second (faster updates for better responsiveness)
 
+        // CSRF Token
+        this.csrfToken = null;
+
         // Load saved player ID if exists
         this.loadPlayerSession();
+
+        // Fetch CSRF token on initialization
+        this.fetchCsrfToken();
+    }
+
+    async fetchCsrfToken() {
+        try {
+            console.log('[CSRF] Fetching CSRF token...');
+            const response = await fetch(`${this.API_BASE}/csrf-token`);
+            const data = await response.json();
+            this.csrfToken = data.csrf_token;
+            console.log('[CSRF] Token received:', this.csrfToken ? 'YES' : 'NO');
+        } catch (error) {
+            console.error('[CSRF] Failed to get CSRF token:', error);
+        }
     }
 
     // ===== Initialization Methods =====
@@ -185,6 +203,20 @@ class ArcaneCodexGame {
 
         if (this.playerId) {
             options.headers['X-Player-ID'] = this.playerId;
+        }
+
+        // Add CSRF token for POST requests
+        if (method === 'POST') {
+            if (!this.csrfToken) {
+                console.warn('[CSRF] No token available for POST request, fetching...');
+                await this.fetchCsrfToken();
+            }
+            if (this.csrfToken) {
+                options.headers['X-CSRFToken'] = this.csrfToken;
+                console.log('[CSRF] Token added to POST request');
+            } else {
+                console.error('[CSRF] Failed to get token for POST request!');
+            }
         }
 
         try {

@@ -64,7 +64,7 @@ try:
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
-    print("❌ MCP client not available. Game requires MCP for dynamic scenarios!")
+    print("[ERROR] MCP client not available. Game requires MCP for dynamic scenarios!")
     print("   See MCP_SETUP.md or QUICK_TEST_SETUP.md for configuration.")
 
 # AI Game Master - Automated scenario generation
@@ -79,7 +79,7 @@ except ImportError:
 # This enables mock interrogation questions when MCP is not available
 TEST_MODE = os.environ.get('ARCANE_TEST_MODE', '0') == '1'
 if TEST_MODE:
-    print("⚠️  TEST MODE ENABLED - Using mock interrogation questions")
+    print("[WARNING] TEST MODE ENABLED - Using mock interrogation questions")
     print("   Set ARCANE_TEST_MODE=0 or unset to require MCP")
 
 app = Flask(__name__)
@@ -804,7 +804,7 @@ def generate_scenario_via_mcp(game_session: GameSession) -> Scenario:
 
     if not MCP_AVAILABLE:
         raise RuntimeError(
-            "❌ MCP client not available!\n\n"
+            "[ERROR] MCP client not available!\n\n"
             "This game requires MCP (Model Context Protocol) for 100% dynamic scenarios.\n"
             "NO static/mock scenarios are used.\n\n"
             "To configure MCP:\n"
@@ -851,7 +851,7 @@ def generate_scenario_via_mcp(game_session: GameSession) -> Scenario:
         )
     except Exception as e:
         raise RuntimeError(
-            f"❌ MCP scenario generation failed!\n\n"
+            f"[ERROR] MCP scenario generation failed!\n\n"
             f"Error: {e}\n\n"
             f"Possible causes:\n"
             f"1. MCP server not configured in Claude Desktop\n"
@@ -1548,7 +1548,7 @@ def start_interrogation():
         if not MCP_AVAILABLE and not TEST_MODE:
             logger.error(f"[START_INTERROGATION] MCP not available and not in TEST_MODE")
             raise RuntimeError(
-                "❌ MCP client not available!\n\n"
+                "[ERROR] MCP client not available!\n\n"
                 "Divine Interrogation requires MCP for 100% unique questions per player.\n"
                 "NO static questions are used.\n\n"
                 "See MCP_SETUP.md for configuration.\n"
@@ -1580,13 +1580,13 @@ def start_interrogation():
 
             return jsonify({
                 'status': 'success',
-                'message': '🌩️ The Seven Gods await your truth...',
+                'message': 'The Seven Gods await your truth...',
                 'question': question_data
             })
         except Exception as e:
             logger.error(f"[START_INTERROGATION] Failed to generate question: {str(e)}", exc_info=True)
             raise RuntimeError(
-                f"❌ MCP interrogation question generation failed!\n\n"
+                f"[ERROR] MCP interrogation question generation failed!\n\n"
                 f"Error: {e}\n\n"
                 f"See MCP_SETUP.md for troubleshooting."
             )
@@ -1769,7 +1769,7 @@ def answer_question():
             except Exception as e:
                 logger.error(f"[ANSWER_QUESTION] Failed to generate next question: {str(e)}", exc_info=True)
                 raise RuntimeError(
-                    f"❌ MCP interrogation question generation failed!\n\n"
+                    f"[ERROR] MCP interrogation question generation failed!\n\n"
                     f"Error: {e}\n\n"
                     f"See MCP_SETUP.md for troubleshooting."
                 )
