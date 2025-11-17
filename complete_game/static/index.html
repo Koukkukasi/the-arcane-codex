@@ -255,8 +255,30 @@
             <h2>Welcome, Adventurer</h2>
             <p>Choose your path:</p>
             <div style="margin-top: 20px;">
-                <button class="button" onclick="startInterrogation()">Begin Divine Interrogation</button>
+                <button class="button" onclick="showMultiplayerMenu()">Create/Join Game (Multiplayer)</button>
+                <button class="button secondary" onclick="startSoloInterrogation()">Solo Play (Quick Start)</button>
                 <button class="button secondary" onclick="showAbout()">About the Game</button>
+            </div>
+        </div>
+
+        <!-- Multiplayer Menu -->
+        <div id="multiplayer-menu" class="card hidden">
+            <h2>Multiplayer Setup</h2>
+            <div style="margin-top: 20px;">
+                <button class="button" onclick="createMultiplayerGame()">Create New Game</button>
+                <button class="button" onclick="showJoinGame()">Join Existing Game</button>
+                <button class="button secondary" onclick="backToMenu()">Back</button>
+            </div>
+        </div>
+
+        <!-- Join Game -->
+        <div id="join-game-screen" class="card hidden">
+            <h2>Join Game</h2>
+            <p>Enter the game code:</p>
+            <input type="text" id="gameCodeInput" placeholder="XXXX-XXXX" style="padding: 10px; font-size: 1.2em; margin: 10px 0; width: 200px;">
+            <div style="margin-top: 20px;">
+                <button class="button" onclick="joinGameWithCode()">Join</button>
+                <button class="button secondary" onclick="showMultiplayerMenu()">Back</button>
             </div>
         </div>
 
@@ -401,7 +423,90 @@
             show('about-screen');
         }
 
-        // Divine Interrogation Functions
+        function showMultiplayerMenu() {
+            hideAll();
+            show('multiplayer-menu');
+        }
+
+        function showJoinGame() {
+            hideAll();
+            show('join-game-screen');
+        }
+
+        // Multiplayer Functions
+        async function createMultiplayerGame() {
+            // Step 1: Set username
+            let username = prompt("Enter your name:");
+            if (!username || username.trim() === '') {
+                username = `Player${Math.floor(Math.random() * 10000)}`;
+            }
+            const usernameResult = await apiCall('/api/set_username', 'POST', {username: username});
+
+            if (!usernameResult || usernameResult.status === 'error') {
+                return;
+            }
+
+            // Step 2: Create game
+            const gameResult = await apiCall('/api/create_game', 'POST', {});
+
+            if (gameResult && gameResult.status === 'success') {
+                showMessage(`Game Created! Share this code with your friend: ${gameResult.game_code}`, 'success');
+
+                // Wait a moment to show the code, then start interrogation
+                setTimeout(() => startInterrogationFlow(), 2000);
+            }
+        }
+
+        async function joinGameWithCode() {
+            const gameCode = document.getElementById('gameCodeInput').value.trim().toUpperCase();
+
+            if (!gameCode) {
+                showMessage('Please enter a game code', 'error');
+                return;
+            }
+
+            // Step 1: Set username
+            let username = prompt("Enter your name:");
+            if (!username || username.trim() === '') {
+                username = `Player${Math.floor(Math.random() * 10000)}`;
+            }
+            const usernameResult = await apiCall('/api/set_username', 'POST', {username: username});
+
+            if (!usernameResult || usernameResult.status === 'error') {
+                return;
+            }
+
+            // Step 2: Join game
+            const joinResult = await apiCall('/api/join_game', 'POST', {game_code: gameCode});
+
+            if (joinResult && joinResult.status === 'success') {
+                showMessage(`Joined game ${gameCode}!`, 'success');
+
+                // Start interrogation
+                setTimeout(() => startInterrogationFlow(), 1000);
+            }
+        }
+
+        // Solo play (original function)
+        async function startSoloInterrogation() {
+            await startInterrogation();
+        }
+
+        // Start interrogation flow (after username + game setup)
+        async function startInterrogationFlow() {
+            const result = await apiCall('/api/start_interrogation', 'POST', {});
+
+            if (result && result.status === 'success' && result.question) {
+                interrogationData = result;
+                hideAll();
+                show('interrogation-screen');
+                displayQuestion(result.question);
+            } else if (result && result.message) {
+                showMessage(result.message, 'error');
+            }
+        }
+
+        // Divine Interrogation Functions (original, now sets up solo game)
         async function startInterrogation() {
             // Step 1: Set username
             let username = prompt("Enter your name:");
