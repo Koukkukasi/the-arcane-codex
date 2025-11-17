@@ -212,33 +212,79 @@ class AIGameMaster:
         }
 
     async def generate_scenario(self, game_state: Dict) -> ScenarioData:
-        """Generate scenario using Claude Desktop via MCP"""
-        try:
-            # Call Claude via MCP
-            raw_scenario = self.mcp_client.generate_scenario(game_state)
+        """
+        Generate scenario using Claude Desktop via MCP with retry logic
 
-            # Parse and structure the scenario
-            scenario = ScenarioData(
-                theme=raw_scenario.get('theme', 'exploration'),
-                public_narration=raw_scenario.get('public', 'The adventure continues...'),
-                whispers=raw_scenario.get('whispers', {}),
-                sensory_data=raw_scenario.get('sensory', {}),
-                choices=raw_scenario.get('choices', []),
-                npc_reactions=raw_scenario.get('npc_reactions', []),
-                trigger_council=raw_scenario.get('trigger_council', False),
-                council_reason=raw_scenario.get('council_reason')
-            )
+        Implements exponential backoff for transient failures:
+        - Attempt 1: immediate
+        - Attempt 2: 2 second delay
+        - Attempt 3: 4 second delay
+        """
+        max_retries = 3
+        retry_delay = 2  # seconds
 
-            # Generate class-specific whispers if missing
-            if not scenario.whispers:
-                scenario.whispers = self.generate_default_whispers(game_state)
+        for attempt in range(max_retries):
+            try:
+                # Call Claude via MCP
+                raw_scenario = self.mcp_client.generate_scenario(
+                    party_trust=game_state.get('party_trust', 50),
+                    player_classes=[p.get('class_type', 'Unknown') for p in game_state.get('players', [])],
+                    npcs=[{'name': npc['name'], 'approval': npc.get('approval', 50)} for npc in game_state.get('npcs', [])],
+                    divine_favor=game_state.get('divine_favor', {}),
+                    previous_themes=game_state.get('scenario_history', [])[-3:],  # Last 3 themes
+                    location=game_state.get('location', 'Unknown'),
+                    difficulty='medium'
+                )
 
-            return scenario
+                # Validate response
+                if not raw_scenario or not isinstance(raw_scenario, dict):
+                    raise ValueError("Invalid scenario format from MCP")
 
-        except Exception as e:
-            logger.error(f"Error generating scenario: {e}")
-            # Return a fallback scenario
-            return self.get_fallback_scenario(game_state)
+                # Parse and structure the scenario
+                scenario = ScenarioData(
+                    theme=raw_scenario.get('theme', 'exploration'),
+                    public_narration=raw_scenario.get('public_scene', raw_scenario.get('public', 'The adventure continues...')),
+                    whispers=raw_scenario.get('player_whispers', raw_scenario.get('whispers', {})),
+                    sensory_data=raw_scenario.get('sensory', {}),
+                    choices=raw_scenario.get('choices', []),
+                    npc_reactions=raw_scenario.get('npc_behaviors', raw_scenario.get('npc_reactions', [])),
+                    trigger_council=raw_scenario.get('trigger_council', False),
+                    council_reason=raw_scenario.get('council_reason')
+                )
+
+                # Validate scenario has minimum required content
+                if not scenario.public_narration or len(scenario.choices) == 0:
+                    raise ValueError("Generated scenario failed validation (missing narration or choices)")
+
+                # Generate class-specific whispers if missing
+                if not scenario.whispers:
+                    scenario.whispers = self.generate_default_whispers(game_state)
+
+                logger.info(f"Scenario generated successfully: theme={scenario.theme}")
+                return scenario
+
+            except (ConnectionError, TimeoutError) as e:
+                # Network/timeout errors - retry with backoff
+                logger.warning(f"MCP connection error (attempt {attempt+1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay * (attempt + 1))
+                    continue
+                else:
+                    logger.error("MCP connection failed after retries, using fallback")
+                    return self.get_fallback_scenario(game_state)
+
+            except ValueError as e:
+                # Validation/parsing errors - don't retry, use fallback
+                logger.error(f"Scenario parsing/validation error: {e}")
+                return self.get_fallback_scenario(game_state)
+
+            except Exception as e:
+                # Unexpected errors - log and use fallback
+                logger.error(f"Unexpected error generating scenario: {e}", exc_info=True)
+                return self.get_fallback_scenario(game_state)
+
+        # If we exhausted retries
+        return self.get_fallback_scenario(game_state)
 
     def generate_default_whispers(self, game_state: Dict) -> Dict[str, str]:
         """Generate default whispers based on player classes"""

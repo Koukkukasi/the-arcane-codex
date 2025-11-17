@@ -7,7 +7,10 @@ import asyncio
 import json
 import os
 import sys
+import logging
+import stat
 from typing import Any
+from datetime import datetime
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 from anthropic import Anthropic
@@ -16,12 +19,41 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Configure security audit logger (separate from stderr)
+security_logger = logging.getLogger('security')
+security_handler = logging.FileHandler('security_audit.log')
+security_handler.setFormatter(logging.Formatter(
+    '%(asctime)s - SECURITY - %(levelname)s - %(message)s'
+))
+security_logger.addHandler(security_handler)
+security_logger.setLevel(logging.INFO)
+
+# Check .env file permissions (security best practice)
+def check_env_file_permissions():
+    """Verify .env file has secure permissions"""
+    env_path = '.env'
+    if os.path.exists(env_path):
+        file_stats = os.stat(env_path)
+        # On Unix-like systems, check if file is readable by others
+        if hasattr(stat, 'S_IROTH'):
+            if file_stats.st_mode & stat.S_IROTH:
+                security_logger.warning("INSECURE_PERMISSIONS .env file is world-readable")
+                print("[WARNING] .env file has insecure permissions", file=sys.stderr)
+        # Check if file is writable by others
+        if hasattr(stat, 'S_IWOTH'):
+            if file_stats.st_mode & stat.S_IWOTH:
+                security_logger.warning("INSECURE_PERMISSIONS .env file is world-writable")
+                print("[WARNING] .env file is world-writable", file=sys.stderr)
+
+check_env_file_permissions()
+
 # Create MCP server
 server = Server("arcane-codex-scenario-generator")
 
 # Log startup
 print("Arcane Codex MCP Server starting...", file=sys.stderr)
 print("Using Anthropic API with Opus 4.1 for best quality", file=sys.stderr)
+security_logger.info("MCP_SERVER_START server=arcane-codex-scenario-generator")
 
 @server.list_tools()
 async def list_tools() -> list[Tool]:
@@ -196,15 +228,24 @@ MAKE IT EMOTIONALLY COMPLEX. Make players AGONIZE over choices. Lure them with d
 
         # Use Anthropic API to generate scenario with Opus 4.1
         try:
+            # Log API request (security audit)
+            security_logger.info(f"API_REQUEST tool=generate_scenario party_trust={arguments.get('party_trust')} difficulty={arguments.get('difficulty')}")
+
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key:
+                # Generic error message (don't reveal configuration details)
+                security_logger.warning("API_KEY_MISSING Authentication failed")
+                print("[ERROR] Authentication failed", file=sys.stderr)
                 error_response = json.dumps({
-                    "error": "ANTHROPIC_API_KEY not configured in .env file",
-                    "scenario_id": "error_no_key"
+                    "error": "Service temporarily unavailable",
+                    "scenario_id": "error_service_unavailable"
                 })
                 return [TextContent(type="text", text=error_response)]
 
             print("[API] Generating scenario with Opus 4.1...", file=sys.stderr)
+
+            # Track API usage
+            security_logger.info("ANTHROPIC_API_REQUEST model=opus-4 tool=generate_scenario")
 
             client = Anthropic(api_key=api_key)
             response = client.messages.create(
@@ -213,15 +254,23 @@ MAKE IT EMOTIONALLY COMPLEX. Make players AGONIZE over choices. Lure them with d
                 messages=[{"role": "user", "content": prompt}]
             )
 
+            # Log successful generation
+            token_count = len(response.content[0].text) if response.content else 0
+            security_logger.info(f"ANTHROPIC_API_SUCCESS tool=generate_scenario tokens={token_count}")
             print("[API] Scenario generated successfully!", file=sys.stderr)
 
             # Return AI-generated JSON
             return [TextContent(type="text", text=response.content[0].text)]
 
         except Exception as e:
-            print(f"[API ERROR] Scenario generation failed: {str(e)}", file=sys.stderr)
+            # Log API failure (security audit)
+            error_type = type(e).__name__
+            security_logger.error(f"ANTHROPIC_API_FAILURE tool=generate_scenario error={error_type} msg={str(e)[:100]}")
+            print(f"[API ERROR] Scenario generation failed: {error_type}", file=sys.stderr)
+
+            # Generic error message for client
             error_response = json.dumps({
-                "error": f"AI generation failed: {str(e)}",
+                "error": "Scenario generation unavailable",
                 "scenario_id": "error_generation_failed"
             })
             return [TextContent(type="text", text=error_response)]
@@ -321,16 +370,25 @@ MAKE IT AGONIZING. Make players FEEL the weight of their choice. This determines
 
         # Use Anthropic API to generate question with Opus 4.1
         try:
+            # Log API request (security audit)
+            security_logger.info(f"API_REQUEST tool=generate_interrogation_question player={player_id} question={question_number}/10")
+
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key:
+                # Generic error message (don't reveal configuration details)
+                security_logger.warning("API_KEY_MISSING Authentication failed")
+                print("[ERROR] Authentication failed", file=sys.stderr)
                 error_response = json.dumps({
-                    "error": "ANTHROPIC_API_KEY not configured in .env file",
+                    "error": "Service temporarily unavailable",
                     "question_number": question_number,
                     "total_questions": 10
                 })
                 return [TextContent(type="text", text=error_response)]
 
             print(f"[API] Generating question {question_number}/10 with Opus 4.1...", file=sys.stderr)
+
+            # Track API usage
+            security_logger.info(f"ANTHROPIC_API_REQUEST model=opus-4 tool=generate_interrogation_question question={question_number}")
 
             client = Anthropic(api_key=api_key)
             response = client.messages.create(
@@ -339,15 +397,23 @@ MAKE IT AGONIZING. Make players FEEL the weight of their choice. This determines
                 messages=[{"role": "user", "content": prompt}]
             )
 
+            # Log successful generation
+            token_count = len(response.content[0].text) if response.content else 0
+            security_logger.info(f"ANTHROPIC_API_SUCCESS tool=generate_interrogation_question question={question_number} tokens={token_count}")
             print(f"[API] Question {question_number}/10 generated successfully!", file=sys.stderr)
 
             # Return AI-generated JSON
             return [TextContent(type="text", text=response.content[0].text)]
 
         except Exception as e:
-            print(f"[API ERROR] Question generation failed: {str(e)}", file=sys.stderr)
+            # Log API failure (security audit)
+            error_type = type(e).__name__
+            security_logger.error(f"ANTHROPIC_API_FAILURE tool=generate_interrogation_question question={question_number} error={error_type} msg={str(e)[:100]}")
+            print(f"[API ERROR] Question generation failed: {error_type}", file=sys.stderr)
+
+            # Generic error message for client
             error_response = json.dumps({
-                "error": f"AI generation failed: {str(e)}",
+                "error": "Question generation unavailable",
                 "question_number": question_number,
                 "total_questions": 10
             })

@@ -516,13 +516,21 @@
         async function startInterrogationFlow() {
             const result = await apiCall('/api/start_interrogation', 'POST', {});
 
+            console.log('Interrogation API result:', result);
+
             if (result && result.status === 'success' && result.question) {
                 interrogationData = result;
+                console.log('Transitioning to interrogation screen...');
                 hideAll();
                 show('interrogation-screen');
+                console.log('Displaying question:', result.question);
                 displayQuestion(result.question);
             } else if (result && result.message) {
+                console.error('Interrogation start failed:', result.message);
                 showMessage(result.message, 'error');
+            } else {
+                console.error('Unexpected interrogation result:', result);
+                showMessage('Failed to start interrogation', 'error');
             }
         }
 

@@ -1516,7 +1516,7 @@ def game():
     return render_template('game.html')
 
 @app.route('/api/start_interrogation', methods=['POST'])
-@limiter.limit("3 per hour")  # Prevent interrogation spam
+@limiter.limit("20 per hour")  # Allow more for testing/retries
 def start_interrogation():
     """Start Divine Interrogation for a player - AI GENERATED ONLY!"""
     try:
