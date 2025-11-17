@@ -363,7 +363,26 @@
 
             try {
                 const response = await fetch(`${API_URL}${endpoint}`, options);
-                return await response.json();
+
+                // Check if response is JSON
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const jsonData = await response.json();
+
+                    // Show error message from server
+                    if (jsonData.status === 'error' && jsonData.message) {
+                        showMessage(`Server error: ${jsonData.message}`, 'error');
+                        console.error('API Error:', jsonData);
+                    }
+
+                    return jsonData;
+                } else {
+                    // HTML error page returned
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    showMessage(`Server error (${response.status})`, 'error');
+                    return null;
+                }
             } catch (error) {
                 showMessage('Error connecting to server. Is it running?', 'error');
                 console.error(error);
@@ -384,6 +403,29 @@
 
         // Divine Interrogation Functions
         async function startInterrogation() {
+            // Step 1: Set username
+            let username = prompt("Enter your name:");
+            if (!username || username.trim() === '') {
+                username = `Player${Math.floor(Math.random() * 10000)}`;
+            }
+            const usernameResult = await apiCall('/api/set_username', 'POST', {username: username});
+
+            if (!usernameResult || usernameResult.status === 'error') {
+                showMessage('Failed to set username', 'error');
+                return;
+            }
+
+            // Step 2: Create a game (for solo play, can be modified for multiplayer)
+            const gameResult = await apiCall('/api/create_game', 'POST', {});
+
+            if (!gameResult || gameResult.status === 'error') {
+                showMessage('Failed to create game session', 'error');
+                return;
+            }
+
+            showMessage(`Game created! Code: ${gameResult.game_code}`, 'success');
+
+            // Step 3: Start interrogation
             const result = await apiCall('/api/start_interrogation', 'POST', {});
 
             if (result && result.status === 'success' && result.question) {
@@ -391,6 +433,8 @@
                 hideAll();
                 show('interrogation-screen');
                 displayQuestion(result.question);
+            } else if (result && result.message) {
+                showMessage(result.message, 'error');
             }
         }
 
