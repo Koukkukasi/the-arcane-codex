@@ -51,13 +51,19 @@ class AIGameMaster:
         self.connect_to_claude()
 
     def connect_to_claude(self):
-        """Initialize connection to Claude Desktop via MCP"""
+        """
+        Verify MCP client is available
+        Note: Actual connection happens on-demand when generating scenarios
+        """
         try:
-            if self.mcp_client.connect():
-                logger.info("[OK] AI GM connected to Claude Desktop")
+            if self.mcp_client is not None:
+                logger.info("[OK] MCP client initialized (connection on-demand)")
                 return True
+            else:
+                logger.warning("[WARNING] MCP client not available")
+                return False
         except Exception as e:
-            logger.error(f"[ERROR] Failed to connect to Claude: {e}")
+            logger.error(f"[ERROR] Failed to initialize MCP client: {e}")
             return False
 
     async def start(self):
