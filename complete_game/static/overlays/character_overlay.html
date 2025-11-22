@@ -1,0 +1,292 @@
+<!-- Character Sheet Overlay - The Arcane Codex -->
+<div id="characterOverlay" class="character-overlay" role="dialog" aria-modal="true" aria-labelledby="characterTitle">
+    <div class="character-backdrop" data-close-overlay></div>
+    <div class="character-sheet">
+        <!-- Close Button -->
+        <button class="character-close" aria-label="Close Character Sheet" data-close-overlay>
+            <span class="close-icon">✕</span>
+        </button>
+
+        <!-- Character Header -->
+        <header class="character-header">
+            <div class="character-portrait-container">
+                <div class="portrait-glow"></div>
+                <div class="character-portrait" data-character-portrait>
+                    <span class="portrait-emoji">⚔️</span>
+                </div>
+                <div class="level-badge" data-level-badge>
+                    <span class="level-text">LVL</span>
+                    <span class="level-value" data-level>1</span>
+                </div>
+            </div>
+
+            <div class="character-identity">
+                <h1 id="characterTitle" class="character-name" data-character-name>Brave Adventurer</h1>
+                <div class="character-class" data-character-class>
+                    <span class="class-icon">🗡️</span>
+                    <span class="class-name">Warrior</span>
+                </div>
+                <div class="character-titles">
+                    <span class="title-label">Title:</span>
+                    <span class="title-value" data-character-title>Novice Explorer</span>
+                </div>
+            </div>
+
+            <div class="xp-container">
+                <div class="xp-label">
+                    <span>Experience</span>
+                    <span class="xp-values">
+                        <span data-current-xp>0</span> / <span data-max-xp>100</span>
+                    </span>
+                </div>
+                <div class="xp-bar-container">
+                    <div class="xp-bar-background"></div>
+                    <div class="xp-bar-fill" data-xp-fill style="width: 0%">
+                        <div class="xp-shimmer"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="character-content">
+            <!-- Core Stats Section -->
+            <section class="stats-section">
+                <h2 class="section-title">
+                    <span class="title-icon">📊</span>
+                    Core Attributes
+                </h2>
+                <div class="stats-grid">
+                    <div class="stat-card" data-stat="strength">
+                        <div class="stat-icon">💪</div>
+                        <div class="stat-info">
+                            <div class="stat-name">STR</div>
+                            <div class="stat-value" data-stat-value="strength">10</div>
+                            <div class="stat-modifier" data-stat-modifier="strength">+0</div>
+                        </div>
+                        <div class="stat-tooltip">
+                            <strong>Strength</strong><br>
+                            Physical power and melee damage
+                        </div>
+                    </div>
+
+                    <div class="stat-card" data-stat="dexterity">
+                        <div class="stat-icon">🏹</div>
+                        <div class="stat-info">
+                            <div class="stat-name">DEX</div>
+                            <div class="stat-value" data-stat-value="dexterity">10</div>
+                            <div class="stat-modifier" data-stat-modifier="dexterity">+0</div>
+                        </div>
+                        <div class="stat-tooltip">
+                            <strong>Dexterity</strong><br>
+                            Agility, reflexes, and accuracy
+                        </div>
+                    </div>
+
+                    <div class="stat-card" data-stat="constitution">
+                        <div class="stat-icon">🛡️</div>
+                        <div class="stat-info">
+                            <div class="stat-name">CON</div>
+                            <div class="stat-value" data-stat-value="constitution">10</div>
+                            <div class="stat-modifier" data-stat-modifier="constitution">+0</div>
+                        </div>
+                        <div class="stat-tooltip">
+                            <strong>Constitution</strong><br>
+                            Health, stamina, and resilience
+                        </div>
+                    </div>
+
+                    <div class="stat-card" data-stat="intelligence">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-info">
+                            <div class="stat-name">INT</div>
+                            <div class="stat-value" data-stat-value="intelligence">10</div>
+                            <div class="stat-modifier" data-stat-modifier="intelligence">+0</div>
+                        </div>
+                        <div class="stat-tooltip">
+                            <strong>Intelligence</strong><br>
+                            Magic power and knowledge
+                        </div>
+                    </div>
+
+                    <div class="stat-card" data-stat="wisdom">
+                        <div class="stat-icon">🔮</div>
+                        <div class="stat-info">
+                            <div class="stat-name">WIS</div>
+                            <div class="stat-value" data-stat-value="wisdom">10</div>
+                            <div class="stat-modifier" data-stat-modifier="wisdom">+0</div>
+                        </div>
+                        <div class="stat-tooltip">
+                            <strong>Wisdom</strong><br>
+                            Perception and divine connection
+                        </div>
+                    </div>
+
+                    <div class="stat-card" data-stat="charisma">
+                        <div class="stat-icon">✨</div>
+                        <div class="stat-info">
+                            <div class="stat-name">CHA</div>
+                            <div class="stat-value" data-stat-value="charisma">10</div>
+                            <div class="stat-modifier" data-stat-modifier="charisma">+0</div>
+                        </div>
+                        <div class="stat-tooltip">
+                            <strong>Charisma</strong><br>
+                            Leadership and social influence
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Divine Favor Section -->
+            <section class="divine-favor-section">
+                <h2 class="section-title">
+                    <span class="title-icon">⭐</span>
+                    Divine Favor
+                </h2>
+                <div class="divine-favor-container">
+                    <div class="favor-chart-wrapper">
+                        <canvas id="favorRadialChart" width="280" height="280"></canvas>
+                        <div class="favor-center-label">
+                            <span class="favor-total" data-favor-total>0</span>
+                            <span class="favor-label">Total Favor</span>
+                        </div>
+                    </div>
+                    <div class="favor-list">
+                        <div class="favor-item" data-god="valdris">
+                            <span class="god-icon">⚔️</span>
+                            <span class="god-name">Valdris</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="valdris" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="valdris">0</span>
+                        </div>
+
+                        <div class="favor-item" data-god="kaitha">
+                            <span class="god-icon">🌙</span>
+                            <span class="god-name">Kaitha</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="kaitha" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="kaitha">0</span>
+                        </div>
+
+                        <div class="favor-item" data-god="morvane">
+                            <span class="god-icon">💀</span>
+                            <span class="god-name">Morvane</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="morvane" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="morvane">0</span>
+                        </div>
+
+                        <div class="favor-item" data-god="sylara">
+                            <span class="god-icon">🌿</span>
+                            <span class="god-name">Sylara</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="sylara" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="sylara">0</span>
+                        </div>
+
+                        <div class="favor-item" data-god="korvan">
+                            <span class="god-icon">🔨</span>
+                            <span class="god-name">Korvan</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="korvan" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="korvan">0</span>
+                        </div>
+
+                        <div class="favor-item" data-god="athena">
+                            <span class="god-icon">🦉</span>
+                            <span class="god-name">Athena</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="athena" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="athena">0</span>
+                        </div>
+
+                        <div class="favor-item" data-god="mercus">
+                            <span class="god-icon">💰</span>
+                            <span class="god-name">Mercus</span>
+                            <div class="favor-bar">
+                                <div class="favor-bar-fill" data-favor-fill="mercus" style="width: 0%"></div>
+                            </div>
+                            <span class="favor-value" data-favor-value="mercus">0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Skills & Abilities Section -->
+            <section class="abilities-section">
+                <h2 class="section-title">
+                    <span class="title-icon">⚡</span>
+                    Skills & Abilities
+                </h2>
+                <div class="abilities-grid" data-abilities-grid>
+                    <div class="ability-card">
+                        <div class="ability-icon">🗡️</div>
+                        <div class="ability-info">
+                            <h3 class="ability-name">Basic Attack</h3>
+                            <p class="ability-description">A simple weapon strike</p>
+                        </div>
+                        <div class="ability-cooldown">Ready</div>
+                    </div>
+
+                    <div class="ability-card">
+                        <div class="ability-icon">🛡️</div>
+                        <div class="ability-info">
+                            <h3 class="ability-name">Defensive Stance</h3>
+                            <p class="ability-description">Reduce incoming damage</p>
+                        </div>
+                        <div class="ability-cooldown">Ready</div>
+                    </div>
+
+                    <div class="ability-card locked">
+                        <div class="ability-icon">🔒</div>
+                        <div class="ability-info">
+                            <h3 class="ability-name">Locked</h3>
+                            <p class="ability-description">Reach level 5 to unlock</p>
+                        </div>
+                        <div class="ability-cooldown">Locked</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Achievements Section -->
+            <section class="achievements-section">
+                <h2 class="section-title">
+                    <span class="title-icon">🏆</span>
+                    Achievements & Titles
+                </h2>
+                <div class="achievements-grid" data-achievements-grid>
+                    <div class="achievement-badge earned">
+                        <div class="achievement-icon">🎯</div>
+                        <div class="achievement-name">First Steps</div>
+                    </div>
+                    <div class="achievement-badge earned">
+                        <div class="achievement-icon">⚔️</div>
+                        <div class="achievement-name">Monster Slayer</div>
+                    </div>
+                    <div class="achievement-badge">
+                        <div class="achievement-icon">🏰</div>
+                        <div class="achievement-name">Castle Defender</div>
+                    </div>
+                    <div class="achievement-badge">
+                        <div class="achievement-icon">🐉</div>
+                        <div class="achievement-name">Dragon Hunter</div>
+                    </div>
+                    <div class="achievement-badge">
+                        <div class="achievement-icon">👑</div>
+                        <div class="achievement-name">Realm Savior</div>
+                    </div>
+                    <div class="achievement-badge">
+                        <div class="achievement-icon">✨</div>
+                        <div class="achievement-name">Legendary Hero</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

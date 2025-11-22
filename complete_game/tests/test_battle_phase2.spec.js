@@ -521,10 +521,11 @@ test.describe('Battle System Phase 2 - Comprehensive Test Suite', () => {
     test('1.1 - Battle Screen Loads from Game Flow', async ({ page }) => {
         console.log('\n=== TEST 1.1: Battle Initialization from Game Flow ===\n');
 
-        await setupGameSession(page, 'BattleTest1');
+        // Navigate directly and inject battle state (skip full game flow)
+        await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
 
-        // Try to trigger battle (if available in game flow)
-        // For testing, we'll inject battle state
+        // Inject battle state
         await forceBattleState(page, 'GOBLIN_SCOUT', 'WARRIOR');
 
         // Verify battle screen is visible

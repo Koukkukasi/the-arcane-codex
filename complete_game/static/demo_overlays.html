@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills & Quest Log Demo - The Arcane Codex</title>
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="css/design-system.css">
+
+    <!-- Overlay Styles -->
+    <link rel="stylesheet" href="css/skills_overlay.css">
+    <link rel="stylesheet" href="css/quest_log_overlay.css">
+
+    <style>
+        /* Demo Page Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, #1e1b3a 0%, #2a2653 100%);
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-container {
+            text-align: center;
+            padding: var(--space-8);
+        }
+
+        .demo-title {
+            font-family: var(--font-display);
+            font-size: var(--font-size-4xl);
+            font-weight: var(--font-weight-black);
+            background: linear-gradient(135deg, var(--color-divine-400), var(--color-arcane-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--space-6);
+            text-transform: uppercase;
+            letter-spacing: var(--letter-spacing-widest);
+        }
+
+        .demo-subtitle {
+            font-size: var(--font-size-lg);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-8);
+            font-style: italic;
+        }
+
+        .demo-buttons {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: var(--space-8);
+        }
+
+        .demo-button {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-4) var(--space-6);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: var(--radius-lg);
+            color: white;
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            cursor: pointer;
+            transition: all var(--duration-base) var(--ease-out);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .demo-button .icon {
+            font-size: 2rem;
+        }
+
+        .demo-info {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: var(--space-6);
+            background: rgba(42, 38, 83, 0.5);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .info-section {
+            margin-bottom: var(--space-4);
+            text-align: left;
+        }
+
+        .info-title {
+            font-family: var(--font-display);
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-arcane-400);
+            margin-bottom: var(--space-2);
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            padding: var(--space-2) 0;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+
+        .key-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 var(--space-2);
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid var(--color-arcane-400);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-arcane-300);
+        }
+
+        @media (max-width: 768px) {
+            .demo-title {
+                font-size: var(--font-size-2xl);
+            }
+
+            .demo-buttons {
+                flex-direction: column;
+            }
+
+            .demo-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="demo-title">The Arcane Codex</h1>
+        <p class="demo-subtitle">Skills Panel & Quest Log Demo</p>
+
+        <div class="demo-buttons">
+            <button class="demo-button" id="openSkillsBtn">
+                <span class="icon">⚔️</span>
+                <span>Open Skills Panel</span>
+            </button>
+
+            <button class="demo-button" id="openQuestLogBtn">
+                <span class="icon">📜</span>
+                <span>Open Quest Log</span>
+            </button>
+        </div>
+
+        <div class="demo-info">
+            <div class="info-section">
+                <h2 class="info-title">Keyboard Shortcuts</h2>
+                <ul class="info-list">
+                    <li>
+                        <span class="key-badge">K</span>
+                        <span>Toggle Skills Panel</span>
+                    </li>
+                    <li>
+                        <span class="key-badge">J</span>
+                        <span>Toggle Quest Log</span>
+                    </li>
+                    <li>
+                        <span class="key-badge">Esc</span>
+                        <span>Close Overlays</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="info-section">
+                <h2 class="info-title">Features</h2>
+                <ul class="info-list">
+                    <li>
+                        <span>✨</span>
+                        <span>Drag-and-drop ability assignment</span>
+                    </li>
+                    <li>
+                        <span>🌳</span>
+                        <span>Class-specific skill trees</span>
+                    </li>
+                    <li>
+                        <span>📊</span>
+                        <span>Quest progress tracking</span>
+                    </li>
+                    <li>
+                        <span>🎯</span>
+                        <span>Objective completion system</span>
+                    </li>
+                    <li>
+                        <span>🎁</span>
+                        <span>Reward preview system</span>
+                    </li>
+                    <li>
+                        <span>📱</span>
+                        <span>Fully responsive design</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Overlay -->
+    <div id="skillsOverlay" class="skills-overlay" role="dialog" aria-modal="true" aria-labelledby="skillsTitle">
+        <div class="skills-backdrop" data-close-overlay></div>
+        <div class="skills-panel">
+            <!-- Close Button -->
+            <button class="skills-close" aria-label="Close Skills Panel" data-close-overlay>
+                <span class="close-icon">✕</span>
+            </button>
+
+            <!-- Panel Header -->
+            <header class="skills-header">
+                <div class="skills-title-container">
+                    <h1 id="skillsTitle" class="skills-title">
+                        <span class="title-icon">⚔️</span>
+                        Skills & Abilities
+                    </h1>
+                    <div class="skills-subtitle">Master your craft and unlock your potential</div>
+                </div>
+                <div class="skill-points-display">
+                    <div class="skill-points-container">
+                        <span class="points-icon">✨</span>
+                        <div class="points-info">
+                            <span class="points-label">Skill Points</span>
+                            <span class="points-value" data-skill-points>5</span>
+                        </div>
+                    </div>
+                    <div class="class-display">
+                        <span class="class-icon" data-class-icon>🗡️</span>
+                        <span class="class-name" data-class-name>Warrior</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content loaded from skills_overlay.html via JavaScript -->
+            <div class="skills-content">
+                <p style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
+                    Loading skills panel...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quest Log Overlay -->
+    <div id="questLogOverlay" class="quest-log-overlay" role="dialog" aria-modal="true" aria-labelledby="questLogTitle">
+        <div class="quest-log-backdrop" data-close-overlay></div>
+        <div class="quest-log-panel">
+            <!-- Close Button -->
+            <button class="quest-log-close" aria-label="Close Quest Log" data-close-overlay>
+                <span class="close-icon">✕</span>
+            </button>
+
+            <!-- Panel Header -->
+            <header class="quest-log-header">
+                <div class="quest-log-title-container">
+                    <h1 id="questLogTitle" class="quest-log-title">
+                        <span class="title-icon">📜</span>
+                        Quest Journal
+                    </h1>
+                    <div class="quest-log-subtitle">Your adventures and trials await</div>
+                </div>
+                <div class="quest-stats-display">
+                    <div class="quest-stat">
+                        <span class="stat-icon">✓</span>
+                        <span class="stat-value" data-completed-quests>12</span>
+                        <span class="stat-label">Completed</span>
+                    </div>
+                    <div class="quest-stat">
+                        <span class="stat-icon">⚡</span>
+                        <span class="stat-value" data-active-quests>3</span>
+                        <span class="stat-label">Active</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content loaded from quest_log_overlay.html via JavaScript -->
+            <div style="padding: 2rem; text-align: center; color: var(--color-text-secondary);">
+                Loading quest log...
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/skills_overlay.js"></script>
+    <script src="js/quest_log_overlay.js"></script>
+
+    <script>
+        // Connect demo buttons to overlays
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load full overlay content
+            fetch('overlays/skills_overlay.html')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const content = doc.querySelector('.skills-content');
+                    if (content) {
+                        document.querySelector('#skillsOverlay .skills-content').innerHTML = content.innerHTML;
+                    }
+
+                    // Add tooltip
+                    const tooltip = doc.getElementById('skillTooltip');
+                    if (tooltip) {
+                        document.body.appendChild(tooltip);
+                    }
+
+                    // Reinitialize skills overlay after content loaded
+                    if (window.SkillsOverlay) {
+                        window.SkillsOverlay.init();
+                    }
+                })
+                .catch(err => console.error('Error loading skills overlay:', err));
+
+            fetch('overlays/quest_log_overlay.html')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const content = doc.querySelector('.quest-log-panel').innerHTML;
+                    if (content) {
+                        document.querySelector('#questLogOverlay .quest-log-panel').innerHTML = content;
+                    }
+
+                    // Reinitialize quest log after content loaded
+                    if (window.QuestLogOverlay) {
+                        window.QuestLogOverlay.init();
+                    }
+                })
+                .catch(err => console.error('Error loading quest log:', err));
+
+            // Connect buttons
+            const skillsBtn = document.getElementById('openSkillsBtn');
+            skillsBtn.addEventListener('click', () => {
+                if (window.SkillsOverlay) {
+                    window.SkillsOverlay.open();
+                }
+            });
+
+            const questBtn = document.getElementById('openQuestLogBtn');
+            questBtn.addEventListener('click', () => {
+                if (window.QuestLogOverlay) {
+                    window.QuestLogOverlay.open();
+                }
+            });
+
+            console.log('🎮 Demo loaded! Press K for Skills, J for Quest Log');
+        });
+    </script>
+</body>
+</html>

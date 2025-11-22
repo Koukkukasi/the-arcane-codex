@@ -1,0 +1,707 @@
+<!-- Settings Overlay - The Arcane Codex -->
+<div id="settingsOverlay" class="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settings-backdrop" data-close-settings></div>
+    <div class="settings-container">
+        <!-- Close Button -->
+        <button class="settings-close" aria-label="Close Settings" data-close-settings>
+            <span class="close-icon">✕</span>
+        </button>
+
+        <!-- Settings Header -->
+        <header class="settings-header">
+            <h1 id="settingsTitle" class="settings-title">
+                <span class="title-icon">⚙️</span>
+                Game Settings
+            </h1>
+            <div class="settings-subtitle">Customize your adventure experience</div>
+        </header>
+
+        <!-- Settings Tabs -->
+        <div class="settings-tabs">
+            <button class="settings-tab active" data-tab="audio" role="tab" aria-selected="true">
+                <span class="tab-icon">🔊</span>
+                <span class="tab-label">Audio</span>
+            </button>
+            <button class="settings-tab" data-tab="display" role="tab" aria-selected="false">
+                <span class="tab-icon">🖥️</span>
+                <span class="tab-label">Display</span>
+            </button>
+            <button class="settings-tab" data-tab="controls" role="tab" aria-selected="false">
+                <span class="tab-icon">🎮</span>
+                <span class="tab-label">Controls</span>
+            </button>
+            <button class="settings-tab" data-tab="game" role="tab" aria-selected="false">
+                <span class="tab-icon">💾</span>
+                <span class="tab-label">Game</span>
+            </button>
+            <button class="settings-tab" data-tab="accessibility" role="tab" aria-selected="false">
+                <span class="tab-icon">♿</span>
+                <span class="tab-label">Accessibility</span>
+            </button>
+        </div>
+
+        <!-- Settings Content Panels -->
+        <div class="settings-content">
+            <!-- Audio Panel -->
+            <div class="settings-panel active" data-panel="audio" role="tabpanel">
+                <h2 class="panel-section-title">Audio Settings</h2>
+
+                <!-- Master Volume -->
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="masterVolume" class="setting-label">
+                                <span class="setting-icon">🔊</span>
+                                Master Volume
+                            </label>
+                            <span class="setting-value" data-master-volume-value>100%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="masterVolume"
+                                class="setting-slider"
+                                min="0"
+                                max="100"
+                                value="100"
+                                data-setting="masterVolume"
+                            >
+                            <div class="slider-track"></div>
+                        </div>
+                        <div class="setting-controls">
+                            <label class="checkbox-container">
+                                <input type="checkbox" data-setting="masterMute">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-label">Mute All</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Music Volume -->
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="musicVolume" class="setting-label">
+                                <span class="setting-icon">🎵</span>
+                                Music Volume
+                            </label>
+                            <span class="setting-value" data-music-volume-value>80%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="musicVolume"
+                                class="setting-slider"
+                                min="0"
+                                max="100"
+                                value="80"
+                                data-setting="musicVolume"
+                            >
+                        </div>
+                        <div class="setting-controls">
+                            <label class="checkbox-container">
+                                <input type="checkbox" data-setting="musicMute">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-label">Mute Music</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SFX Volume -->
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="sfxVolume" class="setting-label">
+                                <span class="setting-icon">💥</span>
+                                Sound Effects Volume
+                            </label>
+                            <span class="setting-value" data-sfx-volume-value>90%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="sfxVolume"
+                                class="setting-slider"
+                                min="0"
+                                max="100"
+                                value="90"
+                                data-setting="sfxVolume"
+                            >
+                        </div>
+                        <div class="setting-controls">
+                            <label class="checkbox-container">
+                                <input type="checkbox" data-setting="sfxMute">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-label">Mute SFX</span>
+                            </label>
+                            <button class="test-btn" data-test-sfx>
+                                <span class="btn-icon">▶️</span>
+                                Test Sound
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ambient Volume -->
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="ambientVolume" class="setting-label">
+                                <span class="setting-icon">🌊</span>
+                                Ambient Volume
+                            </label>
+                            <span class="setting-value" data-ambient-volume-value>70%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="ambientVolume"
+                                class="setting-slider"
+                                min="0"
+                                max="100"
+                                value="70"
+                                data-setting="ambientVolume"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Panel -->
+            <div class="settings-panel" data-panel="display" role="tabpanel">
+                <h2 class="panel-section-title">Display Settings</h2>
+
+                <!-- Fullscreen -->
+                <div class="settings-group">
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🖼️</span>
+                                Fullscreen Mode
+                            </label>
+                            <p class="setting-description">Enable fullscreen for immersive gameplay</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="fullscreen">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- UI Scale -->
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="uiScale" class="setting-label">
+                                <span class="setting-icon">📏</span>
+                                UI Scale
+                            </label>
+                            <span class="setting-value" data-ui-scale-value>100%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="uiScale"
+                                class="setting-slider"
+                                min="75"
+                                max="125"
+                                value="100"
+                                step="5"
+                                data-setting="uiScale"
+                            >
+                        </div>
+                        <div class="scale-markers">
+                            <span>75%</span>
+                            <span>100%</span>
+                            <span>125%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphics Quality -->
+                <div class="settings-group">
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">✨</span>
+                                Graphics Quality
+                            </label>
+                            <p class="setting-description">Adjust visual effects quality</p>
+                        </div>
+                        <select class="setting-select" data-setting="graphicsQuality">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="ultra">Ultra</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Show FPS -->
+                <div class="settings-group">
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">📊</span>
+                                Show FPS Counter
+                            </label>
+                            <p class="setting-description">Display frames per second</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="showFps">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- VSync -->
+                <div class="settings-group">
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🔄</span>
+                                VSync
+                            </label>
+                            <p class="setting-description">Synchronize with monitor refresh rate</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked data-setting="vsync">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="settings-panel" data-panel="controls" role="tabpanel">
+                <h2 class="panel-section-title">Control Settings</h2>
+
+                <div class="controls-info">
+                    <p class="info-text">Click on a keybind to reassign it. Press ESC to cancel.</p>
+                </div>
+
+                <!-- Keybindings -->
+                <div class="keybinds-grid">
+                    <div class="keybind-item">
+                        <label class="keybind-label">Character Sheet</label>
+                        <button class="keybind-btn" data-keybind="character">
+                            <span class="keybind-key">C</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Inventory</label>
+                        <button class="keybind-btn" data-keybind="inventory">
+                            <span class="keybind-key">I</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Map</label>
+                        <button class="keybind-btn" data-keybind="map">
+                            <span class="keybind-key">M</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Settings</label>
+                        <button class="keybind-btn" data-keybind="settings">
+                            <span class="keybind-key">ESC</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Quick Save</label>
+                        <button class="keybind-btn" data-keybind="quicksave">
+                            <span class="keybind-key">F5</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Quick Load</label>
+                        <button class="keybind-btn" data-keybind="quickload">
+                            <span class="keybind-key">F9</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Use Item Slot 1</label>
+                        <button class="keybind-btn" data-keybind="item1">
+                            <span class="keybind-key">1</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Use Item Slot 2</label>
+                        <button class="keybind-btn" data-keybind="item2">
+                            <span class="keybind-key">2</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Use Item Slot 3</label>
+                        <button class="keybind-btn" data-keybind="item3">
+                            <span class="keybind-key">3</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Use Item Slot 4</label>
+                        <button class="keybind-btn" data-keybind="item4">
+                            <span class="keybind-key">4</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Pause Game</label>
+                        <button class="keybind-btn" data-keybind="pause">
+                            <span class="keybind-key">SPACE</span>
+                        </button>
+                    </div>
+
+                    <div class="keybind-item">
+                        <label class="keybind-label">Toggle Help</label>
+                        <button class="keybind-btn" data-keybind="help">
+                            <span class="keybind-key">H</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reset Keybinds -->
+                <div class="settings-group">
+                    <button class="reset-keybinds-btn" data-reset-keybinds>
+                        <span class="btn-icon">🔄</span>
+                        Reset to Defaults
+                    </button>
+                </div>
+
+                <!-- Mouse Settings -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Mouse Settings</h3>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="mouseSensitivity" class="setting-label">
+                                <span class="setting-icon">🖱️</span>
+                                Mouse Sensitivity
+                            </label>
+                            <span class="setting-value" data-mouse-sensitivity-value>50%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="mouseSensitivity"
+                                class="setting-slider"
+                                min="0"
+                                max="100"
+                                value="50"
+                                data-setting="mouseSensitivity"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Panel -->
+            <div class="settings-panel" data-panel="game" role="tabpanel">
+                <h2 class="panel-section-title">Game Settings</h2>
+
+                <!-- Save/Load Section -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Save & Load</h3>
+
+                    <div class="save-load-controls">
+                        <button class="game-action-btn save" data-save-game>
+                            <span class="btn-icon">💾</span>
+                            <span class="btn-label">Save Game</span>
+                            <span class="btn-description">Save your progress</span>
+                        </button>
+
+                        <button class="game-action-btn load" data-load-game>
+                            <span class="btn-icon">📂</span>
+                            <span class="btn-label">Load Game</span>
+                            <span class="btn-description">Load saved progress</span>
+                        </button>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">⚡</span>
+                                Auto-Save
+                            </label>
+                            <p class="setting-description">Automatically save every 5 minutes</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked data-setting="autosave">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Difficulty Settings -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Difficulty</h3>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">⚔️</span>
+                                Difficulty Level
+                            </label>
+                            <p class="setting-description">Adjust game challenge</p>
+                        </div>
+                        <select class="setting-select" data-setting="difficulty">
+                            <option value="easy">Easy</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="hard">Hard</option>
+                            <option value="nightmare">Nightmare</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">💀</span>
+                                Permadeath
+                            </label>
+                            <p class="setting-description">Character dies permanently</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="permadeath">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Game Actions -->
+                <div class="settings-group danger-zone">
+                    <h3 class="subsection-title danger">Danger Zone</h3>
+
+                    <button class="game-action-btn menu" data-return-menu>
+                        <span class="btn-icon">🏠</span>
+                        <span class="btn-label">Return to Main Menu</span>
+                        <span class="btn-description">Exit to title screen</span>
+                    </button>
+
+                    <button class="game-action-btn quit" data-quit-game>
+                        <span class="btn-icon">🚪</span>
+                        <span class="btn-label">Quit Game</span>
+                        <span class="btn-description">Exit the game</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Accessibility Panel -->
+            <div class="settings-panel" data-panel="accessibility" role="tabpanel">
+                <h2 class="panel-section-title">Accessibility Settings</h2>
+
+                <!-- Visual Accessibility -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Visual Accessibility</h3>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🎨</span>
+                                Colorblind Mode
+                            </label>
+                            <p class="setting-description">Adjust colors for colorblindness</p>
+                        </div>
+                        <select class="setting-select" data-setting="colorblindMode">
+                            <option value="none" selected>None</option>
+                            <option value="protanopia">Protanopia</option>
+                            <option value="deuteranopia">Deuteranopia</option>
+                            <option value="tritanopia">Tritanopia</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="fontSize" class="setting-label">
+                                <span class="setting-icon">📝</span>
+                                Font Size
+                            </label>
+                            <span class="setting-value" data-font-size-value>100%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="fontSize"
+                                class="setting-slider"
+                                min="80"
+                                max="150"
+                                value="100"
+                                step="10"
+                                data-setting="fontSize"
+                            >
+                        </div>
+                        <div class="scale-markers">
+                            <span>80%</span>
+                            <span>100%</span>
+                            <span>150%</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🔆</span>
+                                High Contrast Mode
+                            </label>
+                            <p class="setting-description">Increase contrast for better visibility</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="highContrast">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🌐</span>
+                                Dyslexia-Friendly Font
+                            </label>
+                            <p class="setting-description">Use OpenDyslexic font</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="dyslexiaFont">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Motion Accessibility -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Motion & Animation</h3>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🎬</span>
+                                Reduced Motion
+                            </label>
+                            <p class="setting-description">Minimize animations and effects</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="reducedMotion">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">⚡</span>
+                                Screen Shake
+                            </label>
+                            <p class="setting-description">Enable camera shake effects</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked data-setting="screenShake">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">✨</span>
+                                Particle Effects
+                            </label>
+                            <p class="setting-description">Display particle effects</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked data-setting="particleEffects">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Audio Accessibility -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Audio Accessibility</h3>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">💬</span>
+                                Subtitles
+                            </label>
+                            <p class="setting-description">Show dialogue subtitles</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked data-setting="subtitles">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🔔</span>
+                                Visual Cues
+                            </label>
+                            <p class="setting-description">Show visual indicators for sounds</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="visualCues">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Gameplay Accessibility -->
+                <div class="settings-group">
+                    <h3 class="subsection-title">Gameplay Accessibility</h3>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">⏱️</span>
+                                Extended Time Limits
+                            </label>
+                            <p class="setting-description">Increase time for timed events</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="extendedTime">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item-inline">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                <span class="setting-icon">🎯</span>
+                                Auto-Aim Assist
+                            </label>
+                            <p class="setting-description">Assist with targeting</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" data-setting="autoAim">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Footer -->
+        <footer class="settings-footer">
+            <button class="footer-btn secondary" data-reset-settings>
+                <span class="btn-icon">🔄</span>
+                Reset All Settings
+            </button>
+            <div class="footer-actions">
+                <button class="footer-btn secondary" data-cancel-settings>Cancel</button>
+                <button class="footer-btn primary" data-apply-settings>
+                    <span class="btn-icon">✓</span>
+                    Apply Changes
+                </button>
+            </div>
+        </footer>
+    </div>
+</div>
