@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import apiRoutes from './routes/api';
+import BattleService from './services/battle';
 
 // Create Express app
 const app = express();
@@ -141,6 +142,11 @@ app.use((_req, res) => {
   });
 });
 
+// Periodic cleanup of old battles (every 10 minutes)
+setInterval(() => {
+  BattleService.cleanupBattles(30); // Clean up battles older than 30 minutes
+}, 10 * 60 * 1000);
+
 // Start server
 const PORT = process.env.PORT || 5000; // Changed from 5001 to 5000
 server.listen(PORT, () => {
@@ -154,6 +160,7 @@ server.listen(PORT, () => {
 
     Rate limiting: 500 requests/hour
     Session timeout: 4 hours
+    Battle cleanup: Every 10 minutes
 
     Environment: ${process.env.NODE_ENV || 'development'}
     Static files: ${staticPath}

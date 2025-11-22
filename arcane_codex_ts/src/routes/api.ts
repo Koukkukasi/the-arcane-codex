@@ -1,9 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import GameService from '../services/game';
+import BattleService from '../services/battle';
 import { getMCPService } from '../services/mcp';
 import { io } from '../server';
+import { EnemyType } from '../types/battle';
 
 const router = Router();
 const mcpService = getMCPService();
@@ -649,6 +652,457 @@ router.post('/log_client_error', (req: Request, res: Response): void => {
     success: true,
     message: 'Error logged'
   });
+});
+
+// ============================================================================
+// Battle System Endpoints - Phase 2
+// ============================================================================
+
+// Rate limiter for battle actions (prevent spam)
+const battleActionLimiter = rateLimit({
+  windowMs: 1000, // 1 second
+  max: 3, // 3 actions per second
+  message: 'Too many battle actions, slow down!',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+/**
+ * POST /api/battle/start
+ * Start a new battle
+ */
+router.post('/battle/start', requireAuth, battleActionLimiter, (req: Request, res: Response): void => {
+  const { player_id, enemy_type } = req.body;
+  const playerId = player_id || req.session.player_id;
+
+  if (!playerId) {
+    res.status(400).json({
+      success: false,
+      error: 'Player ID required'
+    });
+    return;
+  }
+
+  // Validate enemy type
+  const validEnemyTypes = Object.values(EnemyType);
+  const enemyTypeEnum = enemy_type && validEnemyTypes.includes(enemy_type)
+    ? enemy_type
+    : EnemyType.GOBLIN_SCOUT;
+
+  try {
+    // Check if player already has an active battle
+    const existingBattle = BattleService.getPlayerBattle(playerId);
+    if (existingBattle) {
+      res.status(400).json({
+        success: false,
+        error: 'Already in a battle',
+        battle_id: existingBattle.battleId
+      });
+      return;
+    }
+
+    // Get player session for stats
+    const playerSession = GameService.getPlayerSession(playerId);
+    const characterClass = playerSession?.character_class || req.session.character_class || 'warrior';
+
+    // Create battle
+    const battle = BattleService.startBattle(
+      playerId,
+      {
+        name: req.session.username || 'Hero',
+        class: characterClass,
+        hp: 100,
+        maxHp: 100,
+        mana: 50,
+        maxMana: 50,
+        attack: 5,
+        defense: 2,
+        speed: 10,
+        level: 1,
+        xp: 0,
+        gold: 0
+      },
+      enemyTypeEnum
+    );
+
+    // Emit to Socket.IO if in a game
+    if (req.session.game_code) {
+      io.to(req.session.game_code).emit('battle_started', {
+        player_id: playerId,
+        player_name: req.session.username,
+        enemy: battle.enemy.name,
+        battle_id: battle.battleId
+      });
+    }
+
+    res.json({
+      success: true,
+      battle_id: battle.battleId,
+      player: battle.player,
+      enemy: battle.enemy,
+      turn_order: battle.turnOrder,
+      is_player_turn: battle.isPlayerTurn,
+      abilities: BattleService.getClassAbilities(characterClass)
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to start battle:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to start battle'
+    });
+    return;
+  }
+});
+
+/**
+ * POST /api/battle/:battle_id/action
+ * Execute a combat action (attack or defend)
+ */
+router.post('/battle/:battle_id/action', requireAuth, battleActionLimiter, (req: Request, res: Response): void => {
+  const { battle_id } = req.params;
+  const { action_type, ability_id } = req.body;
+
+  if (!battle_id) {
+    res.status(400).json({
+      success: false,
+      error: 'Battle ID required'
+    });
+    return;
+  }
+
+  if (!action_type || !['attack', 'defend', 'ability'].includes(action_type)) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid action type. Must be: attack, defend, or ability'
+    });
+    return;
+  }
+
+  try {
+    const battle = BattleService.getBattle(battle_id);
+
+    if (!battle) {
+      res.status(404).json({
+        success: false,
+        error: 'Battle not found'
+      });
+      return;
+    }
+
+    // Verify player owns this battle
+    if (battle.playerId !== req.session.player_id) {
+      res.status(403).json({
+        success: false,
+        error: 'Not your battle'
+      });
+      return;
+    }
+
+    if (!battle.isPlayerTurn) {
+      res.status(400).json({
+        success: false,
+        error: 'Not your turn'
+      });
+      return;
+    }
+
+    let result;
+
+    // Execute action
+    switch (action_type) {
+      case 'attack':
+        result = BattleService.executeAttack(battle_id);
+        break;
+      case 'defend':
+        result = BattleService.executeDefend(battle_id);
+        break;
+      case 'ability':
+        if (!ability_id) {
+          res.status(400).json({
+            success: false,
+            error: 'Ability ID required for ability action'
+          });
+          return;
+        }
+        result = BattleService.useAbility(battle_id, ability_id);
+        break;
+      default:
+        res.status(400).json({
+          success: false,
+          error: 'Invalid action'
+        });
+        return;
+    }
+
+    if (!result) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to execute action'
+      });
+      return;
+    }
+
+    // Emit to Socket.IO
+    if (req.session.game_code) {
+      io.to(req.session.game_code).emit('battle_action', {
+        battle_id,
+        player_name: req.session.username,
+        action_type,
+        result
+      });
+    }
+
+    res.json({
+      success: true,
+      ...result,
+      battle_state: {
+        player_hp: battle.player.currentHp,
+        player_mana: battle.player.currentMana,
+        enemy_hp: battle.enemy.currentHp,
+        turn_count: battle.turnCount,
+        is_player_turn: battle.isPlayerTurn
+      }
+    });
+
+  } catch (error: any) {
+    console.error('[ERROR] Failed to execute action:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to execute action'
+    });
+    return;
+  }
+});
+
+/**
+ * POST /api/battle/:battle_id/use_ability
+ * Use a class-specific ability
+ */
+router.post('/battle/:battle_id/use_ability', requireAuth, battleActionLimiter, (req: Request, res: Response): void => {
+  const { battle_id } = req.params;
+  const { ability_id } = req.body;
+
+  if (!battle_id || !ability_id) {
+    res.status(400).json({
+      success: false,
+      error: 'Battle ID and ability ID required'
+    });
+    return;
+  }
+
+  try {
+    const battle = BattleService.getBattle(battle_id);
+
+    if (!battle) {
+      res.status(404).json({
+        success: false,
+        error: 'Battle not found'
+      });
+      return;
+    }
+
+    // Verify player owns this battle
+    if (battle.playerId !== req.session.player_id) {
+      res.status(403).json({
+        success: false,
+        error: 'Not your battle'
+      });
+      return;
+    }
+
+    // Get ability info
+    const abilities = BattleService.getClassAbilities(battle.player.class);
+    const ability = abilities.find(a => a.id === ability_id);
+
+    if (!ability) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid ability for your class'
+      });
+      return;
+    }
+
+    // Execute ability
+    const result = BattleService.useAbility(battle_id, ability_id);
+
+    if (!result) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to use ability'
+      });
+      return;
+    }
+
+    // Emit to Socket.IO
+    if (req.session.game_code) {
+      io.to(req.session.game_code).emit('battle_ability_used', {
+        battle_id,
+        player_name: req.session.username,
+        ability_name: ability.name,
+        result
+      });
+    }
+
+    res.json({
+      success: true,
+      ability: ability.name,
+      mana_cost: ability.manaCost,
+      cooldown: ability.cooldown,
+      ...result
+    });
+
+  } catch (error: any) {
+    console.error('[ERROR] Failed to use ability:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to use ability'
+    });
+    return;
+  }
+});
+
+/**
+ * GET /api/battle/:battle_id/status
+ * Get current battle status
+ */
+router.get('/battle/:battle_id/status', requireAuth, (req: Request, res: Response): void => {
+  const { battle_id } = req.params;
+
+  if (!battle_id) {
+    res.status(400).json({
+      success: false,
+      error: 'Battle ID required'
+    });
+    return;
+  }
+
+  try {
+    const battle = BattleService.getBattle(battle_id);
+
+    if (!battle) {
+      res.status(404).json({
+        success: false,
+        error: 'Battle not found'
+      });
+      return;
+    }
+
+    // Verify player owns this battle
+    if (battle.playerId !== req.session.player_id) {
+      res.status(403).json({
+        success: false,
+        error: 'Not your battle'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      battle_id: battle.battleId,
+      player: {
+        hp: battle.player.currentHp,
+        max_hp: battle.player.maxHp,
+        mana: battle.player.currentMana,
+        max_mana: battle.player.maxMana,
+        status_effects: battle.player.statusEffects
+      },
+      enemy: {
+        name: battle.enemy.name,
+        emoji: battle.enemy.emoji,
+        hp: battle.enemy.currentHp,
+        max_hp: battle.enemy.maxHp,
+        status_effects: battle.enemy.statusEffects
+      },
+      turn_count: battle.turnCount,
+      is_player_turn: battle.isPlayerTurn,
+      is_victory: battle.isVictory,
+      ended: battle.ended,
+      combat_log: battle.combatLog.slice(-10), // Last 10 entries
+      ability_cooldowns: battle.abilityCooldowns,
+      abilities: BattleService.getClassAbilities(battle.player.class)
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to get battle status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get battle status'
+    });
+    return;
+  }
+});
+
+/**
+ * POST /api/battle/:battle_id/flee
+ * Attempt to flee from battle
+ */
+router.post('/battle/:battle_id/flee', requireAuth, battleActionLimiter, (req: Request, res: Response): void => {
+  const { battle_id } = req.params;
+
+  if (!battle_id) {
+    res.status(400).json({
+      success: false,
+      error: 'Battle ID required'
+    });
+    return;
+  }
+
+  try {
+    const battle = BattleService.getBattle(battle_id);
+
+    if (!battle) {
+      res.status(404).json({
+        success: false,
+        error: 'Battle not found'
+      });
+      return;
+    }
+
+    // Verify player owns this battle
+    if (battle.playerId !== req.session.player_id) {
+      res.status(403).json({
+        success: false,
+        error: 'Not your battle'
+      });
+      return;
+    }
+
+    if (!battle.isPlayerTurn) {
+      res.status(400).json({
+        success: false,
+        error: 'Not your turn'
+      });
+      return;
+    }
+
+    // Attempt to flee
+    const result = BattleService.attemptFlee(battle_id);
+
+    // Emit to Socket.IO
+    if (req.session.game_code) {
+      io.to(req.session.game_code).emit('battle_flee_attempt', {
+        battle_id,
+        player_name: req.session.username,
+        success: result.success
+      });
+    }
+
+    res.json({
+      success: true,
+      fled: result.success,
+      flee_chance: result.fleeChance,
+      message: result.success ? 'Successfully fled from battle!' : 'Failed to flee!'
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to flee:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to flee from battle'
+    });
+    return;
+  }
 });
 
 // ============================================================================
