@@ -141,6 +141,33 @@ class DivineCouncil {
 
     console.log('[Divine Council] Showing voting modal', voteData);
 
+    // Play Divine Intervention animation before showing modal
+    if (window.ArcaneCodex && window.ArcaneCodex.animations) {
+      // Get the leading god (first approve or condemn god)
+      const leadingGodKey = voteData.approve[0] || voteData.condemn[0];
+      const leadingGod = leadingGodKey ? this.gods[leadingGodKey] : null;
+
+      window.ArcaneCodex.animations.playDivineIntervention({
+        godName: leadingGod ? leadingGod.name.toUpperCase() : 'THE DIVINE COUNCIL',
+        godColor: leadingGod ? leadingGod.color : '#D4AF37',
+        godSymbol: leadingGod ? leadingGod.icon : null,
+        message: 'The gods convene to judge your choice...',
+        onComplete: () => {
+          // Show modal after animation
+          this.displayVotingModal(voteData);
+        }
+      });
+    } else {
+      // Fallback if animations not loaded
+      this.displayVotingModal(voteData);
+    }
+  }
+
+  /**
+   * Display the voting modal (called after animation)
+   * @private
+   */
+  displayVotingModal(voteData) {
     // Clear previous votes
     this.approveList.innerHTML = '';
     this.condemnList.innerHTML = '';

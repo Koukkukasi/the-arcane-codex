@@ -276,11 +276,25 @@ function handlePlayerChose(data) {
 function handleNewScenario(data) {
     console.log('[SocketIO] New scenario generated:', data.scenario_id);
 
-    // Show dramatic notification
-    showScenarioNotification('A new challenge awaits...');
+    // Play location transition animation if available
+    if (window.ArcaneCodex && window.ArcaneCodex.animations) {
+        window.ArcaneCodex.animations.playLocationTransition({
+            locationName: data.theme || 'New Challenge',
+            locationIcon: '🗺️',
+            description: 'A new scenario unfolds...',
+            onComplete: () => {
+                // Show dramatic notification
+                showScenarioNotification('A new challenge awaits...');
 
-    // Reload scenario data
-    loadCurrentScenario();
+                // Reload scenario data
+                loadCurrentScenario();
+            }
+        });
+    } else {
+        // Fallback if animations not loaded
+        showScenarioNotification('A new challenge awaits...');
+        loadCurrentScenario();
+    }
 
     // Trigger callbacks
     triggerCallbacks('onNewScenario', data);

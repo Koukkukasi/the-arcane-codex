@@ -1162,6 +1162,8 @@
             }
         }
     </style>
+    <!-- Battle Scene Animations -->
+    <link rel="stylesheet" href="css/battle_scene_animations.css">
 </head>
 <body>
     <!-- Canvas for particle effects -->
@@ -2004,6 +2006,42 @@
                 document.querySelectorAll('.count-btn')[1].classList.add('selected');
             }
         };
+    </script>
+
+    <!-- SocketIO for real-time communication -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- Battle Scene Animations -->
+    <script src="js/battle_scene_animations.js"></script>
+
+    <!-- Battle Manager (Phase 1: Quick Win) -->
+    <script src="js/battle_manager.js"></script>
+
+    <!-- Test trigger for battle system -->
+    <script>
+        // Add test battle trigger for development
+        window.triggerTestBattle = function() {
+            // Set a test game code if needed
+            if (!window.gameCode && !localStorage.getItem('game_code')) {
+                localStorage.setItem('game_code', 'TEST001');
+                window.gameCode = 'TEST001';
+            }
+            // Start the battle test
+            if (window.battleManager && window.battleManager.startTestBattle) {
+                console.log('[Battle] Triggering test battle...');
+                window.battleManager.startTestBattle();
+            } else {
+                console.error('[Battle] Battle manager not ready');
+            }
+        };
+
+        // Wait for battle manager to be ready
+        const waitForBattleManager = setInterval(() => {
+            if (window.battleManager) {
+                clearInterval(waitForBattleManager);
+                console.log('[Battle] Test trigger ready: call triggerTestBattle()');
+            }
+        }, 100);
     </script>
 </body>
 </html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Scene Animations - Demo</title>
+    <link rel="stylesheet" href="css/battle_scene_animations.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Yrsa:wght@300;400;500;600;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Yrsa', serif;
+            background: linear-gradient(180deg, #0A0812 0%, #1A1425 100%);
+            color: #D4AF37;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            color: #D4AF37;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #8B7355;
+            margin-bottom: 40px;
+        }
+
+        .demo-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        .demo-button {
+            background: linear-gradient(135deg, #2A1810 0%, #5C4A3A 100%);
+            border: 2px solid #D4AF37;
+            color: #D4AF37;
+            padding: 20px 30px;
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .demo-button:hover {
+            background: linear-gradient(135deg, #3A2820 0%, #6C5A4A 100%);
+            border-color: #FFD700;
+            color: #FFD700;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .demo-button:active {
+            transform: translateY(0);
+        }
+
+        .button-description {
+            font-family: 'Yrsa', serif;
+            font-size: 14px;
+            color: #8B7355;
+            margin-top: 8px;
+        }
+
+        .integration-example {
+            max-width: 800px;
+            background: rgba(42, 36, 30, 0.95);
+            border: 2px solid #5C4A3A;
+            border-radius: 8px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .integration-example h2 {
+            font-family: 'Cinzel', serif;
+            color: #D4AF37;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #0A0908;
+            border: 1px solid #3E342A;
+            border-radius: 5px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #8B7355;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        .code-comment {
+            color: #5C4A3A;
+        }
+
+        .code-function {
+            color: #D4AF37;
+        }
+
+        .code-string {
+            color: #7B5A8B;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚔️ Battle Scene Animations ⚔️</h1>
+    <p class="subtitle">Click buttons below to preview animations</p>
+
+    <div class="demo-controls">
+        <div>
+            <button class="demo-button" onclick="demoNormalBattle()">
+                Normal Battle
+                <div class="button-description">Standard enemy encounter</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoBossBattle()">
+                Boss Battle
+                <div class="button-description">Epic boss encounter</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoAmbush()">
+                Ambush!
+                <div class="button-description">Surprise attack</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoLocationTransition()">
+                Location Change
+                <div class="button-description">Travel to new area</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoDivineIntervention()">
+                Divine Intervention
+                <div class="button-description">A god appears</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoBetrayal()">
+                Betrayal Detected!
+                <div class="button-description">Critical story moment</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoDiscovery()">
+                Major Discovery
+                <div class="button-description">Important revelation</div>
+            </button>
+        </div>
+
+        <div>
+            <button class="demo-button" onclick="demoTrustCritical()">
+                Trust Critical
+                <div class="button-description">Party trust hits zero</div>
+            </button>
+        </div>
+    </div>
+
+    <div class="integration-example">
+        <h2>📖 How to Use in Your Game</h2>
+        <p>Add these files to your HTML pages:</p>
+
+        <div class="code-block">
+<span class="code-comment">&lt;!-- In your HTML head --&gt;</span>
+&lt;link rel="stylesheet" href="css/battle_scene_animations.css"&gt;
+&lt;script src="js/battle_scene_animations.js"&gt;&lt;/script&gt;
+        </div>
+
+        <p style="margin-top: 20px;">Then trigger animations from your game logic:</p>
+
+        <div class="code-block">
+<span class="code-comment">// When player encounters an enemy</span>
+<span class="code-function">playBattleIntro</span>({
+    enemyName: <span class="code-string">'Shadow Demon'</span>,
+    enemyIcon: <span class="code-string">'👹'</span>,
+    flavorText: <span class="code-string">'A creature of darkness emerges from the void!'</span>,
+    battleType: <span class="code-string">'boss'</span>,
+    onComplete: () => {
+        <span class="code-comment">// Start battle gameplay</span>
+        startBattlePhase();
+    }
+});
+
+<span class="code-comment">// When changing locations</span>
+<span class="code-function">playLocationTransition</span>({
+    locationName: <span class="code-string">'The Forbidden Archive'</span>,
+    locationIcon: <span class="code-string">'🏛️'</span>,
+    description: <span class="code-string">'Ancient tomes line endless shelves...'</span>,
+    onComplete: () => {
+        <span class="code-comment">// Load new location</span>
+        loadLocation('forbidden_archive');
+    }
+});
+
+<span class="code-comment">// When a god intervenes</span>
+<span class="code-function">playDivineIntervention</span>({
+    godName: <span class="code-string">'VALDRIS'</span>,
+    godColor: <span class="code-string">'#D4AF37'</span>,
+    godSymbol: <span class="code-string">'images/god_valdris.svg'</span>,
+    message: <span class="code-string">'You have broken the sacred law. Face judgment!'</span>,
+    onComplete: () => {
+        <span class="code-comment">// Trigger Divine Council</span>
+        startDivineCouncil();
+    }
+});
+
+<span class="code-comment">// Critical story moments</span>
+<span class="code-function">playCriticalMoment</span>({
+    title: <span class="code-string">'BETRAYAL DETECTED'</span>,
+    icon: <span class="code-string">'⚠️'</span>,
+    color: <span class="code-string">'#FF0000'</span>,
+    message: <span class="code-string">'Your ally has revealed their true allegiance!'</span>,
+    onComplete: () => {
+        <span class="code-comment">// Update game state</span>
+        handleBetrayal();
+    }
+});
+        </div>
+    </div>
+
+    <script src="js/battle_scene_animations.js"></script>
+    <script>
+        // Demo functions
+        function demoNormalBattle() {
+            playBattleIntro({
+                enemyName: 'Corrupted Guardian',
+                enemyIcon: '⚔️',
+                flavorText: 'An ancient protector, twisted by dark magic!',
+                battleType: 'normal',
+                onComplete: () => console.log('Battle intro complete')
+            });
+        }
+
+        function demoBossBattle() {
+            playBattleIntro({
+                enemyName: 'NIGHTMARE SOVEREIGN',
+                enemyIcon: '👹',
+                flavorText: 'The master of darkness reveals itself at last!',
+                battleType: 'boss',
+                onComplete: () => console.log('Boss battle intro complete')
+            });
+        }
+
+        function demoAmbush() {
+            playBattleIntro({
+                enemyName: 'Shadow Assassins',
+                enemyIcon: '🗡️',
+                flavorText: 'They strike from the darkness without warning!',
+                battleType: 'ambush',
+                onComplete: () => console.log('Ambush intro complete')
+            });
+        }
+
+        function demoLocationTransition() {
+            playLocationTransition({
+                locationName: 'The Forbidden Archive',
+                locationIcon: '📚',
+                description: 'Ancient tomes line endless shelves, their secrets waiting to be uncovered...',
+                onComplete: () => console.log('Location transition complete')
+            });
+        }
+
+        function demoDivineIntervention() {
+            playDivineIntervention({
+                godName: 'VALDRIS',
+                godColor: '#D4AF37',
+                godSymbol: 'images/god_valdris.svg',
+                message: 'You have entered sacred ground. Your actions will be judged...',
+                onComplete: () => console.log('Divine intervention complete')
+            });
+        }
+
+        function demoBetrayal() {
+            playCriticalMoment({
+                title: 'BETRAYAL DETECTED',
+                icon: '⚠️',
+                color: '#FF0000',
+                message: 'Your trusted ally has revealed their true allegiance to the enemy!',
+                onComplete: () => console.log('Betrayal moment complete')
+            });
+        }
+
+        function demoDiscovery() {
+            playCriticalMoment({
+                title: 'ANCIENT SECRET REVEALED',
+                icon: '✨',
+                color: '#D4AF37',
+                message: 'The true nature of the Arcane Codex is finally revealed!',
+                onComplete: () => console.log('Discovery moment complete')
+            });
+        }
+
+        function demoTrustCritical() {
+            playCriticalMoment({
+                title: 'PARTY TRUST: CRITICAL',
+                icon: '💔',
+                color: '#FF6600',
+                message: 'Your party is on the verge of collapse. One more betrayal may destroy everything!',
+                onComplete: () => console.log('Trust critical moment complete')
+            });
+        }
+
+        console.log('Battle Scene Animations Demo Ready!');
+        console.log('Available functions:');
+        console.log('- playBattleIntro()');
+        console.log('- playLocationTransition()');
+        console.log('- playDivineIntervention()');
+        console.log('- playCriticalMoment()');
+    </script>
+</body>
+</html>

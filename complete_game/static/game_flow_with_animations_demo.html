@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Flow with Animations - The Arcane Codex</title>
+    <link rel="stylesheet" href="css/battle_scene_animations.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Yrsa:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Yrsa', serif;
+            background: linear-gradient(180deg, #0A0812 0%, #1A1425 100%);
+            color: #D4AF37;
+            overflow-x: hidden;
+        }
+
+        /* === GAME CONTAINER === */
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px;
+            min-height: 100vh;
+        }
+
+        /* === NARRATIVE SECTIONS === */
+        .narrative-section {
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+            margin-bottom: 50px;
+        }
+
+        .narrative-section.visible {
+            opacity: 1;
+        }
+
+        .chapter-title {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .story-text {
+            font-size: 20px;
+            line-height: 1.8;
+            color: #D4AF37;
+            margin-bottom: 25px;
+            text-align: justify;
+        }
+
+        .story-text.emphasis {
+            text-align: center;
+            font-style: italic;
+            color: #FFD700;
+            font-size: 24px;
+            margin: 40px 0;
+            padding: 20px;
+            background: rgba(255, 215, 0, 0.05);
+            border-left: 4px solid #D4AF37;
+        }
+
+        .story-text strong {
+            color: #FFD700;
+        }
+
+        /* === VISUAL DIVIDERS === */
+        .scene-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 60px 0;
+            gap: 20px;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+            opacity: 0;
+            animation: dividerGrow 1.5s ease-out forwards;
+        }
+
+        .divider-ornament {
+            font-size: 32px;
+            color: #D4AF37;
+            opacity: 0;
+            animation: fadeIn 1s ease-in 0.5s forwards;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+        }
+
+        /* === CHOICE BUTTONS === */
+        .choice-section {
+            margin: 50px 0;
+            padding: 40px;
+            background: rgba(42, 36, 30, 0.6);
+            border: 2px solid #5C4A3A;
+            border-radius: 8px;
+            opacity: 0;
+            animation: fadeIn 1s ease-in 0.5s forwards;
+        }
+
+        .choice-prompt {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: #FFD700;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .choice-button {
+            display: block;
+            width: 100%;
+            padding: 20px 30px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #2A1810 0%, #5C4A3A 100%);
+            border: 2px solid #D4AF37;
+            color: #D4AF37;
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .choice-button:hover {
+            background: linear-gradient(135deg, #3A2820 0%, #6C5A4A 100%);
+            border-color: #FFD700;
+            color: #FFD700;
+            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .choice-button .icon {
+            display: inline-block;
+            width: 40px;
+            font-size: 24px;
+        }
+
+        /* === GOD APPEARANCE === */
+        .god-speaks {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin: 50px 0;
+            padding: 30px;
+            background: rgba(42, 36, 30, 0.4);
+            border-left: 4px solid;
+            border-radius: 4px;
+            opacity: 0;
+            animation: slideInLeft 0.8s ease-out forwards;
+        }
+
+        .god-icon-container {
+            flex-shrink: 0;
+        }
+
+        .god-icon {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 0 20px currentColor);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .god-dialogue {
+            flex: 1;
+        }
+
+        .god-name {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .god-quote {
+            font-style: italic;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        /* === BATTLE RESULT === */
+        .battle-result {
+            margin: 50px 0;
+            padding: 40px;
+            background: rgba(255, 0, 0, 0.05);
+            border: 3px solid #8B0000;
+            border-radius: 8px;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+        }
+
+        .battle-result h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 32px;
+            color: #FF4444;
+            margin-bottom: 20px;
+        }
+
+        .battle-result.victory {
+            background: rgba(0, 255, 0, 0.05);
+            border-color: #2E7D32;
+        }
+
+        .battle-result.victory h3 {
+            color: #4CAF50;
+        }
+
+        /* === PROGRESS INDICATOR === */
+        .progress-tracker {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(42, 36, 30, 0.95);
+            border: 2px solid #5C4A3A;
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 100;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            color: #5C4A3A;
+            font-size: 14px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .progress-step.active {
+            color: #FFD700;
+            font-weight: 600;
+        }
+
+        .progress-step.completed {
+            color: #8B7355;
+        }
+
+        .progress-step .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #5C4A3A;
+        }
+
+        .progress-step.active .dot {
+            background: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .progress-step.completed .dot {
+            background: #8B7355;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes dividerGrow {
+            from { opacity: 0; transform: scaleX(0); }
+            to { opacity: 1; transform: scaleX(1); }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* === HIDDEN === */
+        .hidden {
+            display: none;
+        }
+
+        /* === CONTINUE BUTTON === */
+        .continue-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
+            color: #2A1810;
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Tracker -->
+    <div class="progress-tracker">
+        <div class="progress-step active" id="step1">
+            <div class="dot"></div>
+            <span>Introduction</span>
+        </div>
+        <div class="progress-step" id="step2">
+            <div class="dot"></div>
+            <span>Battle</span>
+        </div>
+        <div class="progress-step" id="step3">
+            <div class="dot"></div>
+            <span>Judgment</span>
+        </div>
+        <div class="progress-step" id="step4">
+            <div class="dot"></div>
+            <span>Resolution</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <!-- ============================================ -->
+        <!-- SECTION 1: Introduction -->
+        <!-- ============================================ -->
+        <div id="section1" class="narrative-section visible">
+            <h1 class="chapter-title">⚔️ The Shadow in the Crypt ⚔️</h1>
+
+            <p class="story-text">
+                Your party descends the worn stone steps into the forgotten crypt beneath the old temple. The air grows cold, and your torchlight flickers against damp walls covered in ancient runes.
+            </p>
+
+            <p class="story-text">
+                <strong>Kaelen the Mage</strong> whispers: "These markings... they're a warning. Something dark was sealed here."
+            </p>
+
+            <p class="story-text">
+                As you reach the bottom of the stairs, your footsteps echo in the vast chamber ahead. Skeletal remains litter the floor—evidence of those who came before and failed.
+            </p>
+
+            <div class="scene-divider">
+                <div class="divider-line"></div>
+                <div class="divider-ornament">⚔️</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <p class="story-text">
+                Suddenly, the temperature drops. Your breath mists in the air. A low growl reverberates through the chamber, and from the shadows emerges a towering figure—its eyes burning with malevolent fire.
+            </p>
+
+            <p class="story-text emphasis">
+                "You should not have come here, mortals..."
+            </p>
+
+            <div class="choice-section">
+                <div class="choice-prompt">What do you do?</div>
+                <button class="choice-button" onclick="startBattle()">
+                    <span class="icon">⚔️</span> Draw weapons and prepare for battle
+                </button>
+                <button class="choice-button" onclick="startBattle()">
+                    <span class="icon">🗣️</span> Try to reason with the creature
+                </button>
+                <button class="choice-button" onclick="startBattle()">
+                    <span class="icon">🏃</span> Attempt a tactical retreat
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SECTION 2: Battle Aftermath -->
+        <!-- ============================================ -->
+        <div id="section2" class="narrative-section hidden">
+            <div class="battle-result victory">
+                <h3>⚔️ VICTORY ⚔️</h3>
+                <p class="story-text">
+                    With a final, earth-shaking roar, the Crypt Guardian collapses. Its form dissolves into shadow and ash, leaving only silence and the echo of battle.
+                </p>
+            </div>
+
+            <p class="story-text">
+                Your party stands victorious but weary. <strong>Thorne the Fighter</strong> wipes blood from his sword. "That was too close. If Aria hadn't covered my flank..."
+            </p>
+
+            <p class="story-text">
+                But as the adrenaline fades, a golden light begins to fill the chamber. The air shimmers, and seven distinct presences make themselves known.
+            </p>
+
+            <div class="scene-divider">
+                <div class="divider-line"></div>
+                <div class="divider-ornament">✦</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <p class="story-text emphasis">
+                The Divine Council has been summoned.
+            </p>
+
+            <p class="story-text">
+                During the battle, you broke a sacred oath. You promised the temple priest you would not spill blood on consecrated ground. But survival demanded it.
+            </p>
+
+            <button class="continue-btn" onclick="startDivineCouncil()">The Gods Appear →</button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SECTION 3: Divine Council -->
+        <!-- ============================================ -->
+        <div id="section3" class="narrative-section hidden">
+            <h2 class="chapter-title">⚖️ Divine Judgment ⚖️</h2>
+
+            <p class="story-text">
+                One by one, the seven gods of the pantheon manifest before you. Their ethereal forms shimmer with power as they deliberate your fate.
+            </p>
+
+            <!-- God 1: Valdris -->
+            <div class="god-speaks" style="border-color: #D4AF37;">
+                <div class="god-icon-container">
+                    <img src="images/god_valdris.svg" class="god-icon" style="color: #D4AF37;" alt="Valdris">
+                </div>
+                <div class="god-dialogue">
+                    <div class="god-name" style="color: #D4AF37;">VALDRIS - God of Order</div>
+                    <div class="god-quote" style="color: #D4AF37;">
+                        "You swore an oath and broke it. Law must be absolute, or it means nothing. I vote for punishment."
+                    </div>
+                </div>
+            </div>
+
+            <!-- God 2: Kaitha -->
+            <div class="god-speaks" style="border-color: #FF00FF;">
+                <div class="god-icon-container">
+                    <img src="images/god_kaitha.svg" class="god-icon" style="color: #FF00FF;" alt="Kaitha">
+                </div>
+                <div class="god-dialogue">
+                    <div class="god-name" style="color: #FF00FF;">KAITHA - Goddess of Chaos</div>
+                    <div class="god-quote" style="color: #FF00FF;">
+                        "Rules are chains! You fought for survival, for freedom. This delights me. I vote for mercy."
+                    </div>
+                </div>
+            </div>
+
+            <!-- God 3: Morvane -->
+            <div class="god-speaks" style="border-color: #8B0000;">
+                <div class="god-icon-container">
+                    <img src="images/god_morvane.svg" class="god-icon" style="color: #8B0000;" alt="Morvane">
+                </div>
+                <div class="god-dialogue">
+                    <div class="god-name" style="color: #CC4444;">MORVANE - God of Death</div>
+                    <div class="god-quote" style="color: #CC4444;">
+                        "Death came for you in that crypt. You refused it. That takes strength. I vote for mercy."
+                    </div>
+                </div>
+            </div>
+
+            <div class="scene-divider">
+                <div class="divider-line"></div>
+                <div class="divider-ornament">⚖️</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <p class="story-text">
+                The remaining gods cast their votes. The chamber fills with light as the divine tally is counted...
+            </p>
+
+            <button class="continue-btn" onclick="showVerdict()">Receive Judgment →</button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SECTION 4: Resolution -->
+        <!-- ============================================ -->
+        <div id="section4" class="narrative-section hidden">
+            <div class="battle-result victory">
+                <h3>⚖️ VERDICT: 4-3 in Your Favor ⚖️</h3>
+                <p class="story-text">
+                    The gods have shown mercy... this time.
+                </p>
+            </div>
+
+            <p class="story-text">
+                The divine presences fade, but their voices linger in your mind:
+            </p>
+
+            <p class="story-text emphasis">
+                "You are spared, mortals. But we are watching. Every choice. Every action. The next judgment may not be so kind."
+            </p>
+
+            <p class="story-text">
+                As the golden light dissipates, you find yourselves alone in the crypt once more. The guardian is defeated, but at what cost? The gods now have their eyes upon you.
+            </p>
+
+            <div class="scene-divider">
+                <div class="divider-line"></div>
+                <div class="divider-ornament">✦</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <p class="story-text">
+                <strong>Trust Score:</strong> The party's trust in each other has been tested. Thorne questions whether breaking the oath was worth it. Aria believes survival justifies any action. Kaelen remains silent, troubled.
+            </p>
+
+            <p class="story-text">
+                Your journey continues, but the weight of divine judgment hangs over your party like a shadow...
+            </p>
+
+            <div class="choice-section">
+                <div class="choice-prompt">Chapter Complete</div>
+                <button class="choice-button" onclick="location.reload()">
+                    <span class="icon">🔄</span> Restart Demo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/battle_scene_animations.js"></script>
+    <script>
+        // Progress tracking
+        function updateProgress(step) {
+            for (let i = 1; i <= 4; i++) {
+                const elem = document.getElementById(`step${i}`);
+                elem.classList.remove('active', 'completed');
+                if (i < step) {
+                    elem.classList.add('completed');
+                } else if (i === step) {
+                    elem.classList.add('active');
+                }
+            }
+        }
+
+        // Section transitions
+        function showSection(sectionId) {
+            document.querySelectorAll('.narrative-section').forEach(section => {
+                section.classList.add('hidden');
+                section.classList.remove('visible');
+            });
+
+            const section = document.getElementById(sectionId);
+            section.classList.remove('hidden');
+            setTimeout(() => section.classList.add('visible'), 100);
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Game flow functions
+        function startBattle() {
+            updateProgress(2);
+
+            // Play battle intro animation
+            playBattleIntro({
+                enemyName: 'CRYPT GUARDIAN',
+                enemyIcon: '👹',
+                flavorText: 'An ancient evil awakens from centuries of slumber!',
+                battleType: 'boss',
+                onComplete: () => {
+                    // Show battle aftermath
+                    showSection('section2');
+                }
+            });
+        }
+
+        function startDivineCouncil() {
+            updateProgress(3);
+
+            // Play divine intervention animation
+            playDivineIntervention({
+                godName: 'THE DIVINE COUNCIL',
+                godColor: '#D4AF37',
+                message: 'Seven gods manifest to judge your actions...',
+                onComplete: () => {
+                    showSection('section3');
+                }
+            });
+        }
+
+        function showVerdict() {
+            updateProgress(4);
+
+            // Play verdict moment
+            playCriticalMoment({
+                title: 'DIVINE VERDICT',
+                icon: '⚖️',
+                color: '#4CAF50',
+                message: '4-3 in your favor. You are spared... for now.',
+                onComplete: () => {
+                    showSection('section4');
+                }
+            });
+        }
+
+        // Initialize
+        updateProgress(1);
+        console.log('Game Flow Demo Ready!');
+    </script>
+</body>
+</html>
