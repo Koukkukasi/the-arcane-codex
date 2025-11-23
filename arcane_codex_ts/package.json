@@ -6,7 +6,13 @@
     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:api": "playwright test --project=multiplayer-api",
+    "test:socketio": "playwright test --project=multiplayer-socketio",
+    "test:e2e": "playwright test --project=multiplayer-e2e",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report test-results/html"
   },
   "keywords": [],
   "author": "",
@@ -28,5 +34,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "socket.io-client": "^4.8.1"
   }
 }
