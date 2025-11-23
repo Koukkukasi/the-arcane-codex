@@ -1106,6 +1106,487 @@ router.post('/battle/:battle_id/flee', requireAuth, battleActionLimiter, (req: R
 });
 
 // ============================================================================
+// AI GM System Endpoints - Phase 4
+// ============================================================================
+
+// Rate limiter for AI GM scenario generation (prevent abuse)
+const aiGMScenarioLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 scenarios per hour per player
+  message: 'Too many scenarios generated. Please wait before creating more.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request): string => {
+    return req.session.player_id || req.ip || 'unknown';
+  }
+});
+
+/**
+ * POST /api/ai_gm/scenario/generate
+ * Generate a new AI GM scenario
+ * Body: { scenario_type?, difficulty?, context? }
+ */
+router.post('/ai_gm/scenario/generate', requireAuth, requireGameSession, aiGMScenarioLimiter, async (req: Request, res: Response): Promise<void> => {
+  const { scenario_type, difficulty, context } = req.body;
+  const gameCode = req.session.game_code!;
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession) {
+      res.status(404).json({
+        success: false,
+        error: 'Game not found'
+      });
+      return;
+    }
+
+    // For now, generate a basic scenario structure
+    // This will be replaced with actual AIGMService call when implemented
+    // TODO: Use AIGMService.generateScenario(gameCode, Array.from(gameSession.players.values()), scenario_type, difficulty, context)
+    const scenario = {
+      scenario_id: uuidv4(),
+      scenario_type: scenario_type || 'mystery',
+      difficulty: difficulty || 'medium',
+      title: 'A New Adventure Begins',
+      description: 'The AI GM weaves a tale of intrigue and danger...',
+      player_count: gameSession.players.size,
+      public_info: {
+        scene: 'You find yourselves at a crossroads in the ancient forest...',
+        npcs: [],
+        observations: []
+      },
+      choices: [
+        {
+          choice_id: 'choice_1',
+          text: 'Investigate the mysterious sounds',
+          visible_to: 'all'
+        },
+        {
+          choice_id: 'choice_2',
+          text: 'Set up camp and wait',
+          visible_to: 'all'
+        }
+      ],
+      asymmetric_info: new Map(), // Player-specific info managed by AsymmetricInfoManager
+      created_at: new Date().toISOString(),
+      context: context || {}
+    };
+
+    // Store scenario in game session
+    gameSession.current_scenario = scenario;
+
+    // Broadcast scenario generation to all players
+    io.to(gameCode).emit('scenario_generated', {
+      scenario_id: scenario.scenario_id,
+      scenario_type: scenario.scenario_type,
+      generated_by: req.session.username
+    });
+
+    console.log(`[AI_GM] Scenario ${scenario.scenario_id} generated for game ${gameCode}`);
+
+    res.json({
+      success: true,
+      scenario_id: scenario.scenario_id,
+      scenario,
+      message: 'Scenario generated successfully'
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to generate AI GM scenario:', error);
+
+    // Fallback to template-based scenario on API failure
+    const fallbackScenario = {
+      scenario_id: uuidv4(),
+      scenario_type: 'template',
+      difficulty: 'medium',
+      title: 'Fallback Adventure',
+      description: 'A template scenario for when AI generation fails',
+      public_info: {
+        scene: 'A simple scenario unfolds...',
+        npcs: [],
+        observations: []
+      },
+      choices: [
+        { choice_id: 'fallback_1', text: 'Continue forward', visible_to: 'all' }
+      ],
+      created_at: new Date().toISOString()
+    };
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate scenario, using fallback',
+      scenario_id: fallbackScenario.scenario_id,
+      scenario: fallbackScenario
+    });
+    return;
+  }
+});
+
+/**
+ * POST /api/ai_gm/scenario/:scenario_id/choose
+ * Make a choice in a scenario
+ * Body: { choice_id }
+ */
+router.post('/ai_gm/scenario/:scenario_id/choose', requireAuth, requireGameSession, async (req: Request, res: Response): Promise<void> => {
+  const { scenario_id } = req.params;
+  const { choice_id } = req.body;
+  const playerId = req.session.player_id!;
+  const gameCode = req.session.game_code!;
+
+  if (!choice_id) {
+    res.status(400).json({
+      success: false,
+      error: 'Choice ID required'
+    });
+    return;
+  }
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession || !gameSession.current_scenario) {
+      res.status(404).json({
+        success: false,
+        error: 'Scenario not found'
+      });
+      return;
+    }
+
+    const scenario = gameSession.current_scenario;
+
+    if (scenario.scenario_id !== scenario_id) {
+      res.status(400).json({
+        success: false,
+        error: 'Scenario ID mismatch'
+      });
+      return;
+    }
+
+    // Validate choice exists
+    const choice = scenario.choices?.find((c: any) => c.choice_id === choice_id);
+    if (!choice) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid choice'
+      });
+      return;
+    }
+
+    // Record the choice (this will be handled by ConsequenceTracker when implemented)
+    const choiceResult = {
+      player_id: playerId,
+      player_name: req.session.username,
+      choice_id,
+      choice_text: choice.text,
+      timestamp: new Date().toISOString(),
+      consequences: {
+        immediate: 'Your choice has been recorded...',
+        preview: 'This decision may have far-reaching effects...'
+      }
+    };
+
+    // Notify other players that a choice was made (without revealing what it was)
+    io.to(gameCode).emit('choice_made', {
+      scenario_id,
+      player_name: req.session.username,
+      choice_revealed: false // For asymmetric gameplay
+    });
+
+    console.log(`[AI_GM] Player ${playerId} made choice ${choice_id} in scenario ${scenario_id}`);
+
+    res.json({
+      success: true,
+      scenario_id,
+      choice_id,
+      result: choiceResult,
+      message: 'Choice recorded successfully'
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to process choice:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process choice'
+    });
+    return;
+  }
+});
+
+/**
+ * GET /api/ai_gm/scenario/:scenario_id
+ * Get scenario details (filtered by player's knowledge)
+ */
+router.get('/ai_gm/scenario/:scenario_id', requireAuth, requireGameSession, (req: Request, res: Response): void => {
+  const { scenario_id } = req.params;
+  const playerId = req.session.player_id!;
+  const gameCode = req.session.game_code!;
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession || !gameSession.current_scenario) {
+      res.status(404).json({
+        success: false,
+        error: 'Scenario not found'
+      });
+      return;
+    }
+
+    const scenario = gameSession.current_scenario;
+
+    if (scenario.scenario_id !== scenario_id) {
+      res.status(404).json({
+        success: false,
+        error: 'Scenario not found'
+      });
+      return;
+    }
+
+    // Filter scenario based on player's knowledge (AsymmetricInfoManager)
+    // For now, return public info + player-specific info
+    const filteredScenario = {
+      scenario_id: scenario.scenario_id,
+      scenario_type: scenario.scenario_type,
+      difficulty: scenario.difficulty,
+      title: scenario.title,
+      description: scenario.description,
+      public_info: scenario.public_info,
+      choices: scenario.choices,
+      player_specific_info: scenario.asymmetric_info?.get(playerId) || null,
+      created_at: scenario.created_at
+    };
+
+    res.json({
+      success: true,
+      scenario: filteredScenario
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to get scenario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get scenario'
+    });
+    return;
+  }
+});
+
+/**
+ * GET /api/ai_gm/player/knowledge
+ * Get player's current knowledge/clues
+ */
+router.get('/ai_gm/player/knowledge', requireAuth, requireGameSession, (req: Request, res: Response): void => {
+  const playerId = req.session.player_id!;
+  const gameCode = req.session.game_code!;
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession) {
+      res.status(404).json({
+        success: false,
+        error: 'Game not found'
+      });
+      return;
+    }
+
+    // This will be managed by AsymmetricInfoManager when implemented
+    const playerKnowledge = {
+      player_id: playerId,
+      clues: [], // Player's discovered clues
+      secrets: [], // Player's secret information
+      shared_clues: [], // Clues shared by other players
+      knowledge_level: 0,
+      last_updated: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      knowledge: playerKnowledge
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to get player knowledge:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get player knowledge'
+    });
+    return;
+  }
+});
+
+/**
+ * GET /api/ai_gm/world/state
+ * Get current world state (public info)
+ */
+router.get('/ai_gm/world/state', requireAuth, requireGameSession, (req: Request, res: Response): void => {
+  const gameCode = req.session.game_code!;
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession) {
+      res.status(404).json({
+        success: false,
+        error: 'Game not found'
+      });
+      return;
+    }
+
+    // Public world state visible to all players
+    const worldState = {
+      game_code: gameCode,
+      current_scenario: gameSession.current_scenario ? {
+        scenario_id: gameSession.current_scenario.scenario_id,
+        title: gameSession.current_scenario.title,
+        public_info: gameSession.current_scenario.public_info
+      } : null,
+      players: Array.from(gameSession.players.entries()).map(([id, name]) => ({
+        id,
+        name,
+        class: gameSession.player_classes.get(id)
+      })),
+      scenario_count: gameSession.scenario_history.length,
+      world_events: [], // Global events that affect all players
+      last_updated: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      world_state: worldState
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to get world state:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get world state'
+    });
+    return;
+  }
+});
+
+/**
+ * GET /api/ai_gm/player/history
+ * Get player's choice history and consequences
+ */
+router.get('/ai_gm/player/history', requireAuth, requireGameSession, (req: Request, res: Response): void => {
+  const playerId = req.session.player_id!;
+  const gameCode = req.session.game_code!;
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession) {
+      res.status(404).json({
+        success: false,
+        error: 'Game not found'
+      });
+      return;
+    }
+
+    // This will be managed by ConsequenceTracker when implemented
+    const playerHistory = {
+      player_id: playerId,
+      choices: [], // Array of past choices
+      consequences: [], // Array of consequences from choices
+      divine_favor_changes: [], // Changes in god favor from choices
+      total_choices: 0,
+      last_choice_at: null
+    };
+
+    res.json({
+      success: true,
+      history: playerHistory
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to get player history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get player history'
+    });
+    return;
+  }
+});
+
+/**
+ * POST /api/ai_gm/share_clue
+ * Share a clue with another player
+ * Body: { to_player_id, clue_id }
+ */
+router.post('/ai_gm/share_clue', requireAuth, requireGameSession, async (req: Request, res: Response): Promise<void> => {
+  const { to_player_id, clue_id } = req.body;
+  const fromPlayerId = req.session.player_id!;
+  const gameCode = req.session.game_code!;
+
+  if (!to_player_id || !clue_id) {
+    res.status(400).json({
+      success: false,
+      error: 'Recipient player ID and clue ID required'
+    });
+    return;
+  }
+
+  try {
+    const gameSession = GameService.getGameSession(gameCode);
+    if (!gameSession) {
+      res.status(404).json({
+        success: false,
+        error: 'Game not found'
+      });
+      return;
+    }
+
+    // Verify recipient is in the game
+    if (!gameSession.players.has(to_player_id)) {
+      res.status(400).json({
+        success: false,
+        error: 'Recipient player not in game'
+      });
+      return;
+    }
+
+    // Cannot share with yourself
+    if (fromPlayerId === to_player_id) {
+      res.status(400).json({
+        success: false,
+        error: 'Cannot share clue with yourself'
+      });
+      return;
+    }
+
+    // This will be managed by AsymmetricInfoManager when implemented
+    const sharedClue = {
+      clue_id,
+      from_player_id: fromPlayerId,
+      from_player_name: req.session.username,
+      to_player_id,
+      to_player_name: gameSession.players.get(to_player_id),
+      shared_at: new Date().toISOString()
+    };
+
+    // Notify the recipient
+    io.to(gameCode).emit('clue_shared', {
+      to_player_id,
+      from_player_name: req.session.username,
+      clue_id
+    });
+
+    console.log(`[AI_GM] Player ${fromPlayerId} shared clue ${clue_id} with ${to_player_id}`);
+
+    res.json({
+      success: true,
+      shared_clue: sharedClue,
+      message: 'Clue shared successfully'
+    });
+
+  } catch (error) {
+    console.error('[ERROR] Failed to share clue:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to share clue'
+    });
+    return;
+  }
+});
+
+// ============================================================================
 // Health Check
 // ============================================================================
 

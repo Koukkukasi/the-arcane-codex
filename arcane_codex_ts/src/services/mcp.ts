@@ -3,13 +3,58 @@ import { InterrogationQuestion } from '../types/game';
 import { getMockInterrogationQuestion } from '../data/questions';
 
 // MCP (Model Context Protocol) service for AI integration
-// Currently using mock data, but ready for Claude integration
+// Supports Claude API with streaming, rate limiting, and fallback to mock data
 
-interface MCPConfig {
+export interface MCPConfig {
   apiKey?: string;
   model?: string;
   maxRetries?: number;
   timeout?: number;
+}
+
+// Kept for future use - may be needed for extended token tracking features
+// export interface TokenUsage {
+//   inputTokens: number;
+//   outputTokens: number;
+//   totalTokens: number;
+//   cost: number; // Estimated cost in USD
+// }
+
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  cost: number; // Estimated cost in USD
+}
+
+interface QueuedRequest {
+  id: string;
+  priority: number; // 0 = urgent, 1 = normal, 2 = low
+  timestamp: number;
+  execute: () => Promise<any>;
+  resolve: (value: any) => void;
+  reject: (error: any) => void;
+}
+
+// Kept for future use - will be needed for dynamic scenario generation
+// export interface ScenarioContext {
+//   gameCode: string;
+//   players: string[];
+//   theme?: string;
+//   scenarioType: 'divine_interrogation' | 'moral_dilemma' | 'investigation' | 'general';
+//   previousScenarios?: string[];
+//   playerChoices?: any[];
+//   godFavor?: Record<string, Record<string, number>>; // playerId -> god -> favor
+// }
+
+interface ScenarioContext {
+  gameCode: string;
+  players: string[];
+  theme?: string;
+  scenarioType: 'divine_interrogation' | 'moral_dilemma' | 'investigation' | 'general';
+  previousScenarios?: string[];
+  playerChoices?: any[];
+  godFavor?: Record<string, Record<string, number>>; // playerId -> god -> favor
 }
 
 /**
@@ -20,15 +65,41 @@ export class MCPService {
   private isAvailable: boolean = false;
   private config: MCPConfig;
 
+  // Rate limiting
+  private requestQueue: QueuedRequest[] = [];
+  private requestsInLastMinute: number[] = []; // Timestamps of requests
+  private readonly MAX_REQUESTS_PER_MINUTE = 50;
+  private readonly MAX_QUEUE_SIZE = 100;
+  private isProcessingQueue = false;
+
+  // Token tracking
+  private sessionTokenUsage: Map<string, TokenUsage> = new Map();
+  private totalTokenUsage: TokenUsage = {
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+    cost: 0
+  };
+
+  // Pricing (per million tokens) - Updated for Sonnet 4.5
+  private readonly PRICING = {
+    'claude-sonnet-4-5-20250929': { input: 3.00, output: 15.00 },
+    'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 },
+    'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
+    'default': { input: 3.00, output: 15.00 }
+  };
+
   constructor(config: MCPConfig = {}) {
     this.config = {
       apiKey: config.apiKey || process.env.ANTHROPIC_API_KEY,
-      model: config.model || 'claude-3-haiku-20240307',
-      maxRetries: config.maxRetries || 3,
-      timeout: config.timeout || 30000
+      model: config.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
+      maxRetries: config.maxRetries || parseInt(process.env.MCP_MAX_RETRIES || '3'),
+      timeout: config.timeout || parseInt(process.env.MCP_TIMEOUT_MS || '30000')
     };
 
     this.initialize();
+    // Queue processor is started automatically via startQueueProcessor() method
+    this.startQueueProcessor();
   }
 
   /**
@@ -42,6 +113,9 @@ export class MCPService {
         });
         this.isAvailable = true;
         console.log('[MCP] Service initialized successfully');
+        console.log(`[MCP] Model: ${this.config.model}`);
+        console.log(`[MCP] Max retries: ${this.config.maxRetries}`);
+        console.log(`[MCP] Timeout: ${this.config.timeout}ms`);
       } catch (error) {
         console.error('[MCP] Failed to initialize:', error);
         this.isAvailable = false;
@@ -60,6 +134,143 @@ export class MCPService {
   }
 
   /**
+   * Get token usage statistics for a session
+   */
+  public getSessionTokenUsage(sessionId: string): TokenUsage | null {
+    return this.sessionTokenUsage.get(sessionId) || null;
+  }
+
+  /**
+   * Get total token usage across all sessions
+   */
+  public getTotalTokenUsage(): TokenUsage {
+    return { ...this.totalTokenUsage };
+  }
+
+  /**
+   * Start the request queue processor
+   */
+  private startQueueProcessor(): void {
+    setInterval(() => {
+      if (!this.isProcessingQueue && this.requestQueue.length > 0) {
+        this.processQueue();
+      }
+    }, 100); // Check every 100ms
+  }
+
+  /**
+   * Process queued requests with rate limiting
+   */
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    try {
+      // Clean up old timestamps (older than 1 minute)
+      const now = Date.now();
+      this.requestsInLastMinute = this.requestsInLastMinute.filter(
+        timestamp => now - timestamp < 60000
+      );
+
+      // Check if we can process more requests
+      if (this.requestsInLastMinute.length >= this.MAX_REQUESTS_PER_MINUTE) {
+        console.log('[MCP] Rate limit reached, waiting...');
+        this.isProcessingQueue = false;
+        return;
+      }
+
+      // Sort queue by priority (0 = highest priority)
+      this.requestQueue.sort((a, b) => a.priority - b.priority);
+
+      // Process the highest priority request
+      const request = this.requestQueue.shift();
+      if (request) {
+        this.requestsInLastMinute.push(now);
+        console.log(`[MCP] Processing request ${request.id} (priority: ${request.priority})`);
+
+        try {
+          const result = await request.execute();
+          request.resolve(result);
+        } catch (error) {
+          request.reject(error);
+        }
+      }
+    } finally {
+      this.isProcessingQueue = false;
+    }
+  }
+
+  /**
+   * Add a request to the queue
+   */
+  private _queueRequest<T>(
+    execute: () => Promise<T>,
+    priority: number = 1
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      if (this.requestQueue.length >= this.MAX_QUEUE_SIZE) {
+        console.error('[MCP] Queue overflow, rejecting request');
+        reject(new Error('Request queue is full'));
+        return;
+      }
+
+      const request: QueuedRequest = {
+        id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        priority,
+        timestamp: Date.now(),
+        execute: execute as () => Promise<any>,
+        resolve,
+        reject
+      };
+
+      this.requestQueue.push(request);
+      console.log(`[MCP] Queued request ${request.id}, queue size: ${this.requestQueue.length}`);
+    });
+  }
+
+  /**
+   * Track token usage for a request
+   */
+  private _trackTokenUsage(
+    sessionId: string,
+    inputTokens: number,
+    outputTokens: number
+  ): void {
+    const totalTokens = inputTokens + outputTokens;
+
+    // Get pricing for current model
+    const pricing = (this.PRICING as any)[this.config.model!] || this.PRICING.default;
+    const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000000;
+
+    // Update session usage
+    const sessionUsage = this.sessionTokenUsage.get(sessionId) || {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      cost: 0
+    };
+
+    sessionUsage.inputTokens += inputTokens;
+    sessionUsage.outputTokens += outputTokens;
+    sessionUsage.totalTokens += totalTokens;
+    sessionUsage.cost += cost;
+
+    this.sessionTokenUsage.set(sessionId, sessionUsage);
+
+    // Update total usage
+    this.totalTokenUsage.inputTokens += inputTokens;
+    this.totalTokenUsage.outputTokens += outputTokens;
+    this.totalTokenUsage.totalTokens += totalTokens;
+    this.totalTokenUsage.cost += cost;
+
+    console.log(`[MCP] Token usage - Session ${sessionId}: ${totalTokens} tokens ($${cost.toFixed(4)})`);
+    console.log(`[MCP] Total usage: ${this.totalTokenUsage.totalTokens} tokens ($${this.totalTokenUsage.cost.toFixed(4)})`);
+  }
+
+  /**
    * Generate an interrogation question using AI
    */
   public async generateInterrogationQuestion(
@@ -74,19 +285,28 @@ export class MCPService {
     }
 
     try {
-      // Attempt to generate question with Claude
-      const prompt = this.buildInterrogationPrompt(questionNumber, previousAnswers);
+      // Queue the request with normal priority
+      const response = await this._queueRequest(async () => {
+        const prompt = this.buildInterrogationPrompt(questionNumber, previousAnswers);
 
-      const response = await this.retryWithBackoff(async () => {
-        return await this.client!.messages.create({
-          model: this.config.model!,
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: prompt
-          }]
-        } as any);
-      });
+        return await this.retryWithBackoff(async () => {
+          return await this.client!.messages.create({
+            model: this.config.model!,
+            max_tokens: 1000,
+            system: this._getSystemPrompt(),
+            messages: [{
+              role: 'user',
+              content: prompt
+            }]
+          } as any);
+        });
+      }, 1); // Normal priority
+
+      // Track token usage
+      const usage = (response as any).usage;
+      if (usage) {
+        this._trackTokenUsage(playerId, usage.input_tokens, usage.output_tokens);
+      }
 
       // Parse the AI response into a question format
       const responseText = typeof response.content[0] === 'string' ? response.content[0] : (response.content[0] as any).text;
@@ -102,7 +322,7 @@ export class MCPService {
   }
 
   /**
-   * Generate a game scenario using AI
+   * Generate a game scenario using AI (legacy method - use generateDynamicScenario for new code)
    */
   public async generateScenario(
     gameCode: string,
@@ -121,6 +341,7 @@ export class MCPService {
         return await this.client!.messages.create({
           model: this.config.model!,
           max_tokens: 1500,
+          system: this._getSystemPrompt(),
           messages: [{
             role: 'user',
             content: prompt
@@ -140,37 +361,359 @@ export class MCPService {
   }
 
   /**
-   * Build prompt for interrogation question
+   * Generate a dynamic scenario based on context and scenario type
+   * This is the enhanced version with full context support
+   */
+  public async generateDynamicScenario(context: ScenarioContext): Promise<any> {
+    // If MCP is not available, fall back to mock scenarios
+    if (!this.isAvailable || !this.client) {
+      console.log('[MCP] Using mock scenario for dynamic generation');
+      return this.getMockScenario(context.theme);
+    }
+
+    try {
+      // Select appropriate prompt based on scenario type
+      let prompt: string;
+      let maxTokens = 2000;
+
+      switch (context.scenarioType) {
+        case 'divine_interrogation':
+          prompt = this.buildInterrogationPrompt(1, context.playerChoices || []);
+          maxTokens = 1000;
+          break;
+        case 'moral_dilemma':
+          prompt = this._buildMoralDilemmaPrompt(context);
+          maxTokens = 2000;
+          break;
+        case 'investigation':
+          prompt = this._buildInvestigationPrompt(context);
+          maxTokens = 2500;
+          break;
+        case 'general':
+        default:
+          prompt = this._buildGeneralScenarioPrompt(context);
+          maxTokens = 2000;
+          break;
+      }
+
+      // Queue the request (urgent scenarios get priority 0)
+      const priority = context.scenarioType === 'divine_interrogation' ? 0 : 1;
+
+      const response = await this._queueRequest(async () => {
+        return await this.retryWithBackoff(async () => {
+          console.log(`[MCP] Generating ${context.scenarioType} scenario for game ${context.gameCode}`);
+          return await this.client!.messages.create({
+            model: this.config.model!,
+            max_tokens: maxTokens,
+            system: this._getSystemPrompt(),
+            messages: [{
+              role: 'user',
+              content: prompt
+            }]
+          } as any);
+        });
+      }, priority);
+
+      // Track token usage
+      const usage = (response as any).usage;
+      if (usage) {
+        this._trackTokenUsage(context.gameCode, usage.input_tokens, usage.output_tokens);
+      }
+
+      // Parse response based on scenario type
+      const responseText = typeof response.content[0] === 'string'
+        ? response.content[0]
+        : (response.content[0] as any).text;
+
+      const scenario = this.parseScenarioResponse(responseText);
+      scenario.scenarioType = context.scenarioType;
+      scenario.generatedAt = new Date().toISOString();
+
+      console.log(`[MCP] Successfully generated ${context.scenarioType} scenario for game ${context.gameCode}`);
+      return scenario;
+
+    } catch (error) {
+      console.error('[MCP] Error generating dynamic scenario:', error);
+      return this.getMockScenario(context.theme);
+    }
+  }
+
+  /**
+   * Stream a scenario response in real-time using Claude's streaming API
+   * Callback receives partial content as it arrives
+   */
+  public async streamScenarioResponse(
+    context: ScenarioContext,
+    callback: (chunk: string, isDone: boolean) => void
+  ): Promise<void> {
+    // If MCP is not available, fall back to mock with simulated streaming
+    if (!this.isAvailable || !this.client) {
+      console.log('[MCP] Streaming mock scenario (simulated)');
+      const mockScenario = this.getMockScenario(context.theme);
+      const mockText = JSON.stringify(mockScenario, null, 2);
+
+      // Simulate streaming by sending chunks
+      for (let i = 0; i < mockText.length; i += 50) {
+        const chunk = mockText.slice(i, i + 50);
+        callback(chunk, i + 50 >= mockText.length);
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      return;
+    }
+
+    try {
+      // Select appropriate prompt based on scenario type
+      let prompt: string;
+      let maxTokens = 2000;
+
+      switch (context.scenarioType) {
+        case 'moral_dilemma':
+          prompt = this._buildMoralDilemmaPrompt(context);
+          maxTokens = 2000;
+          break;
+        case 'investigation':
+          prompt = this._buildInvestigationPrompt(context);
+          maxTokens = 2500;
+          break;
+        case 'general':
+        default:
+          prompt = this._buildGeneralScenarioPrompt(context);
+          maxTokens = 2000;
+          break;
+      }
+
+      console.log(`[MCP] Streaming ${context.scenarioType} scenario for game ${context.gameCode}`);
+
+      // Use streaming API - use .stream() method which returns an async iterable
+      const stream = await this.client!.messages.stream({
+        model: this.config.model!,
+        max_tokens: maxTokens,
+        system: this._getSystemPrompt(),
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      } as any);
+
+      let fullText = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta') {
+          const delta = (event as any).delta;
+          if (delta.type === 'text_delta') {
+            const chunk = delta.text;
+            fullText += chunk;
+            callback(chunk, false);
+          }
+        } else if (event.type === 'message_start') {
+          const message = (event as any).message;
+          if (message.usage) {
+            inputTokens = message.usage.input_tokens || 0;
+          }
+        } else if (event.type === 'message_delta') {
+          const usage = (event as any).usage;
+          if (usage) {
+            outputTokens = usage.output_tokens || 0;
+          }
+        }
+      }
+
+      // Track token usage
+      if (inputTokens > 0 || outputTokens > 0) {
+        this._trackTokenUsage(context.gameCode, inputTokens, outputTokens);
+      }
+
+      // Signal completion
+      callback('', true);
+      console.log(`[MCP] Completed streaming ${context.scenarioType} scenario for game ${context.gameCode}`);
+
+    } catch (error) {
+      console.error('[MCP] Error streaming scenario:', error);
+      // Send error as final chunk
+      callback(JSON.stringify({ error: 'Failed to stream scenario' }), true);
+    }
+  }
+
+  /**
+   * Get system prompt for The Arcane Codex game
+   */
+  private _getSystemPrompt(): string {
+    return `You are the AI Game Master for "The Arcane Codex", a dark fantasy tabletop RPG experience.
+
+GAME LORE:
+The world exists in the shadow of seven divine entities who judge mortal souls:
+- VALDRIS (Justice) - The Lawbringer, values order, fairness, and protection of the innocent
+- KAITHA (Chaos) - The Trickster, values freedom, unpredictability, and breaking conventions
+- MORVANE (Death) - The Reaper, values acceptance of mortality, mercy killings, and natural order
+- SYLARA (Nature) - The Wildmother, values harmony with nature, growth, and preservation
+- KORVAN (War) - The Battlemaster, values strength, honor in combat, and glory
+- ATHENA (Wisdom) - The Scholar, values knowledge, strategy, and thoughtful decision-making
+- MERCUS (Commerce) - The Dealmaker, values wealth, negotiation, and mutual benefit
+
+TONE: Dark, morally complex, with weighty consequences. Players face impossible choices where no option is purely good or evil.
+
+YOUR ROLE: Generate compelling scenarios, moral dilemmas, and questions that:
+1. Challenge players' moral compasses
+2. Reveal character through difficult choices
+3. Have no clear "right" answer
+4. Reflect the complex philosophies of the seven gods
+5. Create memorable storytelling moments
+
+Always respond in valid JSON format as specified in each prompt.`;
+  }
+
+  /**
+   * Build prompt for divine interrogation questions
    */
   private buildInterrogationPrompt(questionNumber: number, previousAnswers: any[]): string {
-    return `
-You are the Divine Interrogator for The Arcane Codex game. Generate question ${questionNumber} of a moral interrogation.
+    const contextNote = previousAnswers.length > 0
+      ? `Build upon these previous answers to create a connected narrative: ${JSON.stringify(previousAnswers)}`
+      : 'This is the first question - establish a compelling moral dilemma.';
 
-The seven gods are:
-- VALDRIS (Justice)
-- KAITHA (Chaos)
-- MORVANE (Death)
-- SYLARA (Nature)
-- KORVAN (War)
-- ATHENA (Wisdom)
-- MERCUS (Commerce)
+    return `Generate divine interrogation question ${questionNumber} for The Arcane Codex.
 
-Previous answers: ${JSON.stringify(previousAnswers)}
+${contextNote}
 
-Generate a moral dilemma question with 4 choices. Each choice should favor different gods.
+Create a morally complex scenario with 4 choices. Each choice should:
+- Represent a different god's philosophy
+- Have both positive and negative consequences
+- Favor 1-2 gods positively (+1 to +3 points) and possibly oppose 1-2 gods (-1 to -2 points)
+- Be compelling and realistic, not cartoonish
 
-Format your response as JSON:
+IMPORTANT: Respond ONLY with valid JSON, no other text:
 {
-  "question_text": "Your moral dilemma question here",
+  "question_text": "Your scenario/question here (2-4 sentences)",
   "options": [
     {
       "id": "q${questionNumber}_a",
       "letter": "A",
-      "text": "First choice",
-      "favor": { "GOD_NAME": 2, "ANOTHER_GOD": -1 }
+      "text": "First choice description",
+      "favor": { "VALDRIS": 2, "KAITHA": -1 }
     },
-    // ... 3 more options
+    {
+      "id": "q${questionNumber}_b",
+      "letter": "B",
+      "text": "Second choice description",
+      "favor": { "MORVANE": 2, "SYLARA": 1 }
+    },
+    {
+      "id": "q${questionNumber}_c",
+      "letter": "C",
+      "text": "Third choice description",
+      "favor": { "KORVAN": 3 }
+    },
+    {
+      "id": "q${questionNumber}_d",
+      "letter": "D",
+      "text": "Fourth choice description",
+      "favor": { "ATHENA": 2, "MERCUS": 1 }
+    }
   ]
+}`;
+  }
+
+  /**
+   * Build prompt for moral dilemma scenarios
+   */
+  private _buildMoralDilemmaPrompt(context: ScenarioContext): string {
+    return `Generate a moral dilemma scenario for The Arcane Codex.
+
+CONTEXT:
+- Players: ${context.players.join(', ')}
+- Theme: ${context.theme || 'Dark fantasy moral choice'}
+- Previous scenarios: ${context.previousScenarios?.join(', ') || 'None'}
+
+Create a scenario where players must make a difficult moral choice with no clear right answer. The scenario should:
+1. Present a conflict involving innocent lives, power, knowledge, or resources
+2. Offer 3-4 possible courses of action
+3. Each action should have both positive and negative consequences
+4. Align choices with different gods' philosophies
+5. Be appropriate for ${context.players.length} players to discuss
+
+Respond ONLY with valid JSON:
+{
+  "title": "Scenario title",
+  "description": "Full scenario description (3-5 paragraphs)",
+  "conflict": "The central moral dilemma",
+  "choices": [
+    {
+      "action": "What players could do",
+      "consequences": "What might happen",
+      "godAlignment": ["VALDRIS", "ATHENA"]
+    }
+  ],
+  "context": "Any additional world-building details"
+}`;
+  }
+
+  /**
+   * Build prompt for investigation scenarios
+   */
+  private _buildInvestigationPrompt(context: ScenarioContext): string {
+    return `Generate an investigation scenario for The Arcane Codex.
+
+CONTEXT:
+- Players: ${context.players.join(', ')}
+- Theme: ${context.theme || 'Dark fantasy mystery'}
+
+Create a mystery scenario where players must gather clues and make deductions. Include:
+1. A mysterious event or crime
+2. Multiple suspects or leads
+3. Hidden clues and red herrings
+4. Moral implications in the investigation methods
+5. Multiple possible conclusions
+
+Respond ONLY with valid JSON:
+{
+  "title": "Investigation title",
+  "description": "Setup and initial information",
+  "mystery": "What needs to be discovered",
+  "clues": [
+    {
+      "description": "A clue description",
+      "howToFind": "How players might discover this",
+      "significance": "What it reveals"
+    }
+  ],
+  "suspects": ["Suspect 1", "Suspect 2"],
+  "moralDilemma": "The ethical challenge within the investigation"
+}`;
+  }
+
+  /**
+   * Build prompt for general scenario generation
+   */
+  private _buildGeneralScenarioPrompt(context: ScenarioContext): string {
+    return `Generate a compelling scenario for The Arcane Codex.
+
+CONTEXT:
+- Players: ${context.players.join(', ')}
+- Theme: ${context.theme || 'Epic dark fantasy adventure'}
+- Player choices so far: ${JSON.stringify(context.playerChoices) || 'None'}
+
+Create an engaging scenario that:
+1. Provides opportunities for roleplay and character development
+2. Includes moral complexity and difficult decisions
+3. Allows for multiple approaches
+4. Connects to the seven gods' domains
+5. Has dramatic tension and stakes
+
+Respond ONLY with valid JSON:
+{
+  "title": "Scenario title",
+  "description": "Rich scenario description",
+  "objectives": ["Primary goal", "Secondary goal"],
+  "challenges": ["Challenge 1", "Challenge 2"],
+  "npcs": [
+    {
+      "name": "NPC name",
+      "role": "Their role in the scenario",
+      "personality": "Brief personality description"
+    }
+  ],
+  "possibleOutcomes": ["Outcome 1", "Outcome 2", "Outcome 3"]
 }`;
   }
 
