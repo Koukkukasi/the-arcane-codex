@@ -10,6 +10,7 @@
     "test:api": "playwright test --project=multiplayer-api",
     "test:socketio": "playwright test --project=multiplayer-socketio",
     "test:e2e": "playwright test --project=multiplayer-e2e",
+    "test:ui-tests": "playwright test --project=multiplayer-ui",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report test-results/html"

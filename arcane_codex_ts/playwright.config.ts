@@ -33,6 +33,13 @@ export default defineConfig({
     {
       name: 'multiplayer-e2e',
       testMatch: '**/e2e-multiplayer.test.ts'
+    },
+    {
+      name: 'multiplayer-ui',
+      testMatch: '**/ui/*.test.ts',
+      use: {
+        ...devices['Desktop Chrome']
+      }
     }
   ],
 
