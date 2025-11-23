@@ -7,6 +7,7 @@ import BattleService from '../services/battle';
 import { getMCPService } from '../services/mcp';
 import { io } from '../server';
 import { EnemyType } from '../types/battle';
+import multiplayerRoutes from './multiplayer';
 
 const router = Router();
 const mcpService = getMCPService();
@@ -1585,6 +1586,13 @@ router.post('/ai_gm/share_clue', requireAuth, requireGameSession, async (req: Re
     return;
   }
 });
+
+// ============================================================================
+// ============================================================================
+// Multiplayer Routes
+// ============================================================================
+
+router.use('/multiplayer', multiplayerRoutes);
 
 // ============================================================================
 // Health Check

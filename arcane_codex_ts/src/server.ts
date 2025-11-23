@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import path from 'path';
 import apiRoutes from './routes/api';
 import BattleService from './services/battle';
+import { MultiplayerService } from './services/multiplayer/multiplayer_service';
 
 // Create Express app
 const app = express();
@@ -71,10 +72,17 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Initialize Multiplayer Service
+const multiplayerService = MultiplayerService.initialize(io);
+
 // Socket.IO handlers
 io.on('connection', (socket) => {
   console.log(`[SOCKET] Client connected: ${socket.id}`);
 
+  // Setup multiplayer event handlers
+  multiplayerService.setupSocketHandlers(socket);
+
+  // Legacy handlers for backward compatibility
   socket.on('join_game', (data: { game_code: string; player_name: string }) => {
     if (data.game_code) {
       socket.join(data.game_code);
