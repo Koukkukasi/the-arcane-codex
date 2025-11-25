@@ -15,6 +15,7 @@ test.describe('Player Repository', () => {
 
   test.beforeAll(async () => {
     dbConnection = DatabaseConnection.getInstance();
+    await dbConnection.connect();
     playerRepo = new PlayerRepository();
   });
 
@@ -36,7 +37,7 @@ test.describe('Player Repository', () => {
   });
 
   test.afterAll(async () => {
-    await dbConnection.close();
+    await dbConnection.disconnect();
   });
 
   test('should create a new player with required fields only', async () => {

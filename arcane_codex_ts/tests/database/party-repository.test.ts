@@ -20,6 +20,7 @@ test.describe('Party Repository', () => {
 
   test.beforeAll(async () => {
     dbConnection = DatabaseConnection.getInstance();
+    await dbConnection.connect();
     partyRepo = new PartyRepository();
     playerRepo = new PlayerRepository();
   });
@@ -72,7 +73,7 @@ test.describe('Party Repository', () => {
   });
 
   test.afterAll(async () => {
-    await dbConnection.close();
+    await dbConnection.disconnect();
   });
 
   test('should create a new party', async () => {
