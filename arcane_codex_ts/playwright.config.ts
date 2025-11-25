@@ -24,6 +24,20 @@ export default defineConfig({
 
   projects: [
     {
+      name: 'database-tests',
+      testMatch: '**/database/*.test.ts',
+      use: {
+        // Database tests don't need browser
+      }
+    },
+    {
+      name: 'api-tests',
+      testMatch: '**/api/*.test.ts',
+      use: {
+        // API tests use request context
+      }
+    },
+    {
       name: 'unit-tests',
       testMatch: '**/battle/*.test.ts',
       use: {
