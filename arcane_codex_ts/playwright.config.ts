@@ -15,8 +15,9 @@ export default defineConfig({
     ['list']
   ],
   outputDir: 'test-results',
+  globalSetup: require.resolve('./tests/setup.ts'),
   use: {
-    baseURL: 'http://localhost:5000',
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
