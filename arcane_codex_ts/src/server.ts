@@ -96,7 +96,7 @@ app.use('/api', apiRoutes);
 
 // Root route - serve the main game (MUST be before static middleware)
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(staticPath, 'game_flow_beautiful_integrated.html'));
+  res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 // Serve static files AFTER root route to prevent index.html from being served automatically
