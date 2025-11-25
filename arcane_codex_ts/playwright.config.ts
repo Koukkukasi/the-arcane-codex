@@ -27,8 +27,10 @@ export default defineConfig({
       name: 'database-tests',
       testMatch: '**/database/*.test.ts',
       use: {
-        // Database tests don't need browser
-      }
+        // Database tests don't need browser or web server
+      },
+      // Don't start webServer for database tests
+      webServer: undefined
     },
     {
       name: 'api-tests',
@@ -65,10 +67,10 @@ export default defineConfig({
     }
   ],
 
-  // Start server before tests
-  webServer: {
+  // Start server before tests (only for tests that need it)
+  webServer: process.env.SKIP_SERVER ? undefined : {
     command: 'npm run dev',
-    url: 'http://localhost:5000/health',
+    url: 'http://localhost:3000',
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI
   }
