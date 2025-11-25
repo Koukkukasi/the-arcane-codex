@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { test, expect } from '@playwright/test';
 import { DatabaseConnection } from '../../src/database/connection';
 import { PlayerRepository } from '../../src/database/repositories/player.repository';
