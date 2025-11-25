@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { InterrogationQuestion } from '../types/game';
 import { getMockInterrogationQuestion } from '../data/questions';
+import { mcpLogger } from './logger';
 
 // MCP (Model Context Protocol) service for AI integration
 // Supports Claude API with streaming, rate limiting, and fallback to mock data
@@ -112,16 +113,17 @@ export class MCPService {
           apiKey: this.config.apiKey
         });
         this.isAvailable = true;
-        console.log('[MCP] Service initialized successfully');
-        console.log(`[MCP] Model: ${this.config.model}`);
-        console.log(`[MCP] Max retries: ${this.config.maxRetries}`);
-        console.log(`[MCP] Timeout: ${this.config.timeout}ms`);
+        mcpLogger.info({
+          model: this.config.model,
+          maxRetries: this.config.maxRetries,
+          timeout: this.config.timeout
+        }, 'Service initialized successfully');
       } catch (error) {
-        console.error('[MCP] Failed to initialize:', error);
+        mcpLogger.error({ error }, 'Failed to initialize');
         this.isAvailable = false;
       }
     } else {
-      console.log('[MCP] No API key provided, using mock data');
+      mcpLogger.info('No API key provided, using mock data');
       this.isAvailable = false;
     }
   }
@@ -177,7 +179,7 @@ export class MCPService {
 
       // Check if we can process more requests
       if (this.requestsInLastMinute.length >= this.MAX_REQUESTS_PER_MINUTE) {
-        console.log('[MCP] Rate limit reached, waiting...');
+        mcpLogger.warn('Rate limit reached, waiting');
         this.isProcessingQueue = false;
         return;
       }
@@ -189,7 +191,7 @@ export class MCPService {
       const request = this.requestQueue.shift();
       if (request) {
         this.requestsInLastMinute.push(now);
-        console.log(`[MCP] Processing request ${request.id} (priority: ${request.priority})`);
+        mcpLogger.debug({ requestId: request.id, priority: request.priority }, 'Processing request');
 
         try {
           const result = await request.execute();
@@ -212,7 +214,7 @@ export class MCPService {
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       if (this.requestQueue.length >= this.MAX_QUEUE_SIZE) {
-        console.error('[MCP] Queue overflow, rejecting request');
+        mcpLogger.error('Queue overflow, rejecting request');
         reject(new Error('Request queue is full'));
         return;
       }
@@ -227,7 +229,7 @@ export class MCPService {
       };
 
       this.requestQueue.push(request);
-      console.log(`[MCP] Queued request ${request.id}, queue size: ${this.requestQueue.length}`);
+      mcpLogger.debug({ requestId: request.id, queueSize: this.requestQueue.length }, 'Request queued');
     });
   }
 
@@ -266,8 +268,13 @@ export class MCPService {
     this.totalTokenUsage.totalTokens += totalTokens;
     this.totalTokenUsage.cost += cost;
 
-    console.log(`[MCP] Token usage - Session ${sessionId}: ${totalTokens} tokens ($${cost.toFixed(4)})`);
-    console.log(`[MCP] Total usage: ${this.totalTokenUsage.totalTokens} tokens ($${this.totalTokenUsage.cost.toFixed(4)})`);
+    mcpLogger.info({
+      sessionId,
+      tokens: totalTokens,
+      cost: cost.toFixed(4),
+      totalTokens: this.totalTokenUsage.totalTokens,
+      totalCost: this.totalTokenUsage.cost.toFixed(4)
+    }, 'Token usage tracked');
   }
 
   /**
@@ -280,7 +287,7 @@ export class MCPService {
   ): Promise<InterrogationQuestion> {
     // If MCP is not available, fall back to mock questions
     if (!this.isAvailable || !this.client) {
-      console.log(`[MCP] Using mock question for ${playerId}, question ${questionNumber}`);
+      mcpLogger.debug({ playerId, questionNumber }, 'Using mock question');
       return getMockInterrogationQuestion(questionNumber);
     }
 
@@ -311,11 +318,11 @@ export class MCPService {
       // Parse the AI response into a question format
       const responseText = typeof response.content[0] === 'string' ? response.content[0] : (response.content[0] as any).text;
       const question = this.parseInterrogationResponse(responseText, questionNumber);
-      console.log(`[MCP] Generated AI question for ${playerId}, question ${questionNumber}`);
+      mcpLogger.info({ playerId, questionNumber }, 'Generated AI question');
       return question;
 
     } catch (error) {
-      console.error('[MCP] Error generating question:', error);
+      mcpLogger.error({ error }, 'Error generating question');
       // Fall back to mock questions on error
       return getMockInterrogationQuestion(questionNumber);
     }
@@ -330,7 +337,7 @@ export class MCPService {
     theme?: string
   ): Promise<any> {
     if (!this.isAvailable || !this.client) {
-      console.log('[MCP] Using mock scenario');
+      mcpLogger.debug('Using mock scenario');
       return this.getMockScenario(theme);
     }
 
@@ -351,11 +358,11 @@ export class MCPService {
 
       const responseText = typeof response.content[0] === 'string' ? response.content[0] : (response.content[0] as any).text;
       const scenario = this.parseScenarioResponse(responseText);
-      console.log(`[MCP] Generated AI scenario for game ${gameCode}`);
+      mcpLogger.info({ gameCode }, 'Generated AI scenario');
       return scenario;
 
     } catch (error) {
-      console.error('[MCP] Error generating scenario:', error);
+      mcpLogger.error({ error }, 'Error generating scenario');
       return this.getMockScenario(theme);
     }
   }
@@ -367,7 +374,7 @@ export class MCPService {
   public async generateDynamicScenario(context: ScenarioContext): Promise<any> {
     // If MCP is not available, fall back to mock scenarios
     if (!this.isAvailable || !this.client) {
-      console.log('[MCP] Using mock scenario for dynamic generation');
+      mcpLogger.debug('Using mock scenario for dynamic generation');
       return this.getMockScenario(context.theme);
     }
 
@@ -401,7 +408,7 @@ export class MCPService {
 
       const response = await this._queueRequest(async () => {
         return await this.retryWithBackoff(async () => {
-          console.log(`[MCP] Generating ${context.scenarioType} scenario for game ${context.gameCode}`);
+          mcpLogger.info({ scenarioType: context.scenarioType, gameCode: context.gameCode }, 'Generating dynamic scenario');
           return await this.client!.messages.create({
             model: this.config.model!,
             max_tokens: maxTokens,
@@ -429,11 +436,11 @@ export class MCPService {
       scenario.scenarioType = context.scenarioType;
       scenario.generatedAt = new Date().toISOString();
 
-      console.log(`[MCP] Successfully generated ${context.scenarioType} scenario for game ${context.gameCode}`);
+      mcpLogger.info({ scenarioType: context.scenarioType, gameCode: context.gameCode }, 'Successfully generated dynamic scenario');
       return scenario;
 
     } catch (error) {
-      console.error('[MCP] Error generating dynamic scenario:', error);
+      mcpLogger.error({ error }, 'Error generating dynamic scenario');
       return this.getMockScenario(context.theme);
     }
   }
@@ -448,7 +455,7 @@ export class MCPService {
   ): Promise<void> {
     // If MCP is not available, fall back to mock with simulated streaming
     if (!this.isAvailable || !this.client) {
-      console.log('[MCP] Streaming mock scenario (simulated)');
+      mcpLogger.debug('Streaming mock scenario (simulated)');
       const mockScenario = this.getMockScenario(context.theme);
       const mockText = JSON.stringify(mockScenario, null, 2);
 
@@ -482,7 +489,7 @@ export class MCPService {
           break;
       }
 
-      console.log(`[MCP] Streaming ${context.scenarioType} scenario for game ${context.gameCode}`);
+      mcpLogger.info({ scenarioType: context.scenarioType, gameCode: context.gameCode }, 'Streaming scenario');
 
       // Use streaming API - use .stream() method which returns an async iterable
       const stream = await this.client!.messages.stream({
@@ -527,10 +534,10 @@ export class MCPService {
 
       // Signal completion
       callback('', true);
-      console.log(`[MCP] Completed streaming ${context.scenarioType} scenario for game ${context.gameCode}`);
+      mcpLogger.info({ scenarioType: context.scenarioType, gameCode: context.gameCode }, 'Completed streaming scenario');
 
     } catch (error) {
-      console.error('[MCP] Error streaming scenario:', error);
+      mcpLogger.error({ error }, 'Error streaming scenario');
       // Send error as final chunk
       callback(JSON.stringify({ error: 'Failed to stream scenario' }), true);
     }
@@ -758,7 +765,7 @@ Format as JSON:
         };
       }
     } catch (error) {
-      console.error('[MCP] Failed to parse AI response:', error);
+      mcpLogger.error({ error }, 'Failed to parse AI response');
     }
 
     // Fall back to mock question if parsing fails
@@ -775,7 +782,7 @@ Format as JSON:
         return JSON.parse(jsonMatch[0]);
       }
     } catch (error) {
-      console.error('[MCP] Failed to parse scenario response:', error);
+      mcpLogger.error({ error }, 'Failed to parse scenario response');
     }
 
     return this.getMockScenario();
@@ -831,7 +838,7 @@ Format as JSON:
         lastError = error;
         if (attempt < maxRetries - 1) {
           const delay = Math.pow(2, attempt) * 1000;
-          console.log(`[MCP] Retry attempt ${attempt + 1} after ${delay}ms`);
+          mcpLogger.warn({ attempt: attempt + 1, delay }, 'Retrying request');
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }

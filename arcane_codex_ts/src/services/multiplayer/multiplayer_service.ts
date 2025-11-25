@@ -5,6 +5,7 @@
 
 import { Server, Socket } from 'socket.io';
 import { PartyManager } from './party_manager';
+import { multiplayerLogger } from '../logger';
 import {
   PlayerConnection,
   RoomState,
@@ -69,7 +70,7 @@ export class MultiplayerService {
    * Setup Socket.IO event handlers for a client socket
    */
   public setupSocketHandlers(socket: Socket): void {
-    console.log(`[MULTIPLAYER] Client connected: ${socket.id}`);
+    multiplayerLogger.info({ socketId: socket.id }, 'Client connected');
 
     // Join room event
     socket.on('join_room', (payload: JoinRoomPayload, callback) => {
@@ -181,7 +182,7 @@ export class MultiplayerService {
       // Join Socket.IO room
       socket.join(roomId);
 
-      console.log(`[MULTIPLAYER] Player ${playerName} (${playerId}) joined room ${roomId}`);
+      multiplayerLogger.info({ roomId, playerId, playerName }, 'Player joined room');
 
       // Broadcast to other players
       const globalEvent: GlobalEvent = {
@@ -212,7 +213,7 @@ export class MultiplayerService {
         }
       });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error joining room:', error);
+      multiplayerLogger.error({ error }, 'Error joining room');
       callback({
         success: false,
         error: error.message,
@@ -249,7 +250,7 @@ export class MultiplayerService {
       // Leave Socket.IO room
       socket.leave(roomId);
 
-      console.log(`[MULTIPLAYER] Player ${playerId} left room ${roomId} (${reason || 'manual'})`);
+      multiplayerLogger.info({ roomId, playerId, reason: reason || 'manual' }, 'Player left room');
 
       // Broadcast to other players
       const globalEvent: GlobalEvent = {
@@ -269,7 +270,7 @@ export class MultiplayerService {
       // If room is empty, clean it up
       if (room.players.size === 0) {
         this.rooms.delete(roomId);
-        console.log(`[MULTIPLAYER] Room ${roomId} disbanded (empty)`);
+        multiplayerLogger.info({ roomId }, 'Room disbanded (empty)');
       } else if (room.hostPlayerId === playerId) {
         // Transfer host to first remaining player
         const newHostId = room.players.keys().next().value as string;
@@ -285,7 +286,7 @@ export class MultiplayerService {
         timestamp: Date.now()
       });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error leaving room:', error);
+      multiplayerLogger.error({ error }, 'Error leaving room');
       callback({
         success: false,
         error: error.message,
@@ -318,11 +319,11 @@ export class MultiplayerService {
         timestamp: Date.now()
       });
 
-      console.log(`[MULTIPLAYER] Player ${playerId} is ${isReady ? 'ready' : 'not ready'} in room ${roomId}`);
+      multiplayerLogger.info({ roomId, playerId, isReady }, 'Player ready status changed');
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error updating ready status:', error);
+      multiplayerLogger.error({ error }, 'Error updating ready status');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -372,7 +373,7 @@ export class MultiplayerService {
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error sending chat message:', error);
+      multiplayerLogger.error({ error }, 'Error sending chat message');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -401,11 +402,11 @@ export class MultiplayerService {
         timestamp: Date.now()
       });
 
-      console.log(`[MULTIPLAYER] Player ${playerId} took action: ${actionType} in room ${roomId}`);
+      multiplayerLogger.info({ roomId, playerId, actionType }, 'Player action');
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error handling player action:', error);
+      multiplayerLogger.error({ error }, 'Error handling player action');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -450,7 +451,7 @@ export class MultiplayerService {
         data: syncData
       });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error handling sync request:', error);
+      multiplayerLogger.error({ error }, 'Error handling sync request');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -476,7 +477,7 @@ export class MultiplayerService {
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error handling heartbeat:', error);
+      multiplayerLogger.error({ error }, 'Error handling heartbeat');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -514,7 +515,7 @@ export class MultiplayerService {
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error handling battle turn:', error);
+      multiplayerLogger.error({ error }, 'Error handling battle turn');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -553,7 +554,7 @@ export class MultiplayerService {
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error handling scenario choice:', error);
+      multiplayerLogger.error({ error }, 'Error handling scenario choice');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -585,7 +586,7 @@ export class MultiplayerService {
 
       callback({ success: true, timestamp: Date.now() });
     } catch (error: any) {
-      console.error('[MULTIPLAYER] Error sharing clue:', error);
+      multiplayerLogger.error({ error }, 'Error sharing clue');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
   }
@@ -594,7 +595,7 @@ export class MultiplayerService {
    * Handle disconnect
    */
   private handleDisconnect(socket: Socket): void {
-    console.log(`[MULTIPLAYER] Client disconnected: ${socket.id}`);
+    multiplayerLogger.info({ socketId: socket.id }, 'Client disconnected');
 
     // Find player by socket ID
     for (const [playerId, connection] of this.playerConnections.entries()) {
@@ -621,7 +622,7 @@ export class MultiplayerService {
           });
         }
 
-        console.log(`[MULTIPLAYER] Player ${playerId} disconnected, reconnection data saved`);
+        multiplayerLogger.info({ playerId }, 'Player disconnected, reconnection data saved');
         break;
       }
     }
@@ -663,7 +664,7 @@ export class MultiplayerService {
     // Clear reconnection data
     this.reconnectionData.delete(playerId);
 
-    console.log(`[MULTIPLAYER] Player ${playerId} reconnected to room ${reconnectionData.roomId}`);
+    multiplayerLogger.info({ playerId, roomId: reconnectionData.roomId }, 'Player reconnected');
   }
 
   /**
@@ -696,7 +697,7 @@ export class MultiplayerService {
     };
 
     this.rooms.set(roomId, room);
-    console.log(`[MULTIPLAYER] Created room ${roomId} with host ${hostPlayerId}`);
+    multiplayerLogger.info({ roomId, hostPlayerId }, 'Room created');
 
     return room;
   }
@@ -727,7 +728,7 @@ export class MultiplayerService {
       this.rooms.forEach((room, roomId) => {
         room.players.forEach((player, playerId) => {
           if (now - player.lastSeen > timeout && player.isConnected) {
-            console.log(`[MULTIPLAYER] Player ${playerId} timed out in room ${roomId}`);
+            multiplayerLogger.warn({ playerId, roomId }, 'Player timed out');
             player.isConnected = false;
 
             // Notify other players
@@ -767,7 +768,7 @@ export class MultiplayerService {
       timestamp: Date.now()
     });
 
-    console.log(`[MULTIPLAYER] Room ${roomId} phase changed to ${newPhase}`);
+    multiplayerLogger.info({ roomId, newPhase }, 'Room phase changed');
   }
 
   /**
@@ -785,6 +786,6 @@ export class MultiplayerService {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
-    console.log('[MULTIPLAYER] Service shut down');
+    multiplayerLogger.info('Service shut down');
   }
 }

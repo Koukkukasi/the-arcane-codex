@@ -12,6 +12,7 @@ import {
   DifficultyLevel,
   PublicPartyInfo
 } from '../../types/party';
+import { partyLogger } from '../logger';
 
 /**
  * Singleton class for managing multiplayer parties
@@ -79,7 +80,7 @@ export class PartyManager {
     });
 
     toDelete.forEach(code => {
-      console.log(`[PARTY] Cleaning up inactive party: ${code}`);
+      partyLogger.info({ partyCode: code }, 'Cleaning up inactive party');
       this.disbandParty(code);
     });
   }
@@ -141,7 +142,7 @@ export class PartyManager {
     this.parties.set(partyCode, party);
     this.playerToParty.set(hostId, partyCode);
 
-    console.log(`[PARTY] Created party ${partyCode} with host ${hostId}`);
+    partyLogger.info({ partyCode, hostId }, 'Party created');
     return party;
   }
 
@@ -193,7 +194,7 @@ export class PartyManager {
     this.playerToParty.set(playerId, partyCode.toUpperCase());
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Player ${playerName} (${playerId}) joined party ${partyCode}`);
+    partyLogger.info({ partyCode, playerId, playerName }, 'Player joined party');
 
     return {
       success: true,
@@ -207,13 +208,13 @@ export class PartyManager {
   public leaveParty(partyCode: string, playerId: string): void {
     const party = this.parties.get(partyCode.toUpperCase());
     if (!party) {
-      console.warn(`[PARTY] Attempted to leave non-existent party: ${partyCode}`);
+      partyLogger.warn({ partyCode }, 'Attempted to leave non-existent party');
       return;
     }
 
     const player = party.players.get(playerId);
     if (!player) {
-      console.warn(`[PARTY] Player ${playerId} not in party ${partyCode}`);
+      partyLogger.warn({ partyCode, playerId }, 'Player not in party');
       return;
     }
 
@@ -221,7 +222,7 @@ export class PartyManager {
     this.playerToParty.delete(playerId);
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Player ${player.name} (${playerId}) left party ${partyCode}`);
+    partyLogger.info({ partyCode, playerId, playerName: player.name }, 'Player left party');
 
     // If the host left, transfer host or disband
     if (party.host === playerId) {
@@ -229,7 +230,7 @@ export class PartyManager {
         // Transfer host to first remaining player
         const newHost = party.players.keys().next().value as string;
         party.host = newHost;
-        console.log(`[PARTY] Host transferred to ${newHost} in party ${partyCode}`);
+        partyLogger.info({ partyCode, newHost }, 'Host transferred');
       } else {
         // No players left, disband party
         this.disbandParty(partyCode);
@@ -248,7 +249,7 @@ export class PartyManager {
   public disbandParty(partyCode: string): void {
     const party = this.parties.get(partyCode.toUpperCase());
     if (!party) {
-      console.warn(`[PARTY] Attempted to disband non-existent party: ${partyCode}`);
+      partyLogger.warn({ partyCode }, 'Attempted to disband non-existent party');
       return;
     }
 
@@ -258,7 +259,7 @@ export class PartyManager {
     });
 
     this.parties.delete(partyCode.toUpperCase());
-    console.log(`[PARTY] Disbanded party ${partyCode}`);
+    partyLogger.info({ partyCode }, 'Party disbanded');
   }
 
   /**
@@ -302,7 +303,7 @@ export class PartyManager {
     party.settings = { ...party.settings, ...settings };
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Updated settings for party ${partyCode}:`, settings);
+    partyLogger.info({ partyCode, settings }, 'Party settings updated');
   }
 
   /**
@@ -322,7 +323,7 @@ export class PartyManager {
     player.isReady = ready;
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Player ${player.name} is ${ready ? 'ready' : 'not ready'} in party ${partyCode}`);
+    partyLogger.info({ partyCode, playerId, playerName: player.name, ready }, 'Player ready status changed');
   }
 
   /**
@@ -331,23 +332,23 @@ export class PartyManager {
   public kickPlayer(partyCode: string, hostId: string, targetId: string): boolean {
     const party = this.parties.get(partyCode.toUpperCase());
     if (!party) {
-      console.warn(`[PARTY] Kick failed: party ${partyCode} not found`);
+      partyLogger.warn({ partyCode }, 'Kick failed: party not found');
       return false;
     }
 
     if (party.host !== hostId) {
-      console.warn(`[PARTY] Kick failed: ${hostId} is not the host of party ${partyCode}`);
+      partyLogger.warn({ partyCode, hostId }, 'Kick failed: not the host');
       return false;
     }
 
     if (hostId === targetId) {
-      console.warn(`[PARTY] Kick failed: host cannot kick themselves`);
+      partyLogger.warn({ partyCode }, 'Kick failed: host cannot kick themselves');
       return false;
     }
 
     const targetPlayer = party.players.get(targetId);
     if (!targetPlayer) {
-      console.warn(`[PARTY] Kick failed: player ${targetId} not in party ${partyCode}`);
+      partyLogger.warn({ partyCode, targetId }, 'Kick failed: player not in party');
       return false;
     }
 
@@ -355,7 +356,7 @@ export class PartyManager {
     this.playerToParty.delete(targetId);
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Player ${targetPlayer.name} (${targetId}) was kicked from party ${partyCode}`);
+    partyLogger.info({ partyCode, targetId, playerName: targetPlayer.name }, 'Player kicked from party');
     return true;
   }
 
@@ -365,24 +366,24 @@ export class PartyManager {
   public transferHost(partyCode: string, currentHost: string, newHost: string): boolean {
     const party = this.parties.get(partyCode.toUpperCase());
     if (!party) {
-      console.warn(`[PARTY] Host transfer failed: party ${partyCode} not found`);
+      partyLogger.warn({ partyCode }, 'Host transfer failed: party not found');
       return false;
     }
 
     if (party.host !== currentHost) {
-      console.warn(`[PARTY] Host transfer failed: ${currentHost} is not the host`);
+      partyLogger.warn({ partyCode, currentHost }, 'Host transfer failed: not the host');
       return false;
     }
 
     if (!party.players.has(newHost)) {
-      console.warn(`[PARTY] Host transfer failed: ${newHost} not in party`);
+      partyLogger.warn({ partyCode, newHost }, 'Host transfer failed: player not in party');
       return false;
     }
 
     party.host = newHost;
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Host transferred from ${currentHost} to ${newHost} in party ${partyCode}`);
+    partyLogger.info({ partyCode, currentHost, newHost }, 'Host transferred');
     return true;
   }
 
@@ -445,7 +446,7 @@ export class PartyManager {
     player.role = role;
     this.updateActivity(partyCode.toUpperCase());
 
-    console.log(`[PARTY] Assigned role ${role} to player ${player.name} in party ${partyCode}`);
+    partyLogger.info({ partyCode, playerId, playerName: player.name, role }, 'Role assigned');
   }
 
   /**
@@ -492,9 +493,9 @@ export class PartyManager {
         this.playerToParty.set(playerId, partyCode);
       });
 
-      console.log(`[PARTY] Imported ${this.parties.size} parties`);
+      partyLogger.info({ count: this.parties.size }, 'Parties imported');
     } catch (error) {
-      console.error('[PARTY] Failed to import data:', error);
+      partyLogger.error({ error }, 'Failed to import data');
       throw new Error('Failed to import party data');
     }
   }

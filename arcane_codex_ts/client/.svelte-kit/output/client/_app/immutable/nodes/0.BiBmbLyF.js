@@ -1,0 +1,1 @@
+import{f as i,a as n}from"../chunks/DmY1WVrf.js";import{c as s,r as t}from"../chunks/BXw_DALN.js";import{s as m}from"../chunks/C-SmSxMe.js";var p=i('<div class="min-h-screen bg-gradient-arcane"><!></div>');function v(a,o){var r=p(),e=s(r);m(e,()=>o.children),t(r),n(a,r)}export{v as component};

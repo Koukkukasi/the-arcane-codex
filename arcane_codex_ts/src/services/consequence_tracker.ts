@@ -4,6 +4,7 @@
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
+import { consequenceLogger } from './logger';
 import {
   Consequence,
   ConsequenceDuration,
@@ -62,7 +63,7 @@ export class ConsequenceTracker extends EventEmitter {
     // Set up consequence expiration checker
     this.setupExpirationChecker();
 
-    console.log('[ConsequenceTracker] Initialized with world state:', this.worldState.id);
+    consequenceLogger.info({ worldStateId: this.worldState.id }, 'ConsequenceTracker initialized');
   }
 
   public static getInstance(): ConsequenceTracker {
@@ -131,7 +132,7 @@ export class ConsequenceTracker extends EventEmitter {
     choiceId: string,
     consequences: Consequence[]
   ): void {
-    console.log(`[ConsequenceTracker] Recording choice for player ${playerId}: ${choiceId}`);
+    consequenceLogger.info({ playerId, choiceId }, 'Recording choice');
 
     // Get or create player history
     let playerHistory = this.playerHistories.get(playerId);
@@ -318,7 +319,7 @@ export class ConsequenceTracker extends EventEmitter {
     if (!consequence.revealed && this.checkRevealCondition(consequence.condition, playerId)) {
       consequence.revealed = true;
       playerHistory.unlockedContent.push(consequence.revealId);
-      console.log(`[ConsequenceTracker] Hidden content revealed for player ${playerId}: ${consequence.revealId}`);
+      consequenceLogger.info({ playerId, revealId: consequence.revealId }, 'Hidden content revealed');
     }
   }
 
@@ -332,7 +333,7 @@ export class ConsequenceTracker extends EventEmitter {
 
     if (playerHistory && consequence.effectType === 'unlock') {
       playerHistory.unlockedContent.push(consequence.effectName);
-      console.log(`[ConsequenceTracker] Unlocked content for player ${targetId}: ${consequence.effectName}`);
+      consequenceLogger.info({ playerId: targetId, effectName: consequence.effectName }, 'Content unlocked');
     }
   }
 
@@ -473,7 +474,7 @@ export class ConsequenceTracker extends EventEmitter {
 
     this.consequences.forEach((consequence, id) => {
       if (!consequence.resolved && consequence.expiresAt && consequence.expiresAt <= now) {
-        console.log(`[ConsequenceTracker] Expiring consequence: ${id}`);
+        consequenceLogger.debug({ consequenceId: id }, 'Consequence expired');
         consequence.resolved = true;
 
         // Remove from active consequences
@@ -616,9 +617,9 @@ export class ConsequenceTracker extends EventEmitter {
       const filePath = path.join(this.DATA_DIR, 'world_state.json');
       fs.writeFileSync(filePath, JSON.stringify(stateToSave, null, 2));
 
-      console.log('[ConsequenceTracker] State saved successfully');
+      consequenceLogger.info('State saved successfully');
     } catch (error) {
-      console.error('[ConsequenceTracker] Failed to save state:', error);
+      consequenceLogger.error({ error }, 'Failed to save state');
     }
   }
 
@@ -666,10 +667,10 @@ export class ConsequenceTracker extends EventEmitter {
           this.worldStateChanges = data.worldStateChanges;
         }
 
-        console.log('[ConsequenceTracker] State loaded successfully');
+        consequenceLogger.info('State loaded successfully');
       }
     } catch (error) {
-      console.error('[ConsequenceTracker] Failed to load state:', error);
+      consequenceLogger.error({ error }, 'Failed to load state');
     }
   }
 
@@ -704,7 +705,7 @@ export class ConsequenceTracker extends EventEmitter {
 
       return false;
     } catch (error) {
-      console.error('[ConsequenceTracker] Failed to import state:', error);
+      consequenceLogger.error({ error }, 'Failed to import state');
       return false;
     }
   }

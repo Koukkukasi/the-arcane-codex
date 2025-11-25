@@ -1,44 +1,83 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import apiRoutes from './routes/api';
 import BattleService from './services/battle';
 import { MultiplayerService } from './services/multiplayer/multiplayer_service';
+import GameService from './services/game';
+import { logger, socketLogger, securityLogger } from './services/logger';
+
+// ============================================
+// SECURITY: Environment Configuration
+// ============================================
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Session secret - require in production, warn in development
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET && isProduction) {
+  throw new Error('SESSION_SECRET environment variable is required in production');
+}
+if (!SESSION_SECRET) {
+  securityLogger.warn('Using generated session secret - set SESSION_SECRET env var for production');
+}
+const sessionSecret = SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+
+// CORS allowed origins
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:3000'];
+
+// CORS configuration with allowlist
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.) in development
+    if (!origin && !isProduction) {
+      callback(null, true);
+      return;
+    }
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      securityLogger.warn({ origin }, 'Blocked CORS request');
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 // Create Express app
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
 
 // Middleware
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static path (defined here, but middleware added later to avoid intercepting root route)
-const staticPath = path.join(__dirname, '../../complete_game/static');
+// Static path
+const staticPath = path.join(__dirname, '../public');
 
 // Session configuration
 app.use(session({
-  secret: 'arcane-codex-secret-key-2024',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: true,
   cookie: {
     maxAge: 4 * 60 * 60 * 1000, // 4 hours
     httpOnly: true,
-    secure: false // Set to true in production with HTTPS
+    secure: isProduction, // Use secure cookies in production
+    sameSite: isProduction ? 'strict' : 'lax'
   }
 }));
 
@@ -77,7 +116,7 @@ const multiplayerService = MultiplayerService.initialize(io);
 
 // Socket.IO handlers
 io.on('connection', (socket) => {
-  console.log(`[SOCKET] Client connected: ${socket.id}`);
+  socketLogger.info({ socketId: socket.id }, 'Client connected');
 
   // Setup multiplayer event handlers
   multiplayerService.setupSocketHandlers(socket);
@@ -86,7 +125,7 @@ io.on('connection', (socket) => {
   socket.on('join_game', (data: { game_code: string; player_name: string }) => {
     if (data.game_code) {
       socket.join(data.game_code);
-      console.log(`[SOCKET] ${data.player_name || 'Unknown'} joined game ${data.game_code}`);
+      socketLogger.info({ playerName: data.player_name || 'Unknown', gameCode: data.game_code }, 'Player joined game');
 
       // Notify other players in the room
       socket.to(data.game_code).emit('player_joined', {
@@ -99,7 +138,7 @@ io.on('connection', (socket) => {
   socket.on('leave_game', (data: { game_code: string; player_name: string }) => {
     if (data.game_code) {
       socket.leave(data.game_code);
-      console.log(`[SOCKET] ${data.player_name || 'Unknown'} left game ${data.game_code}`);
+      socketLogger.info({ playerName: data.player_name || 'Unknown', gameCode: data.game_code }, 'Player left game');
 
       // Notify other players
       socket.to(data.game_code).emit('player_left', {
@@ -121,11 +160,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`[SOCKET] Client disconnected: ${socket.id}`);
+    socketLogger.info({ socketId: socket.id }, 'Client disconnected');
   });
 
   socket.on('error', (error) => {
-    console.error(`[SOCKET] Error from client ${socket.id}:`, error);
+    socketLogger.error({ socketId: socket.id, error }, 'Socket error');
   });
 });
 
@@ -134,7 +173,7 @@ export { io };
 
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[ERROR]', err.stack);
+  logger.error({ err }, 'Unhandled server error');
   res.status(500).json({
     success: false,
     error: 'Internal server error',
@@ -155,23 +194,19 @@ setInterval(() => {
   BattleService.cleanupBattles(30); // Clean up battles older than 30 minutes
 }, 10 * 60 * 1000);
 
+// Periodic cleanup of old game sessions (every 15 minutes)
+setInterval(() => {
+  GameService.cleanupOldSessions(4); // Clean up sessions older than 4 hours
+}, 15 * 60 * 1000);
+
 // Start server
 const PORT = process.env.PORT || 5000; // Changed from 5001 to 5000
 server.listen(PORT, () => {
-  console.log(`
-====================================
-    The Arcane Codex - TypeScript Server
-====================================
-    Server:   http://localhost:${PORT}
-    API:      http://localhost:${PORT}/api
-    Health:   http://localhost:${PORT}/health
-
-    Rate limiting: 500 requests/hour
-    Session timeout: 4 hours
-    Battle cleanup: Every 10 minutes
-
-    Environment: ${process.env.NODE_ENV || 'development'}
-    Static files: ${staticPath}
-====================================
-  `);
+  logger.info({
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    staticPath,
+    rateLimit: '500 requests/hour',
+    sessionTimeout: '4 hours'
+  }, 'The Arcane Codex server started');
 });

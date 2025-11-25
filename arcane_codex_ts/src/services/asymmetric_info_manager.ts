@@ -8,6 +8,7 @@ import {
   PlayerHistory
 } from '../types/world_state';
 import { ConsequenceTracker } from './consequence_tracker';
+import { asymmetricLogger } from './logger';
 
 // Interface for scenario response that contains asymmetric information
 export interface ScenarioResponse {
@@ -56,7 +57,7 @@ export class AsymmetricInfoManager extends EventEmitter {
     this.sharedInformation = new Map();
     this.consequenceTracker = ConsequenceTracker.getInstance();
 
-    console.log('[AsymmetricInfoManager] Initialized');
+    asymmetricLogger.info('AsymmetricInfoManager initialized');
   }
 
   public static getInstance(): AsymmetricInfoManager {
@@ -74,7 +75,7 @@ export class AsymmetricInfoManager extends EventEmitter {
     players: string[],
     scenario: ScenarioResponse
   ): void {
-    console.log(`[AsymmetricInfoManager] Distributing information for scenario ${scenarioId} to ${players.length} players`);
+    asymmetricLogger.info({ scenarioId, playerCount: players.length }, 'Distributing information');
 
     // Store all clues from the scenario
     scenario.clues.forEach(clue => {
@@ -191,24 +192,24 @@ export class AsymmetricInfoManager extends EventEmitter {
    * Share a clue from one player to another
    */
   public shareClue(fromPlayerId: string, toPlayerId: string, clueId: string): boolean {
-    console.log(`[AsymmetricInfoManager] Player ${fromPlayerId} sharing clue ${clueId} with ${toPlayerId}`);
+    asymmetricLogger.info({ fromPlayerId, toPlayerId, clueId }, 'Sharing clue');
 
     const clue = this.allClues.get(clueId);
     if (!clue) {
-      console.error(`[AsymmetricInfoManager] Clue ${clueId} not found`);
+      asymmetricLogger.error({ clueId }, 'Clue not found');
       return false;
     }
 
     // Check if clue is shareable
     if (clue.shareability === 'private') {
-      console.log(`[AsymmetricInfoManager] Clue ${clueId} is private and cannot be shared`);
+      asymmetricLogger.warn({ clueId }, 'Clue is private and cannot be shared');
       return false;
     }
 
     // Check if the sharing player has the clue
     const fromPlayerHistory = this.consequenceTracker.getPlayerHistory(fromPlayerId);
     if (!fromPlayerHistory.discoveredClues.includes(clueId)) {
-      console.log(`[AsymmetricInfoManager] Player ${fromPlayerId} doesn't have clue ${clueId}`);
+      asymmetricLogger.warn({ fromPlayerId, clueId }, 'Player does not have clue');
       return false;
     }
 
@@ -261,7 +262,7 @@ export class AsymmetricInfoManager extends EventEmitter {
    * Reveal hidden information when conditions are met
    */
   public revealHiddenInfo(playerId: string, conditionMet: string): void {
-    console.log(`[AsymmetricInfoManager] Checking reveals for player ${playerId} with condition: ${conditionMet}`);
+    asymmetricLogger.debug({ playerId, conditionMet }, 'Checking reveals');
 
     const playerScenarios = this.playerKnowledge.get(playerId);
     if (!playerScenarios) return;
@@ -284,7 +285,7 @@ export class AsymmetricInfoManager extends EventEmitter {
           playerHistory.unlockedContent.push(reveal.revealId);
         }
 
-        console.log(`[AsymmetricInfoManager] Revealed ${reveal.revealId} to player ${playerId}`);
+        asymmetricLogger.info({ playerId, revealId: reveal.revealId }, 'Hidden info revealed');
         this.emit('hiddenInfoRevealed', playerId, reveal.revealId, reveal);
 
         // Check for cascade reveals
@@ -403,7 +404,7 @@ export class AsymmetricInfoManager extends EventEmitter {
       if (this.meetsAutomaticDiscovery(playerHistory, clue)) {
         playerHistory.discoveredClues.push(clue.id);
         this.emit('clueDiscovered', playerId, clue);
-        console.log(`[AsymmetricInfoManager] Player ${playerId} automatically discovered clue ${clue.id}`);
+        asymmetricLogger.info({ playerId, clueId: clue.id }, 'Clue automatically discovered');
       }
     });
   }
@@ -647,7 +648,7 @@ export class AsymmetricInfoManager extends EventEmitter {
     }
 
     this.emit('deductionMade', playerId, deduction);
-    console.log(`[AsymmetricInfoManager] Player ${playerId} made deduction: ${hypothesis}`);
+    asymmetricLogger.info({ playerId, hypothesis }, 'Deduction made');
   }
 
   /**

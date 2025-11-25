@@ -1,5 +1,6 @@
 import { GameSession, PlayerSessionData, God } from '../types/game';
 import { getMockInterrogationQuestion } from '../data/questions';
+import { gameLogger } from './logger';
 
 // In-memory game storage (in production, use Redis or a database)
 const gameSessions = new Map<string, GameSession>();
@@ -53,14 +54,14 @@ export class GameService {
     };
     playerSessions.set(playerId, playerSession);
 
-    console.log(`[GAME] Created game ${gameCode} by ${playerName}`);
+    gameLogger.info({ gameCode, playerName }, 'Game created');
     return { gameCode, session };
   }
 
   /**
    * Join an existing game
    */
-  static joinGame(gameCode: string, playerId: string, playerName: string): { success: boolean; error?: string } {
+  static joinGame(gameCode: string, playerId: string, playerName: string): { success: boolean; error?: string; rejoined?: boolean } {
     const session = gameSessions.get(gameCode.toUpperCase());
 
     if (!session) {
@@ -75,8 +76,10 @@ export class GameService {
       return { success: false, error: 'Game is full' };
     }
 
+    // Check if player is already in game (idempotent - just return success)
     if (session.players.has(playerId)) {
-      return { success: false, error: 'Already in this game' };
+      gameLogger.info({ playerName, gameCode }, 'Player rejoined game');
+      return { success: true, rejoined: true };
     }
 
     // Add player to game
@@ -91,7 +94,7 @@ export class GameService {
     };
     playerSessions.set(playerId, playerSession);
 
-    console.log(`[GAME] ${playerName} joined game ${gameCode}`);
+    gameLogger.info({ playerName, gameCode }, 'Player joined game');
     return { success: true };
   }
 
@@ -126,7 +129,7 @@ export class GameService {
     // Get first question
     const question = getMockInterrogationQuestion(1);
 
-    console.log(`[INTERROGATION] Started for player ${playerId}`);
+    gameLogger.info({ playerId }, 'Interrogation started');
     return { success: true, question };
   }
 
@@ -182,7 +185,7 @@ export class GameService {
         }
       }
 
-      console.log(`[INTERROGATION] Completed for player ${playerId}`);
+      gameLogger.info({ playerId }, 'Interrogation completed');
       return {
         success: true,
         completed: true
@@ -288,7 +291,7 @@ export class GameService {
     gameSession.player_classes.set(playerId, characterClass);
     playerSession.character_class = characterClass;
 
-    console.log(`[GAME] Player ${playerId} selected class: ${characterClass}`);
+    gameLogger.info({ playerId, characterClass }, 'Player selected class');
     return true;
   }
 
@@ -324,7 +327,7 @@ export class GameService {
     }
 
     session.game_started = true;
-    console.log(`[GAME] Game ${gameCode} started with ${session.players.size} players`);
+    gameLogger.info({ gameCode, playerCount: session.players.size }, 'Game started');
     return true;
   }
 
@@ -334,7 +337,7 @@ export class GameService {
   static cleanupOldSessions(_maxAgeHours = 4): void {
     // This would need timestamps to be properly implemented
     // For now, it's a placeholder
-    console.log('[CLEANUP] Session cleanup not yet implemented');
+    gameLogger.debug('Session cleanup not yet implemented');
   }
 }
 

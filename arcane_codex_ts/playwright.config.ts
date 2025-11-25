@@ -11,9 +11,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker to avoid race conditions
   reporter: [
-    ['html', { outputFolder: 'test-results/html' }],
+    ['html', { outputFolder: 'playwright-report' }],
     ['list']
   ],
+  outputDir: 'test-results',
   use: {
     baseURL: 'http://localhost:5000',
     trace: 'on-first-retry',
@@ -22,6 +23,13 @@ export default defineConfig({
   },
 
   projects: [
+    {
+      name: 'unit-tests',
+      testMatch: '**/battle/*.test.ts',
+      use: {
+        // No browser or server needed for unit tests
+      }
+    },
     {
       name: 'multiplayer-api',
       testMatch: '**/party-api.test.ts'

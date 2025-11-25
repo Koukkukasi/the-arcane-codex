@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { PartyManager } from '../services/multiplayer/party_manager';
+import { apiLogger } from '../services/logger';
 
 const router = Router();
 const partyManager = PartyManager.getInstance();
@@ -39,7 +40,7 @@ router.post('/party/create', (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('[API] Error creating party:', error);
+    apiLogger.error({ error }, 'Error creating party');
     res.status(500).json({
       success: false,
       error: error.message
@@ -90,7 +91,7 @@ router.post('/party/join', (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('[API] Error joining party:', error);
+    apiLogger.error({ error }, 'Error joining party');
     res.status(500).json({
       success: false,
       error: error.message
@@ -123,7 +124,7 @@ router.post('/party/:partyCode/leave', (req: Request, res: Response) => {
       message: 'Successfully left party'
     });
   } catch (error: any) {
-    console.error('[API] Error leaving party:', error);
+    apiLogger.error({ error }, 'Error leaving party');
     res.status(500).json({
       success: false,
       error: error.message
@@ -172,7 +173,7 @@ router.get('/party/:partyCode', (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('[API] Error getting party:', error);
+    apiLogger.error({ error }, 'Error getting party');
     res.status(500).json({
       success: false,
       error: error.message
@@ -193,7 +194,7 @@ router.get('/parties/public', (_req: Request, res: Response) => {
       data: publicParties
     });
   } catch (error: any) {
-    console.error('[API] Error getting public parties:', error);
+    apiLogger.error({ error }, 'Error getting public parties');
     res.status(500).json({
       success: false,
       error: error.message
@@ -246,7 +247,7 @@ router.put('/party/:partyCode/settings', (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('[API] Error updating party settings:', error);
+    apiLogger.error({ error }, 'Error updating party settings');
     res.status(500).json({
       success: false,
       error: error.message
@@ -284,7 +285,7 @@ router.post('/party/:partyCode/ready', (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('[API] Error setting ready status:', error);
+    apiLogger.error({ error }, 'Error setting ready status');
     res.status(500).json({
       success: false,
       error: error.message
@@ -325,7 +326,7 @@ router.post('/party/:partyCode/kick', (req: Request, res: Response) => {
       message: 'Player kicked successfully'
     });
   } catch (error: any) {
-    console.error('[API] Error kicking player:', error);
+    apiLogger.error({ error }, 'Error kicking player');
     res.status(500).json({
       success: false,
       error: error.message
@@ -369,7 +370,7 @@ router.post('/party/:partyCode/transfer-host', (req: Request, res: Response) => 
       }
     });
   } catch (error: any) {
-    console.error('[API] Error transferring host:', error);
+    apiLogger.error({ error }, 'Error transferring host');
     res.status(500).json({
       success: false,
       error: error.message
@@ -408,7 +409,7 @@ router.get('/player/:playerId/party', (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('[API] Error getting player party:', error);
+    apiLogger.error({ error }, 'Error getting player party');
     res.status(500).json({
       success: false,
       error: error.message

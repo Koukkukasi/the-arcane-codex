@@ -10,6 +10,7 @@ import {
   EnemyType,
   StatusEffectType
 } from '../types/battle';
+import { battleLogger } from './logger';
 
 // In-memory battle state storage (use Redis in production)
 const activeBattles = new Map<string, BattleState>();
@@ -413,7 +414,7 @@ export class BattleService {
     // Add initial log
     this.addLogEntry(battleState, `Battle started against ${enemy.name}!`, 'system');
 
-    console.log(`[BATTLE] Started: ${battleId} - ${player.name} vs ${enemy.name}`);
+    battleLogger.info({ battleId, playerName: player.name, enemyName: enemy.name }, 'Battle started');
     return battleState;
   }
 
@@ -846,7 +847,7 @@ export class BattleService {
     for (const [battleId, battle] of activeBattles.entries()) {
       if (battle.ended && now - battle.ended > maxAge) {
         activeBattles.delete(battleId);
-        console.log(`[BATTLE] Cleaned up battle: ${battleId}`);
+        battleLogger.debug({ battleId }, 'Battle cleaned up');
       }
     }
   }
