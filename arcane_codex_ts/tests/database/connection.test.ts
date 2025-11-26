@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { test, expect } from '@playwright/test';
-import { DatabaseConnection } from '../../src/database/connection';
+import { getDatabase } from '../../src/database';
 
 /**
  * Database Connection Tests
@@ -8,10 +8,10 @@ import { DatabaseConnection } from '../../src/database/connection';
  */
 
 test.describe('Database Connection', () => {
-  let dbConnection: DatabaseConnection;
+  let dbConnection: any;
 
   test.beforeAll(async () => {
-    dbConnection = DatabaseConnection.getInstance();
+    dbConnection = getDatabase();
     await dbConnection.connect();
   });
 
@@ -20,8 +20,8 @@ test.describe('Database Connection', () => {
   });
 
   test('should create singleton instance', async () => {
-    const instance1 = DatabaseConnection.getInstance();
-    const instance2 = DatabaseConnection.getInstance();
+    const instance1 = getDatabase();
+    const instance2 = getDatabase();
     expect(instance1).toBe(instance2);
   });
 

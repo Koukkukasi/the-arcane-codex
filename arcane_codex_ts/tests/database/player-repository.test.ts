@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { test, expect } from '@playwright/test';
-import { DatabaseConnection } from '../../src/database/connection';
+import { getDatabase } from '../../src/database';
 import { PlayerRepository } from '../../src/database/repositories/player.repository';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -10,12 +10,12 @@ import { v4 as uuidv4 } from 'uuid';
  */
 
 test.describe('Player Repository', () => {
-  let dbConnection: DatabaseConnection;
+  let dbConnection: any;
   let playerRepo: PlayerRepository;
   let testPlayerId: string;
 
   test.beforeAll(async () => {
-    dbConnection = DatabaseConnection.getInstance();
+    dbConnection = getDatabase();
     await dbConnection.connect();
     playerRepo = new PlayerRepository();
   });
