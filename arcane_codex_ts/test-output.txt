@@ -1,0 +1,1138 @@
+
+> arcane_codex_ts@1.0.0 test:database
+> playwright test tests/database
+
+[dotenv@17.2.3] injecting env (44) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+✓ Test setup complete - Environment variables loaded
+✓ DB_PASSWORD: arcane_cod...
+PRAGMA foreign_keys = ON
+[2025-11-26 19:10:52.697 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+
+Running 56 tests using 1 worker
+
+PRAGMA foreign_keys = ON
+  ok  1 [database-tests] › tests\database\connection.test.ts:22:7 › Database Connection › should create singleton instance (3ms)
+[2025-11-26 19:10:53.432 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:53.459 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+SELECT 1 as test
+  ok  2 [database-tests] › tests\database\connection.test.ts:28:7 › Database Connection › should execute simple query (3ms)
+SELECT 'hello world' as value
+  ok  3 [database-tests] › tests\database\connection.test.ts:34:7 › Database Connection › should handle parameterized queries (2ms)
+SELECT '''; DROP TABLE players; --' as safe_value
+  ok  4 [database-tests] › tests\database\connection.test.ts:42:7 › Database Connection › should prevent SQL injection (1ms)
+BEGIN
+
+        CREATE TEMP TABLE test_transaction (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          value TEXT
+        )
+      
+INSERT INTO test_transaction (value) VALUES ('test')
+SELECT * FROM test_transaction
+COMMIT
+  ok  5 [database-tests] › tests\database\connection.test.ts:51:7 › Database Connection › should handle transactions (2ms)
+BEGIN
+
+        CREATE TEMP TABLE test_rollback (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          value TEXT NOT NULL
+        )
+      
+INSERT INTO test_rollback (value) VALUES ('test1')
+INSERT INTO test_rollback (value) VALUES (NULL)
+ROLLBACK
+ROLLBACK
+  x   6 [database-tests] › tests\database\connection.test.ts:82:7 › Database Connection › should rollback on error (3ms)
+[2025-11-26 19:10:53.534 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+SELECT 0.0 as num
+SELECT 1.0 as num
+SELECT 2.0 as num
+SELECT 3.0 as num
+SELECT 4.0 as num
+SELECT 5.0 as num
+SELECT 6.0 as num
+SELECT 7.0 as num
+SELECT 8.0 as num
+SELECT 9.0 as num
+[2025-11-26 19:10:54.296 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+  ok  7 [database-tests] › tests\database\connection.test.ts:117:7 › Database Connection › should handle concurrent queries (11ms)
+SELECT 1 as healthy
+  ok  8 [database-tests] › tests\database\connection.test.ts:129:7 › Database Connection › should check database health (1ms)
+[2025-11-26 19:10:54.323 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+  ok  9 [database-tests] › tests\database\connection.test.ts:134:7 › Database Connection › should get pool stats (7ms)
+  -  10 [database-tests] › tests\database\connection.test.ts:144:8 › Database Connection › should handle query timeout
+  ok 11 [database-tests] › tests\database\connection.test.ts:152:7 › Database Connection › should handle connection errors gracefully (3ms)
+[2025-11-26 19:10:54.375 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "INVALID SQL QUERY"
+    [35mparams[39m: []
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+  x  12 [database-tests] › tests\database\connection.test.ts:159:7 › Database Connection › should reuse connections from pool (2ms)
+[2025-11-26 19:10:54.395 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+BEGIN
+BEGIN
+SELECT 1
+COMMIT
+[2025-11-26 19:10:55.119 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+  x  13 [database-tests] › tests\database\connection.test.ts:173:7 › Database Connection › should handle multiple transactions in parallel (5ms)
+[2025-11-26 19:10:55.154 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:55.187 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:10:56.131 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_4efc6360-c8e0-4df4-8058-c8c'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+SELECT * FROM players WHERE id = 1.0
+  x  14 [database-tests] › tests\database\party-repository.test.ts:80:7 › Party Repository › should create a new party (12ms)
+[2025-11-26 19:10:56.207 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:56.233 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTWMHCEB"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:10:56.247 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:10:57.081 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_832ec54b-d49f-4618-96ff-595'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  15 [database-tests] › tests\database\party-repository.test.ts:97:7 › Party Repository › should create party with default max_players (5ms)
+[2025-11-26 19:10:57.149 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:57.163 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_832ec54b-d49f-4618-96ff-5956fd75241d",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:10:57.168 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST4LQS2U"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:10:57.183 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:10:57.993 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_056646ce-d779-4cd2-977c-0e5'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  16 [database-tests] › tests\database\party-repository.test.ts:107:7 › Party Repository › should create private party (6ms)
+[2025-11-26 19:10:58.070 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:58.087 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_056646ce-d779-4cd2-977c-0e538fb0ec8a",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:10:58.092 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST9G2RAX"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:10:58.105 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:10:58.889 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_dc2ea9d6-7420-4045-9728-620'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  17 [database-tests] › tests\database\party-repository.test.ts:118:7 › Party Repository › should not create duplicate party_code (5ms)
+[2025-11-26 19:10:58.959 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:58.974 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_dc2ea9d6-7420-4045-9728-620cdee4b390",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:10:58.978 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTYG64Z6"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:10:58.991 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:10:59.787 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_0d22df38-7e70-4ad2-a6b6-4c0'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  18 [database-tests] › tests\database\party-repository.test.ts:134:7 › Party Repository › should get party by code (5ms)
+[2025-11-26 19:10:59.858 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:10:59.873 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_0d22df38-7e70-4ad2-a6b6-4c0f28779ce4",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:10:59.877 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTP0D6P1"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:10:59.888 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:00.650 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_412b8bd2-6c1a-4fc0-9db6-dda'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  19 [database-tests] › tests\database\party-repository.test.ts:146:7 › Party Repository › should return null for non-existent party (5ms)
+[2025-11-26 19:11:00.720 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:00.733 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_412b8bd2-6c1a-4fc0-9db6-dda2159c0546",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:00.737 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTIGXG5Q"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:00.750 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:01.482 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_a26f7bca-ccbf-4f09-a6cb-266'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  20 [database-tests] › tests\database\party-repository.test.ts:151:7 › Party Repository › should add member to party (5ms)
+[2025-11-26 19:11:01.552 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:01.568 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_a26f7bca-ccbf-4f09-a6cb-2664433c50ff",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:01.572 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTWR8IZ4"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:01.585 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:02.477 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_e20881f1-4d7c-4ba5-9d57-e28'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  21 [database-tests] › tests\database\party-repository.test.ts:169:7 › Party Repository › should add host as member (6ms)
+[2025-11-26 19:11:02.549 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:02.567 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_e20881f1-4d7c-4ba5-9d57-e2855e7d4299",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:02.572 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST4ZRTOH"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:02.584 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:03.318 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_a0e75f40-35e1-47b1-94e0-ff2'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  22 [database-tests] › tests\database\party-repository.test.ts:185:7 › Party Repository › should not add duplicate member (5ms)
+[2025-11-26 19:11:03.392 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:03.406 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_a0e75f40-35e1-47b1-94e0-ff28661b3819",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:03.410 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTQ83RPD"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:03.422 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:04.203 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_04a3cd25-4fca-479e-ad1b-f17'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  23 [database-tests] › tests\database\party-repository.test.ts:205:7 › Party Repository › should remove member from party (5ms)
+[2025-11-26 19:11:04.273 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:04.286 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_04a3cd25-4fca-479e-ad1b-f1798c6b7255",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:04.290 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST3TA24X"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:04.303 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:05.068 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_c8bc8fcb-c057-4fc8-9dab-99d'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  24 [database-tests] › tests\database\party-repository.test.ts:224:7 › Party Repository › should return false when removing non-existent member (5ms)
+[2025-11-26 19:11:05.135 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:05.148 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_c8bc8fcb-c057-4fc8-9dab-99d185672d84",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:05.152 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTGHBJ1Z"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:05.163 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:05.924 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_ae7f8027-e4fb-43c3-9f18-e9b'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  25 [database-tests] › tests\database\party-repository.test.ts:235:7 › Party Repository › should update member ready status (5ms)
+[2025-11-26 19:11:05.992 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:06.005 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_ae7f8027-e4fb-43c3-9f18-e9bbd3654fce",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:06.009 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTLZ1ON0"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:06.020 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:06.780 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_4e51aba0-34fe-4254-9f1a-fa5'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  26 [database-tests] › tests\database\party-repository.test.ts:256:7 › Party Repository › should update member character data (5ms)
+[2025-11-26 19:11:06.858 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:06.873 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_4e51aba0-34fe-4254-9f1a-fa5c03078fa8",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:06.877 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST70AGJK"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:06.890 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:07.640 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_4cc73f93-aec6-439e-9641-cb1'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  27 [database-tests] › tests\database\party-repository.test.ts:283:7 › Party Repository › should get party with members (5ms)
+[2025-11-26 19:11:07.717 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:07.731 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_4cc73f93-aec6-439e-9641-cb120958b515",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:07.735 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST6YPLZG"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:07.747 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:08.481 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_a31b3079-482f-45b0-9362-741'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  28 [database-tests] › tests\database\party-repository.test.ts:308:7 › Party Repository › should update party status (6ms)
+[2025-11-26 19:11:08.551 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:08.568 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_a31b3079-482f-45b0-9362-7411163f1a58",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:08.572 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST0GHA34"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:08.587 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:09.331 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_206815e7-d0f4-4993-9a77-020'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  29 [database-tests] › tests\database\party-repository.test.ts:322:7 › Party Repository › should update member count (5ms)
+[2025-11-26 19:11:09.400 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:09.415 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_206815e7-d0f4-4993-9a77-0209c3a5f8be",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:09.420 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST52R551"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:09.432 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:10.186 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_8074f5dc-c69b-4712-8bf7-17b'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  30 [database-tests] › tests\database\party-repository.test.ts:335:7 › Party Repository › should list public parties (5ms)
+[2025-11-26 19:11:10.256 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:10.270 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_8074f5dc-c69b-4712-8bf7-17b7e155939b",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:10.274 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTH22DNF"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:10.286 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:11.025 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_a022b575-46cc-4b34-816c-3b7'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  31 [database-tests] › tests\database\party-repository.test.ts:350:7 › Party Repository › should not list private parties (5ms)
+[2025-11-26 19:11:11.095 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:11.110 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_a022b575-46cc-4b34-816c-3b7423572e0b",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:11.114 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTMAZR2O"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:11.127 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:11.910 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_92694c99-f762-4942-8215-906'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  32 [database-tests] › tests\database\party-repository.test.ts:363:7 › Party Repository › should check if player is in party (5ms)
+[2025-11-26 19:11:11.981 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:11.995 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_92694c99-f762-4942-8215-906dd6e19454",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:11.999 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST3VIX3H"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:12.010 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:12.766 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_2a901b25-b3e0-4896-9c57-cfe'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  33 [database-tests] › tests\database\party-repository.test.ts:382:7 › Party Repository › should enforce max players limit check (5ms)
+[2025-11-26 19:11:12.838 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:12.852 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_2a901b25-b3e0-4896-9c57-cfea8878bf52",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:12.856 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTY2CXVC"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:12.867 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:13.616 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_7fb69114-7398-4826-a678-026'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  34 [database-tests] › tests\database\party-repository.test.ts:398:7 › Party Repository › should delete party (5ms)
+[2025-11-26 19:11:13.693 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:13.708 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_7fb69114-7398-4826-a678-026225294676",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:13.713 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTLVTQBQ"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:13.725 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:14.512 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_cad8a44f-5d68-4b90-9663-394'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  35 [database-tests] › tests\database\party-repository.test.ts:412:7 › Party Repository › should cascade delete members when party is deleted (5ms)
+[2025-11-26 19:11:14.580 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:14.595 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_cad8a44f-5d68-4b90-9663-394f4d1b091b",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:14.599 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTZCMUFT"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:14.610 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:15.356 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_30fca2c2-a5b2-4f13-b39d-c1b'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  36 [database-tests] › tests\database\party-repository.test.ts:431:7 › Party Repository › should handle party settings JSON (5ms)
+[2025-11-26 19:11:15.426 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:15.440 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_30fca2c2-a5b2-4f13-b39d-c1b2e32681ef",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:15.444 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TESTIJCIUF"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:15.456 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:16.214 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('host_d1f8283d-ffba-4d66-a925-147'/*+9 bytes*/, 'TestHost', 'host@example.com', NULL)
+  x  37 [database-tests] › tests\database\party-repository.test.ts:448:7 › Party Repository › should update timestamps on member update (5ms)
+[2025-11-26 19:11:16.287 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:16.302 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      INSERT INTO players (player_id, username, email, preferred_role)\n      VALUES ($1, $2, $3, $4)\n      RETURNING *\n    "
+    [35mparams[39m: [
+      "host_d1f8283d-ffba-4d66-a925-1470b427cec4",
+      "TestHost",
+      "host@example.com",
+      null
+    ]
+    error: {
+      "code": "SQLITE_CONSTRAINT_UNIQUE"
+    }
+[2025-11-26 19:11:16.306 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "DELETE FROM party_members WHERE party_code = $1"
+    [35mparams[39m: [
+      "TEST7QML8L"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:16.317 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:17.111 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_f5a531cb-6f49-48e2-b'/*+16 bytes*/, 'TestPlayer', 'test@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_f5a531cb-6f49-48e2-b'/*+16 bytes*/
+  x  38 [database-tests] › tests\database\player-repository.test.ts:44:7 › Player Repository › should create a new player with required fields only (14ms)
+[2025-11-26 19:11:17.183 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:17.223 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:17.988 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_d27b3f9f-a8fa-4fbd-9'/*+16 bytes*/, 'CompletePlayer', 'complete@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_d27b3f9f-a8fa-4fbd-9'/*+16 bytes*/
+  x  39 [database-tests] › tests\database\player-repository.test.ts:60:7 › Player Repository › should create player with all optional fields (14ms)
+[2025-11-26 19:11:18.057 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:18.097 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:18.841 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_e38a7412-6ded-40fd-a'/*+16 bytes*/, 'FirstPlayer', 'first@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_e38a7412-6ded-40fd-a'/*+16 bytes*/
+  x  40 [database-tests] › tests\database\player-repository.test.ts:77:7 › Player Repository › should not create duplicate player_id (15ms)
+[2025-11-26 19:11:18.912 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:18.957 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:19.720 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_fd589200-9027-41ef-b'/*+16 bytes*/, 'GetTest', 'get@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_fd589200-9027-41ef-b'/*+16 bytes*/
+  x  41 [database-tests] › tests\database\player-repository.test.ts:93:7 › Player Repository › should get player by ID (13ms)
+[2025-11-26 19:11:19.793 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:19.831 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:20.584 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_c50fc900-38ff-4e08-9'/*+16 bytes*/, 'GetByPlayerIdTest', 'getbyplayerid@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_c50fc900-38ff-4e08-9'/*+16 bytes*/
+  x  42 [database-tests] › tests\database\player-repository.test.ts:106:7 › Player Repository › should get player by player_id (14ms)
+[2025-11-26 19:11:20.657 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:20.701 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:21.564 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+SELECT * FROM players WHERE id = '00000000-0000-0000-0000-00000000'/*+4 bytes*/
+DELETE FROM players WHERE player_id = 'test_player_5b0e49fe-9f91-4583-b'/*+16 bytes*/
+  ok 43 [database-tests] › tests\database\player-repository.test.ts:118:7 › Player Repository › should return null for non-existent player (5ms)
+[2025-11-26 19:11:21.640 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_36f7ac3f-a367-4e75-b'/*+16 bytes*/, 'UpdateTest', 'update@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_36f7ac3f-a367-4e75-b'/*+16 bytes*/
+  x  44 [database-tests] › tests\database\player-repository.test.ts:125:7 › Player Repository › should update player fields (13ms)
+[2025-11-26 19:11:21.698 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:22.473 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_2f19aa29-2768-443c-a'/*+16 bytes*/, 'StatsTest', 'stats@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_2f19aa29-2768-443c-a'/*+16 bytes*/
+  x  45 [database-tests] › tests\database\player-repository.test.ts:144:7 › Player Repository › should update player stats (14ms)
+[2025-11-26 19:11:22.546 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:22.585 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:23.363 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_5d9d35c9-b1a9-4ec5-a'/*+16 bytes*/, 'IncrementTest', 'increment@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_5d9d35c9-b1a9-4ec5-a'/*+16 bytes*/
+  x  46 [database-tests] › tests\database\player-repository.test.ts:165:7 › Player Repository › should increment player stats (15ms)
+[2025-11-26 19:11:23.438 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:23.478 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:24.225 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_3fa66d2c-262c-4d40-9'/*+16 bytes*/, 'WinRateTest', 'winrate@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_3fa66d2c-262c-4d40-9'/*+16 bytes*/
+  x  47 [database-tests] › tests\database\player-repository.test.ts:187:7 › Player Repository › should calculate win rate correctly (13ms)
+[2025-11-26 19:11:24.290 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:24.326 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:25.121 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_b628a3da-10f4-49b7-b'/*+16 bytes*/, 'ZeroWinRate', 'zerowin@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_b628a3da-10f4-49b7-b'/*+16 bytes*/
+  x  48 [database-tests] › tests\database\player-repository.test.ts:203:7 › Player Repository › should handle zero win rate (13ms)
+[2025-11-26 19:11:25.192 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:25.230 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:26.004 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_1aa185ed-da7a-47bc-b'/*+16 bytes*/, 'AvgSessionTest', 'avgsession@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_1aa185ed-da7a-47bc-b'/*+16 bytes*/
+  x  49 [database-tests] › tests\database\player-repository.test.ts:214:7 › Player Repository › should calculate average session length (13ms)
+[2025-11-26 19:11:26.075 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:26.114 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:26.895 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_leader1_e8ec5469-907b-46cb-'/*+17 bytes*/, 'Leader1', 'leader1@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id IN ('test_leader1_e8ec5469-907b-46cb-'/*+17 bytes*/, 'test_leader2_96eefb7b-41d2-476c-'/*+17 bytes*/, 'test_leader3_b79b1f5d-d6a2-4aa6-'/*+17 bytes*/)
+DELETE FROM players WHERE player_id = 'test_player_60eedb8b-b1c5-46bc-b'/*+16 bytes*/
+  x  50 [database-tests] › tests\database\player-repository.test.ts:230:7 › Player Repository › should get leaderboard (14ms)
+[2025-11-26 19:11:26.970 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:27.010 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:27.822 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+
+      SELECT * FROM players
+      WHERE victories > 0
+      ORDER BY victories DESC, (victories / NULLIF(victories + defeats, 0)) DESC
+      LIMIT 5.0
+    
+DELETE FROM players WHERE player_id = 'test_player_7f905faa-6e55-41fa-b'/*+16 bytes*/
+  ok 51 [database-tests] › tests\database\player-repository.test.ts:275:7 › Player Repository › should limit leaderboard results (5ms)
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_0b33d7b0-cc1b-4740-a'/*+16 bytes*/, 'DeleteTest', 'delete@example.com', NULL)
+[2025-11-26 19:11:27.892 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_0b33d7b0-cc1b-4740-a'/*+16 bytes*/
+  x  52 [database-tests] › tests\database\player-repository.test.ts:280:7 › Player Repository › should delete player (14ms)
+[2025-11-26 19:11:27.952 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:28.751 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+DELETE FROM players WHERE player_id = 'test_player_7bdeca00-af57-40f0-8'/*+16 bytes*/
+  x  53 [database-tests] › tests\database\player-repository.test.ts:294:7 › Player Repository › should return false when deleting non-existent player (5ms)
+[2025-11-26 19:11:28.825 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:28.840 +0200] [31mERROR[39m: [36mQuery error[39m
+    [35mcategory[39m: "database"
+    [35msql[39m: "\n      UPDATE players\n      SET email = NULL,\n          username = CONCAT('deleted_', id),\n          avatar_url = NULL,\n          updated_at = NOW()\n      WHERE player_id = $1\n      RETURNING id\n    "
+    [35mparams[39m: [
+      "00000000-0000-0000-0000-000000000000"
+    ]
+    error: {
+      "code": "SQLITE_ERROR"
+    }
+[2025-11-26 19:11:28.857 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:29.642 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_eaf46cf5-6217-418a-b'/*+16 bytes*/, 'LoginTest', 'login@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_eaf46cf5-6217-418a-b'/*+16 bytes*/
+  x  54 [database-tests] › tests\database\player-repository.test.ts:301:7 › Player Repository › should update last_login timestamp (14ms)
+[2025-11-26 19:11:29.720 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:29.765 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:30.547 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_special_b4eabeda-2e2c-4300-'/*+17 bytes*/, 'Test_User-123', 'special@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_special_b4eabeda-2e2c-4300-'/*+17 bytes*/
+DELETE FROM players WHERE player_id = 'test_player_dcebab0d-e028-4d8b-a'/*+16 bytes*/
+  x  55 [database-tests] › tests\database\player-repository.test.ts:319:7 › Player Repository › should handle special characters in username (13ms)
+[2025-11-26 19:11:30.620 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:30.657 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
+PRAGMA foreign_keys = ON
+[2025-11-26 19:11:31.447 +0200] [32mINFO[39m: [36mConnected to SQLite database[39m
+    [35mcategory[39m: "database"
+    [35mdbPath[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+INSERT INTO players (player_id, username, email, preferred_role)
+      VALUES ('test_player_efa5867f-bd07-46a1-b'/*+16 bytes*/, 'NullFieldsTest', 'null@example.com', NULL)
+SELECT * FROM players WHERE id = 2.0
+DELETE FROM players WHERE player_id = 'test_player_efa5867f-bd07-46a1-b'/*+16 bytes*/
+  x  56 [database-tests] › tests\database\player-repository.test.ts:337:7 › Player Repository › should handle NULL optional fields (15ms)
+[2025-11-26 19:11:31.514 +0200] [32mINFO[39m: [36mSQLite connection ready[39m
+    [35mcategory[39m: "database"
+    [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
+[2025-11-26 19:11:31.557 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
+    [35mcategory[39m: "database"
