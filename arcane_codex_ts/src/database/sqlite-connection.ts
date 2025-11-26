@@ -86,16 +86,19 @@ export class SQLiteConnection {
         ? convertedSql.replace(/RETURNING\s+.*/i, '').trim()
         : convertedSql;
 
+      // Convert boolean values to 0/1 for SQLite
+      const convertedParams = params.map(p => typeof p === 'boolean' ? (p ? 1 : 0) : p);
+
       if (convertedSql.trim().toUpperCase().startsWith('SELECT') ||
           convertedSql.trim().toUpperCase().startsWith('WITH')) {
         // SELECT query - return rows
         const stmt = this.db.prepare(convertedSql);
-        const rows = stmt.all(...params);
+        const rows = stmt.all(...convertedParams);
         return { rows, rowCount: rows.length };
       } else {
         // INSERT/UPDATE/DELETE
         const stmt = this.db.prepare(sqlWithoutReturning);
-        const info = stmt.run(...params);
+        const info = stmt.run(...convertedParams);
 
         // For INSERT with RETURNING, fetch the inserted row
         if (hasReturning) {
@@ -110,8 +113,15 @@ export class SQLiteConnection {
 
         return { rows: [], rowCount: info.changes };
       }
-    } catch (error) {
-      dbLogger.error({ sql, params, error }, 'Query error');
+    } catch (error: any) {
+      dbLogger.error({
+        sql,
+        params,
+        error,
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack
+      }, 'Query error');
       throw error;
     }
   }
