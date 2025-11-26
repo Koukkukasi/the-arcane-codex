@@ -1,6 +1,0 @@
-# The Arcane Codex - Discord Bot Dependencies
-
-discord.py==2.3.2
-anthropic==0.25.0
-python-dotenv==1.0.0
-aiohttp==3.9.1
