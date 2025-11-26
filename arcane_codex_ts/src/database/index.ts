@@ -8,10 +8,8 @@ export { getDatabaseConfig, getTestDatabaseConfig } from './config';
 export type { DatabaseConfig } from './config';
 
 // Connection
-import { DatabaseConnection } from './connection';
-import { SQLiteConnection } from './sqlite-connection';
-
-export { DatabaseConnection, SQLiteConnection };
+export { DatabaseConnection } from './connection';
+export { SQLiteConnection } from './sqlite-connection';
 
 // Database Factory
 export type DatabaseType = 'sqlite' | 'postgres';
@@ -19,12 +17,14 @@ export type DatabaseType = 'sqlite' | 'postgres';
 /**
  * Get the active database connection based on DB_TYPE env var
  */
-export function getDatabase(): DatabaseConnection | SQLiteConnection {
+export function getDatabase() {
   const dbType = (process.env.DB_TYPE || 'sqlite') as DatabaseType;
 
   if (dbType === 'sqlite') {
+    const { SQLiteConnection } = require('./sqlite-connection');
     return SQLiteConnection.getInstance();
   } else {
+    const { DatabaseConnection } = require('./connection');
     return DatabaseConnection.getInstance();
   }
 }

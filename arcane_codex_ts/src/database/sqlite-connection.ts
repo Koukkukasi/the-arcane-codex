@@ -54,24 +54,51 @@ export class SQLiteConnection {
   }
 
   /**
+   * Convert PostgreSQL syntax to SQLite syntax
+   */
+  private convertPostgresToSQLite(sql: string): string {
+    // Replace $1, $2, etc with ?
+    let converted = sql.replace(/\$\d+/g, '?');
+
+    // Remove ::type casts (including float, real, numeric, etc)
+    converted = converted.replace(/::(text|integer|int|varchar|boolean|json|jsonb|uuid|timestamp|float|real|numeric|double)/gi, '');
+
+    // Replace ILIKE with LIKE (case-insensitive in SQLite)
+    converted = converted.replace(/\bILIKE\b/gi, 'LIKE');
+
+    // Replace RETURNING * with just the INSERT/UPDATE (handle separately)
+    // We'll handle RETURNING in the query method itself
+
+    return converted;
+  }
+
+  /**
    * Execute a query (compatible with pg interface)
    */
   public async query(sql: string, params: any[] = []): Promise<{ rows: any[]; rowCount: number }> {
     try {
-      if (sql.trim().toUpperCase().startsWith('SELECT') ||
-          sql.trim().toUpperCase().startsWith('WITH')) {
+      // Convert PostgreSQL syntax to SQLite
+      const convertedSql = this.convertPostgresToSQLite(sql);
+      const hasReturning = sql.toUpperCase().includes('RETURNING');
+
+      // Remove RETURNING clause for SQLite
+      const sqlWithoutReturning = hasReturning
+        ? convertedSql.replace(/RETURNING\s+.*/i, '').trim()
+        : convertedSql;
+
+      if (convertedSql.trim().toUpperCase().startsWith('SELECT') ||
+          convertedSql.trim().toUpperCase().startsWith('WITH')) {
         // SELECT query - return rows
-        const stmt = this.db.prepare(sql);
+        const stmt = this.db.prepare(convertedSql);
         const rows = stmt.all(...params);
         return { rows, rowCount: rows.length };
       } else {
         // INSERT/UPDATE/DELETE
-        const stmt = this.db.prepare(sql);
+        const stmt = this.db.prepare(sqlWithoutReturning);
         const info = stmt.run(...params);
 
-        // For INSERT with RETURNING, need to fetch the inserted row
-        if (sql.toUpperCase().includes('RETURNING')) {
-          // SQLite doesn't support RETURNING, so we'll fetch last insert
+        // For INSERT with RETURNING, fetch the inserted row
+        if (hasReturning) {
           const lastId = info.lastInsertRowid;
           const tableName = sql.match(/INSERT INTO (\w+)/i)?.[1];
           if (tableName && lastId) {
@@ -127,26 +154,41 @@ class SQLiteClient {
 
   constructor(private db: Database.Database) {}
 
+  private convertPostgresToSQLite(sql: string): string {
+    // Replace $1, $2, etc with ?
+    let converted = sql.replace(/\$\d+/g, '?');
+
+    // Remove ::type casts (including float, real, numeric, etc)
+    converted = converted.replace(/::(text|integer|int|varchar|boolean|json|jsonb|uuid|timestamp|float|real|numeric|double)/gi, '');
+
+    // Replace ILIKE with LIKE
+    converted = converted.replace(/\bILIKE\b/gi, 'LIKE');
+
+    return converted;
+  }
+
   async query(sql: string, params: any[] = []): Promise<{ rows: any[]; rowCount: number }> {
     try {
-      if (sql.trim().toUpperCase().startsWith('SELECT')) {
-        const stmt = this.db.prepare(sql);
+      const convertedSql = this.convertPostgresToSQLite(sql);
+
+      if (convertedSql.trim().toUpperCase().startsWith('SELECT')) {
+        const stmt = this.db.prepare(convertedSql);
         const rows = stmt.all(...params);
         return { rows, rowCount: rows.length };
-      } else if (sql.trim().toUpperCase() === 'BEGIN') {
+      } else if (convertedSql.trim().toUpperCase() === 'BEGIN') {
         this.db.prepare('BEGIN').run();
         this.inTransaction = true;
         return { rows: [], rowCount: 0 };
-      } else if (sql.trim().toUpperCase() === 'COMMIT') {
+      } else if (convertedSql.trim().toUpperCase() === 'COMMIT') {
         this.db.prepare('COMMIT').run();
         this.inTransaction = false;
         return { rows: [], rowCount: 0 };
-      } else if (sql.trim().toUpperCase() === 'ROLLBACK') {
+      } else if (convertedSql.trim().toUpperCase() === 'ROLLBACK') {
         this.db.prepare('ROLLBACK').run();
         this.inTransaction = false;
         return { rows: [], rowCount: 0 };
       } else {
-        const stmt = this.db.prepare(sql);
+        const stmt = this.db.prepare(convertedSql);
         const info = stmt.run(...params);
         return { rows: [], rowCount: info.changes };
       }

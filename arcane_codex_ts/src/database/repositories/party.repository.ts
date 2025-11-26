@@ -4,6 +4,8 @@
  */
 
 import { DatabaseConnection } from '../connection';
+import { SQLiteConnection } from '../sqlite-connection';
+import { getDatabase } from '../index';
 import {
   PartyModel,
   CreatePartyDTO,
@@ -15,10 +17,10 @@ import {
 } from '../models/party.model';
 
 export class PartyRepository {
-  private db: DatabaseConnection;
+  private db: DatabaseConnection | SQLiteConnection;
 
-  constructor(db?: DatabaseConnection) {
-    this.db = db || DatabaseConnection.getInstance();
+  constructor(db?: DatabaseConnection | SQLiteConnection) {
+    this.db = db || getDatabase();
   }
 
   /**

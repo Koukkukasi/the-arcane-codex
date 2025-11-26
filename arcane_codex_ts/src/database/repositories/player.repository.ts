@@ -4,13 +4,15 @@
  */
 
 import { DatabaseConnection } from '../connection';
+import { SQLiteConnection } from '../sqlite-connection';
+import { getDatabase } from '../index';
 import { PlayerModel, CreatePlayerDTO, UpdatePlayerDTO, PlayerStatsDTO } from '../models/player.model';
 
 export class PlayerRepository {
-  private db: DatabaseConnection;
+  private db: DatabaseConnection | SQLiteConnection;
 
-  constructor(db?: DatabaseConnection) {
-    this.db = db || DatabaseConnection.getInstance();
+  constructor(db?: DatabaseConnection | SQLiteConnection) {
+    this.db = db || getDatabase();
   }
 
   /**
@@ -295,6 +297,13 @@ export class PlayerRepository {
     const query = 'SELECT COUNT(*) as count FROM players WHERE username = $1';
     const result = await this.db.query(query, [username]);
     return parseInt(result.rows[0].count) === 0;
+  }
+
+  /**
+   * Get leaderboard (alias for getTopPlayers for backward compatibility)
+   */
+  async getLeaderboard(limit: number = 10): Promise<PlayerModel[]> {
+    return this.getTopPlayers(limit);
   }
 
   /**
