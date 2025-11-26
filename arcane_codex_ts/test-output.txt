@@ -1136,3 +1136,801 @@ DELETE FROM players WHERE player_id = 'test_player_efa5867f-bd07-46a1-b'/*+16 by
     [35mdatabase[39m: "C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\arcane_codex.db"
 [2025-11-26 19:11:31.557 +0200] [32mINFO[39m: [36mSQLite connection closed[39m
     [35mcategory[39m: "database"
+
+
+  1) [database-tests] › tests\database\connection.test.ts:82:7 › Database Connection › should rollback on error 
+
+    SqliteError: cannot rollback - no transaction is active
+
+       at ..\src\database\sqlite-connection.ts:187
+
+      185 |         return { rows: [], rowCount: 0 };
+      186 |       } else if (convertedSql.trim().toUpperCase() === 'ROLLBACK') {
+    > 187 |         this.db.prepare('ROLLBACK').run();
+          |                                     ^
+      188 |         this.inTransaction = false;
+      189 |         return { rows: [], rowCount: 0 };
+      190 |       } else {
+        at SQLiteClient.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:187:37)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\connection.test.ts:105:20
+
+  2) [database-tests] › tests\database\connection.test.ts:159:7 › Database Connection › should reuse connections from pool 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m2[39m
+    Received:    [31m1[39m
+
+      168 |
+      169 |     const stats = dbConnection.getPoolStats();
+    > 170 |     expect(stats.idle).toBeGreaterThanOrEqual(2);
+          |                        ^
+      171 |   });
+      172 |
+      173 |   test('should handle multiple transactions in parallel', async () => {
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\connection.test.ts:170:24
+
+  3) [database-tests] › tests\database\connection.test.ts:173:7 › Database Connection › should handle multiple transactions in parallel 
+
+    SqliteError: cannot start a transaction within a transaction
+
+       at ..\src\database\sqlite-connection.ts:179
+
+      177 |         return { rows, rowCount: rows.length };
+      178 |       } else if (convertedSql.trim().toUpperCase() === 'BEGIN') {
+    > 179 |         this.db.prepare('BEGIN').run();
+          |                                  ^
+      180 |         this.inTransaction = true;
+      181 |         return { rows: [], rowCount: 0 };
+      182 |       } else if (convertedSql.trim().toUpperCase() === 'COMMIT') {
+        at SQLiteClient.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:179:34)
+        at transaction2 (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\connection.test.ts:188:22)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\connection.test.ts:196:5
+
+  4) [database-tests] › tests\database\party-repository.test.ts:80:7 › Party Repository › should create a new party 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:5
+
+  5) [database-tests] › tests\database\party-repository.test.ts:97:7 › Party Repository › should create party with default max_players 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  6) [database-tests] › tests\database\party-repository.test.ts:107:7 › Party Repository › should create private party 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  7) [database-tests] › tests\database\party-repository.test.ts:118:7 › Party Repository › should not create duplicate party_code 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  8) [database-tests] › tests\database\party-repository.test.ts:134:7 › Party Repository › should get party by code 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  9) [database-tests] › tests\database\party-repository.test.ts:146:7 › Party Repository › should return null for non-existent party 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  10) [database-tests] › tests\database\party-repository.test.ts:151:7 › Party Repository › should add member to party 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  11) [database-tests] › tests\database\party-repository.test.ts:169:7 › Party Repository › should add host as member 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  12) [database-tests] › tests\database\party-repository.test.ts:185:7 › Party Repository › should not add duplicate member 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  13) [database-tests] › tests\database\party-repository.test.ts:205:7 › Party Repository › should remove member from party 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  14) [database-tests] › tests\database\party-repository.test.ts:224:7 › Party Repository › should return false when removing non-existent member 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  15) [database-tests] › tests\database\party-repository.test.ts:235:7 › Party Repository › should update member ready status 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  16) [database-tests] › tests\database\party-repository.test.ts:256:7 › Party Repository › should update member character data 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  17) [database-tests] › tests\database\party-repository.test.ts:283:7 › Party Repository › should get party with members 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  18) [database-tests] › tests\database\party-repository.test.ts:308:7 › Party Repository › should update party status 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  19) [database-tests] › tests\database\party-repository.test.ts:322:7 › Party Repository › should update member count 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  20) [database-tests] › tests\database\party-repository.test.ts:335:7 › Party Repository › should list public parties 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  21) [database-tests] › tests\database\party-repository.test.ts:350:7 › Party Repository › should not list private parties 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  22) [database-tests] › tests\database\party-repository.test.ts:363:7 › Party Repository › should check if player is in party 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  23) [database-tests] › tests\database\party-repository.test.ts:382:7 › Party Repository › should enforce max players limit check 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  24) [database-tests] › tests\database\party-repository.test.ts:398:7 › Party Repository › should delete party 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  25) [database-tests] › tests\database\party-repository.test.ts:412:7 › Party Repository › should cascade delete members when party is deleted 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  26) [database-tests] › tests\database\party-repository.test.ts:431:7 › Party Repository › should handle party settings JSON 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  27) [database-tests] › tests\database\party-repository.test.ts:448:7 › Party Repository › should update timestamps on member update 
+
+    SqliteError: UNIQUE constraint failed: players.email
+
+       at ..\src\database\sqlite-connection.ts:98
+
+       96 |         // INSERT/UPDATE/DELETE
+       97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+    >  98 |         const info = stmt.run(...params);
+          |                           ^
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+      101 |         if (hasReturning) {
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:98:27)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:28:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\party-repository.test.ts:37:22
+
+  28) [database-tests] › tests\database\player-repository.test.ts:44:7 › Player Repository › should create a new player with required fields only 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:45:20
+
+  29) [database-tests] › tests\database\player-repository.test.ts:60:7 › Player Repository › should create player with all optional fields 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:61:20
+
+  30) [database-tests] › tests\database\player-repository.test.ts:77:7 › Player Repository › should not create duplicate player_id 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:78:5
+
+  31) [database-tests] › tests\database\player-repository.test.ts:93:7 › Player Repository › should get player by ID 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:94:21
+
+  32) [database-tests] › tests\database\player-repository.test.ts:106:7 › Player Repository › should get player by player_id 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:107:5
+
+  33) [database-tests] › tests\database\player-repository.test.ts:125:7 › Player Repository › should update player fields 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:126:20
+
+  34) [database-tests] › tests\database\player-repository.test.ts:144:7 › Player Repository › should update player stats 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:145:20
+
+  35) [database-tests] › tests\database\player-repository.test.ts:165:7 › Player Repository › should increment player stats 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:166:20
+
+  36) [database-tests] › tests\database\player-repository.test.ts:187:7 › Player Repository › should calculate win rate correctly 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:188:20
+
+  37) [database-tests] › tests\database\player-repository.test.ts:203:7 › Player Repository › should handle zero win rate 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:204:20
+
+  38) [database-tests] › tests\database\player-repository.test.ts:214:7 › Player Repository › should calculate average session length 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:215:20
+
+  39) [database-tests] › tests\database\player-repository.test.ts:230:7 › Player Repository › should get leaderboard 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:237:23
+
+  40) [database-tests] › tests\database\player-repository.test.ts:280:7 › Player Repository › should delete player 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:281:20
+
+  41) [database-tests] › tests\database\player-repository.test.ts:294:7 › Player Repository › should return false when deleting non-existent player 
+
+    SqliteError: no such function: NOW
+
+       at ..\src\database\sqlite-connection.ts:97
+
+       95 |       } else {
+       96 |         // INSERT/UPDATE/DELETE
+    >  97 |         const stmt = this.db.prepare(sqlWithoutReturning);
+          |                              ^
+       98 |         const info = stmt.run(...params);
+       99 |
+      100 |         // For INSERT with RETURNING, fetch the inserted row
+        at Database.prepare (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\node_modules\better-sqlite3\lib\methods\wrappers.js:5:21)
+        at SQLiteConnection.query (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\sqlite-connection.ts:97:30)
+        at PlayerRepository.deletePlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:253:34)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:295:38
+
+  42) [database-tests] › tests\database\player-repository.test.ts:301:7 › Player Repository › should update last_login timestamp 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:302:20
+
+  43) [database-tests] › tests\database\player-repository.test.ts:319:7 › Player Repository › should handle special characters in username 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:322:22
+
+  44) [database-tests] › tests\database\player-repository.test.ts:337:7 › Player Repository › should handle NULL optional fields 
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+       at ..\src\database\repositories\player.repository.ts:314
+
+      312 |   private mapRowToPlayer(row: any): PlayerModel {
+      313 |     return {
+    > 314 |       id: row.id,
+          |               ^
+      315 |       player_id: row.player_id,
+      316 |       username: row.username,
+      317 |       email: row.email,
+        at PlayerRepository.mapRowToPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:314:15)
+        at PlayerRepository.createPlayer (C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\src\database\repositories\player.repository.ts:35:17)
+        at C:\Users\ilmiv\ProjectArgent\arcane_codex_ts\tests\database\player-repository.test.ts:338:20
+
+  44 failed
+    [database-tests] › tests\database\connection.test.ts:82:7 › Database Connection › should rollback on error 
+    [database-tests] › tests\database\connection.test.ts:159:7 › Database Connection › should reuse connections from pool 
+    [database-tests] › tests\database\connection.test.ts:173:7 › Database Connection › should handle multiple transactions in parallel 
+    [database-tests] › tests\database\party-repository.test.ts:80:7 › Party Repository › should create a new party 
+    [database-tests] › tests\database\party-repository.test.ts:97:7 › Party Repository › should create party with default max_players 
+    [database-tests] › tests\database\party-repository.test.ts:107:7 › Party Repository › should create private party 
+    [database-tests] › tests\database\party-repository.test.ts:118:7 › Party Repository › should not create duplicate party_code 
+    [database-tests] › tests\database\party-repository.test.ts:134:7 › Party Repository › should get party by code 
+    [database-tests] › tests\database\party-repository.test.ts:146:7 › Party Repository › should return null for non-existent party 
+    [database-tests] › tests\database\party-repository.test.ts:151:7 › Party Repository › should add member to party 
+    [database-tests] › tests\database\party-repository.test.ts:169:7 › Party Repository › should add host as member 
+    [database-tests] › tests\database\party-repository.test.ts:185:7 › Party Repository › should not add duplicate member 
+    [database-tests] › tests\database\party-repository.test.ts:205:7 › Party Repository › should remove member from party 
+    [database-tests] › tests\database\party-repository.test.ts:224:7 › Party Repository › should return false when removing non-existent member 
+    [database-tests] › tests\database\party-repository.test.ts:235:7 › Party Repository › should update member ready status 
+    [database-tests] › tests\database\party-repository.test.ts:256:7 › Party Repository › should update member character data 
+    [database-tests] › tests\database\party-repository.test.ts:283:7 › Party Repository › should get party with members 
+    [database-tests] › tests\database\party-repository.test.ts:308:7 › Party Repository › should update party status 
+    [database-tests] › tests\database\party-repository.test.ts:322:7 › Party Repository › should update member count 
+    [database-tests] › tests\database\party-repository.test.ts:335:7 › Party Repository › should list public parties 
+    [database-tests] › tests\database\party-repository.test.ts:350:7 › Party Repository › should not list private parties 
+    [database-tests] › tests\database\party-repository.test.ts:363:7 › Party Repository › should check if player is in party 
+    [database-tests] › tests\database\party-repository.test.ts:382:7 › Party Repository › should enforce max players limit check 
+    [database-tests] › tests\database\party-repository.test.ts:398:7 › Party Repository › should delete party 
+    [database-tests] › tests\database\party-repository.test.ts:412:7 › Party Repository › should cascade delete members when party is deleted 
+    [database-tests] › tests\database\party-repository.test.ts:431:7 › Party Repository › should handle party settings JSON 
+    [database-tests] › tests\database\party-repository.test.ts:448:7 › Party Repository › should update timestamps on member update 
+    [database-tests] › tests\database\player-repository.test.ts:44:7 › Player Repository › should create a new player with required fields only 
+    [database-tests] › tests\database\player-repository.test.ts:60:7 › Player Repository › should create player with all optional fields 
+    [database-tests] › tests\database\player-repository.test.ts:77:7 › Player Repository › should not create duplicate player_id 
+    [database-tests] › tests\database\player-repository.test.ts:93:7 › Player Repository › should get player by ID 
+    [database-tests] › tests\database\player-repository.test.ts:106:7 › Player Repository › should get player by player_id 
+    [database-tests] › tests\database\player-repository.test.ts:125:7 › Player Repository › should update player fields 
+    [database-tests] › tests\database\player-repository.test.ts:144:7 › Player Repository › should update player stats 
+    [database-tests] › tests\database\player-repository.test.ts:165:7 › Player Repository › should increment player stats 
+    [database-tests] › tests\database\player-repository.test.ts:187:7 › Player Repository › should calculate win rate correctly 
+    [database-tests] › tests\database\player-repository.test.ts:203:7 › Player Repository › should handle zero win rate 
+    [database-tests] › tests\database\player-repository.test.ts:214:7 › Player Repository › should calculate average session length 
+    [database-tests] › tests\database\player-repository.test.ts:230:7 › Player Repository › should get leaderboard 
+    [database-tests] › tests\database\player-repository.test.ts:280:7 › Player Repository › should delete player 
+    [database-tests] › tests\database\player-repository.test.ts:294:7 › Player Repository › should return false when deleting non-existent player 
+    [database-tests] › tests\database\player-repository.test.ts:301:7 › Player Repository › should update last_login timestamp 
+    [database-tests] › tests\database\player-repository.test.ts:319:7 › Player Repository › should handle special characters in username 
+    [database-tests] › tests\database\player-repository.test.ts:337:7 › Player Repository › should handle NULL optional fields 
+  1 skipped
+  11 passed (41.8s)
+
+[36m  Serving HTML report at http://localhost:53751. Press Ctrl+C to quit.[39m

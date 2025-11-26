@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS players (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   player_id TEXT UNIQUE NOT NULL,
   username TEXT NOT NULL,
-  email TEXT UNIQUE,
+  email TEXT,
 
   -- Stats
   total_sessions INTEGER DEFAULT 0,
@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS players (
 
 CREATE INDEX IF NOT EXISTS idx_players_player_id ON players(player_id);
 CREATE INDEX IF NOT EXISTS idx_players_username ON players(username);
-CREATE INDEX IF NOT EXISTS idx_players_email ON players(email);
 
 -- Parties table (party_code to match PostgreSQL)
 CREATE TABLE IF NOT EXISTS parties (
