@@ -57,15 +57,15 @@ test.describe('Party Repository', () => {
     // Clean up test data
     try {
       await dbConnection.query(
-        'DELETE FROM party_members WHERE party_code = $1',
+        'DELETE FROM party_members WHERE party_id IN (SELECT id FROM parties WHERE code = ?)',
         [testPartyCode]
       );
       await dbConnection.query(
-        'DELETE FROM parties WHERE party_code = $1',
+        'DELETE FROM parties WHERE code = ?',
         [testPartyCode]
       );
       await dbConnection.query(
-        'DELETE FROM players WHERE player_id IN ($1, $2, $3)',
+        'DELETE FROM players WHERE player_id IN (?, ?, ?)',
         [testHostId, testPlayer1Id, testPlayer2Id]
       );
     } catch (error) {
@@ -79,14 +79,14 @@ test.describe('Party Repository', () => {
 
   test('should create a new party', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Test Party',
       max_players: 4
     });
 
     expect(party).toBeDefined();
-    expect(party.party_code).toBe(testPartyCode);
+    expect(party.code).toBe(testPartyCode);
     expect(party.host_player_id).toBe(testHostId);
     expect(party.name).toBe('Test Party');
     expect(party.max_players).toBe(4);
@@ -96,7 +96,7 @@ test.describe('Party Repository', () => {
 
   test('should create party with default max_players', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Default Party'
     });
@@ -106,7 +106,7 @@ test.describe('Party Repository', () => {
 
   test('should create private party', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Private Party',
       is_public: false
@@ -115,16 +115,16 @@ test.describe('Party Repository', () => {
     expect(party.is_public).toBe(false);
   });
 
-  test('should not create duplicate party_code', async () => {
+  test('should not create duplicate code', async () => {
     await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'First Party'
     });
 
     await expect(
       partyRepo.createParty({
-        party_code: testPartyCode,
+        code: testPartyCode,
         host_player_id: testPlayer1Id,
         name: 'Second Party'
       })
@@ -133,14 +133,14 @@ test.describe('Party Repository', () => {
 
   test('should get party by code', async () => {
     await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Get Test'
     });
 
     const party = await partyRepo.getPartyByCode(testPartyCode);
     expect(party).toBeDefined();
-    expect(party?.party_code).toBe(testPartyCode);
+    expect(party?.code).toBe(testPartyCode);
   });
 
   test('should return null for non-existent party', async () => {
@@ -150,7 +150,7 @@ test.describe('Party Repository', () => {
 
   test('should add member to party', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Member Test'
     });
@@ -168,7 +168,7 @@ test.describe('Party Repository', () => {
 
   test('should add host as member', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Host Member Test'
     });
@@ -184,7 +184,7 @@ test.describe('Party Repository', () => {
 
   test('should not add duplicate member', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Duplicate Test'
     });
@@ -204,7 +204,7 @@ test.describe('Party Repository', () => {
 
   test('should remove member from party', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Remove Test'
     });
@@ -223,7 +223,7 @@ test.describe('Party Repository', () => {
 
   test('should return false when removing non-existent member', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Remove Nonexistent'
     });
@@ -234,7 +234,7 @@ test.describe('Party Repository', () => {
 
   test('should update member ready status', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Ready Test'
     });
@@ -255,7 +255,7 @@ test.describe('Party Repository', () => {
 
   test('should update member character data', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Character Test'
     });
@@ -282,7 +282,7 @@ test.describe('Party Repository', () => {
 
   test('should get party with members', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'With Members Test'
     });
@@ -307,7 +307,7 @@ test.describe('Party Repository', () => {
 
   test('should update party status', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Status Test'
     });
@@ -321,7 +321,7 @@ test.describe('Party Repository', () => {
 
   test('should update member count', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Count Test'
     });
@@ -334,7 +334,7 @@ test.describe('Party Repository', () => {
 
   test('should list public parties', async () => {
     await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Public Party',
       is_public: true
@@ -343,26 +343,26 @@ test.describe('Party Repository', () => {
     const publicParties = await partyRepo.listPublicParties();
 
     expect(publicParties.length).toBeGreaterThan(0);
-    const foundParty = publicParties.find(p => p.party_code === testPartyCode);
+    const foundParty = publicParties.find(p => p.code === testPartyCode);
     expect(foundParty).toBeDefined();
   });
 
   test('should not list private parties', async () => {
     await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Private Party',
       is_public: false
     });
 
     const publicParties = await partyRepo.listPublicParties();
-    const foundParty = publicParties.find(p => p.party_code === testPartyCode);
+    const foundParty = publicParties.find(p => p.code === testPartyCode);
     expect(foundParty).toBeUndefined();
   });
 
   test('should check if player is in party', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Check Member Test'
     });
@@ -381,7 +381,7 @@ test.describe('Party Repository', () => {
 
   test('should enforce max players limit check', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Max Players Test',
       max_players: 2
@@ -397,7 +397,7 @@ test.describe('Party Repository', () => {
 
   test('should delete party', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Delete Test'
     });
@@ -411,7 +411,7 @@ test.describe('Party Repository', () => {
 
   test('should cascade delete members when party is deleted', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Cascade Test'
     });
@@ -436,7 +436,7 @@ test.describe('Party Repository', () => {
     };
 
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Settings Test',
       settings
@@ -447,7 +447,7 @@ test.describe('Party Repository', () => {
 
   test('should update timestamps on member update', async () => {
     const party = await partyRepo.createParty({
-      party_code: testPartyCode,
+      code: testPartyCode,
       host_player_id: testHostId,
       name: 'Timestamp Test'
     });

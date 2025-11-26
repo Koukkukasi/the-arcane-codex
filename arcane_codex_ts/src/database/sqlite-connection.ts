@@ -99,10 +99,11 @@ export class SQLiteConnection {
 
         // For INSERT with RETURNING, fetch the inserted row
         if (hasReturning) {
-          const lastId = info.lastInsertRowid;
+          const lastRowid = info.lastInsertRowid;
           const tableName = sql.match(/INSERT INTO (\w+)/i)?.[1];
-          if (tableName && lastId) {
-            const row = this.db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(lastId);
+          if (tableName && lastRowid) {
+            // Use ROWID to fetch the just-inserted row (works for all primary key types)
+            const row = this.db.prepare(`SELECT * FROM ${tableName} WHERE ROWID = ?`).get(lastRowid);
             return { rows: row ? [row] : [], rowCount: info.changes };
           }
         }

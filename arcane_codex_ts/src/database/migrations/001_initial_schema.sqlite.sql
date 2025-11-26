@@ -46,10 +46,10 @@ CREATE TABLE IF NOT EXISTS players (
 CREATE INDEX IF NOT EXISTS idx_players_player_id ON players(player_id);
 CREATE INDEX IF NOT EXISTS idx_players_username ON players(username);
 
--- Parties table (party_code to match PostgreSQL)
+-- Parties table
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-  party_code TEXT UNIQUE NOT NULL,
+  code TEXT UNIQUE NOT NULL,
   host_player_id TEXT NOT NULL,
   name TEXT,
   max_players INTEGER DEFAULT 4,
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS parties (
   FOREIGN KEY (host_player_id) REFERENCES players(player_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_parties_party_code ON parties(party_code);
+CREATE INDEX IF NOT EXISTS idx_parties_code ON parties(code);
 CREATE INDEX IF NOT EXISTS idx_parties_host ON parties(host_player_id);
 CREATE INDEX IF NOT EXISTS idx_parties_status ON parties(status);
 
