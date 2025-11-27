@@ -12,6 +12,7 @@ import BattleService from './services/battle';
 import { MultiplayerService } from './services/multiplayer/multiplayer_service';
 import GameService from './services/game';
 import { logger, socketLogger, securityLogger } from './services/logger';
+import { socketAuthMiddleware, AuthenticatedSocket } from './middleware/socketAuth';
 
 // ============================================
 // SECURITY: Environment Configuration
@@ -114,9 +115,16 @@ app.get('/health', (_req, res) => {
 // Initialize Multiplayer Service
 const multiplayerService = MultiplayerService.initialize(io);
 
+// Socket.IO Authentication Middleware
+io.use(socketAuthMiddleware);
+
 // Socket.IO handlers
-io.on('connection', (socket) => {
-  socketLogger.info({ socketId: socket.id }, 'Client connected');
+io.on('connection', (socket: AuthenticatedSocket) => {
+  socketLogger.info({
+    socketId: socket.id,
+    playerId: socket.playerId,
+    playerName: socket.playerName
+  }, 'Client connected');
 
   // Setup multiplayer event handlers
   multiplayerService.setupSocketHandlers(socket);

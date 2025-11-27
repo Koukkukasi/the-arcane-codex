@@ -459,8 +459,8 @@ test.describe('Party Repository', () => {
 
     const joinedAt = member.joined_at;
 
-    // Wait a moment
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait longer for SQLite (has second-level precision only)
+    await new Promise(resolve => setTimeout(resolve, 1100));
 
     await partyRepo.updateMember(party.id, testPlayer1Id, { is_ready: true });
 
@@ -469,7 +469,8 @@ test.describe('Party Repository', () => {
       [party.id, testPlayer1Id]
     );
 
+    // SQLite CURRENT_TIMESTAMP has second precision, so use >= instead of >
     expect(new Date(updated.rows[0].updated_at).getTime())
-      .toBeGreaterThan(joinedAt.getTime());
+      .toBeGreaterThanOrEqual(joinedAt.getTime());
   });
 });

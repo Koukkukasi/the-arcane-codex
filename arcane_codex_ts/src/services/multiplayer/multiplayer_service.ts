@@ -5,7 +5,10 @@
 
 import { Server, Socket } from 'socket.io';
 import { PartyManager } from './party_manager';
-import { multiplayerLogger } from '../logger';
+import { multiplayerLogger, securityLogger } from '../logger';
+import { PhaseManager } from '../phase.manager';
+import { TurnManager } from '../turn.manager';
+import { SessionManager, ManagedSession } from '../session.manager';
 import {
   PlayerConnection,
   RoomState,
@@ -21,8 +24,40 @@ import {
   GlobalEvent,
   BattleAction,
   SocketResponse,
-  ReconnectionData
+  ReconnectionData,
+  SocketErrorCode
 } from '../../types/multiplayer';
+import {
+  validateSocketData,
+  joinRoomSchema,
+  leaveRoomSchema,
+  readyStatusSchema,
+  chatMessageSchema,
+  requestSyncSchema,
+  heartbeatSchema,
+  battleActionSchema,
+  scenarioChoiceSchema,
+  shareClueSchema
+} from '../../validation/socketSchemas';
+import { AuthenticatedSocket } from '../../middleware/socketAuth';
+
+// ============================================
+// Rate Limiting Configuration
+// ============================================
+interface RateLimitConfig {
+  maxRequests: number;
+  windowMs: number;
+}
+
+const RATE_LIMITS: Record<string, RateLimitConfig> = {
+  chat_message: { maxRequests: 10, windowMs: 10000 }, // 10 messages per 10 seconds
+  player_action: { maxRequests: 20, windowMs: 10000 }, // 20 actions per 10 seconds
+  battle_turn: { maxRequests: 5, windowMs: 5000 }, // 5 turns per 5 seconds
+  default: { maxRequests: 30, windowMs: 10000 } // 30 requests per 10 seconds
+};
+
+// Rate limit tracking per player
+const rateLimitTracking = new Map<string, Map<string, { count: number; resetTime: number }>>();
 
 /**
  * Singleton service for managing multiplayer sessions
@@ -30,16 +65,22 @@ import {
 export class MultiplayerService {
   private static instance: MultiplayerService;
   private io: Server;
-  // @ts-expect-error - PartyManager is initialized but not yet used
-  private _partyManager: PartyManager;
+  private partyManager: PartyManager;
+  private phaseManager: PhaseManager;
+  private turnManager: TurnManager;
+  private sessionManager: SessionManager;
   private rooms: Map<string, RoomState>;
   private playerConnections: Map<string, PlayerConnection>;
   private reconnectionData: Map<string, ReconnectionData>;
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private roomToSession: Map<string, string> = new Map(); // roomId -> sessionId
 
   private constructor(io: Server) {
     this.io = io;
-    this._partyManager = PartyManager.getInstance();
+    this.partyManager = PartyManager.getInstance();
+    this.phaseManager = PhaseManager.getInstance();
+    this.turnManager = TurnManager.getInstance();
+    this.sessionManager = SessionManager.getInstance();
     this.rooms = new Map();
     this.playerConnections = new Map();
     this.reconnectionData = new Map();
@@ -66,60 +107,251 @@ export class MultiplayerService {
     return MultiplayerService.instance;
   }
 
+  // ============================================
+  // Helper Methods
+  // ============================================
+
+  /**
+   * Create standardized error response
+   */
+  private createErrorResponse(code: SocketErrorCode, message: string): SocketResponse {
+    return {
+      success: false,
+      error: message,
+      errorCode: code,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * Create standardized success response
+   */
+  private createSuccessResponse(data?: any): SocketResponse {
+    return {
+      success: true,
+      timestamp: Date.now(),
+      data
+    };
+  }
+
+  /**
+   * Check rate limit for a player/event combination
+   */
+  private checkRateLimit(playerId: string, eventType: string): boolean {
+    const config = RATE_LIMITS[eventType] || RATE_LIMITS.default;
+    const now = Date.now();
+
+    if (!rateLimitTracking.has(playerId)) {
+      rateLimitTracking.set(playerId, new Map());
+    }
+
+    const playerLimits = rateLimitTracking.get(playerId)!;
+    const eventLimit = playerLimits.get(eventType);
+
+    if (!eventLimit || now > eventLimit.resetTime) {
+      playerLimits.set(eventType, { count: 1, resetTime: now + config.windowMs });
+      return true;
+    }
+
+    if (eventLimit.count >= config.maxRequests) {
+      securityLogger.warn({
+        playerId,
+        eventType,
+        count: eventLimit.count,
+        limit: config.maxRequests
+      }, 'Rate limit exceeded');
+      return false;
+    }
+
+    eventLimit.count++;
+    return true;
+  }
+
+  /**
+   * Validate and handle socket event with rate limiting
+   */
+  private handleValidatedEvent<T>(
+    socket: Socket | AuthenticatedSocket,
+    eventType: string,
+    payload: unknown,
+    schema: any,
+    callback: ((response: SocketResponse) => void) | undefined,
+    handler: (validatedPayload: T) => void
+  ): void {
+    // Get player ID from authenticated socket or payload
+    const authSocket = socket as AuthenticatedSocket;
+    const playerId = authSocket.playerId || (payload as any)?.playerId;
+
+    // Check rate limit
+    if (playerId && !this.checkRateLimit(playerId, eventType)) {
+      if (callback) {
+        callback(this.createErrorResponse(
+          SocketErrorCode.RATE_LIMITED,
+          'Too many requests. Please slow down.'
+        ));
+      }
+      return;
+    }
+
+    // Validate payload
+    const validation = validateSocketData(schema, payload);
+    if (!validation.success) {
+      multiplayerLogger.warn({
+        socketId: socket.id,
+        eventType,
+        error: validation.error
+      }, 'Socket validation failed');
+
+      if (callback) {
+        callback(this.createErrorResponse(
+          SocketErrorCode.VALIDATION_ERROR,
+          validation.error
+        ));
+      }
+      return;
+    }
+
+    // Execute handler with validated data cast to expected type
+    handler(validation.data as T);
+  }
+
   /**
    * Setup Socket.IO event handlers for a client socket
    */
-  public setupSocketHandlers(socket: Socket): void {
-    multiplayerLogger.info({ socketId: socket.id }, 'Client connected');
+  public setupSocketHandlers(socket: Socket | AuthenticatedSocket): void {
+    const authSocket = socket as AuthenticatedSocket;
+    multiplayerLogger.info({
+      socketId: socket.id,
+      playerId: authSocket.playerId
+    }, 'Setting up socket handlers');
 
-    // Join room event
-    socket.on('join_room', (payload: JoinRoomPayload, callback) => {
-      this.handleJoinRoom(socket, payload, callback);
+    // Join room event - with validation
+    socket.on('join_room', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'join_room',
+        payload,
+        joinRoomSchema,
+        callback,
+        (validPayload: JoinRoomPayload) => this.handleJoinRoom(socket, validPayload, callback!)
+      );
     });
 
-    // Leave room event
-    socket.on('leave_room', (payload: LeaveRoomPayload, callback) => {
-      this.handleLeaveRoom(socket, payload, callback);
+    // Leave room event - with validation
+    socket.on('leave_room', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'leave_room',
+        payload,
+        leaveRoomSchema,
+        callback,
+        (validPayload: LeaveRoomPayload) => this.handleLeaveRoom(socket, validPayload, callback!)
+      );
     });
 
-    // Ready status event
-    socket.on('ready_status', (payload: ReadyStatusPayload, callback) => {
-      this.handleReadyStatus(socket, payload, callback);
+    // Ready status event - with validation
+    socket.on('ready_status', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'ready_status',
+        payload,
+        readyStatusSchema,
+        callback,
+        (validPayload: ReadyStatusPayload) => this.handleReadyStatus(socket, validPayload, callback!)
+      );
     });
 
-    // Chat message event
-    socket.on('chat_message', (payload: ChatMessagePayload, callback) => {
-      this.handleChatMessage(socket, payload, callback);
+    // Chat message event - with validation and rate limiting
+    socket.on('chat_message', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'chat_message',
+        payload,
+        chatMessageSchema,
+        callback,
+        (validPayload: ChatMessagePayload) => this.handleChatMessage(socket, validPayload, callback!)
+      );
     });
 
-    // Player action event
-    socket.on('player_action', (payload: PlayerActionPayload, callback) => {
-      this.handlePlayerAction(socket, payload, callback);
+    // Player action event - with validation
+    socket.on('player_action', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      // Player action uses a flexible schema, so we validate manually
+      const authSocket = socket as AuthenticatedSocket;
+      const playerId = authSocket.playerId || (payload as any)?.playerId;
+
+      if (playerId && !this.checkRateLimit(playerId, 'player_action')) {
+        if (callback) {
+          callback(this.createErrorResponse(SocketErrorCode.RATE_LIMITED, 'Too many actions'));
+        }
+        return;
+      }
+
+      this.handlePlayerAction(socket, payload as PlayerActionPayload, callback!);
     });
 
-    // Request sync event
-    socket.on('request_sync', (payload: RequestSyncPayload, callback) => {
-      this.handleRequestSync(socket, payload, callback);
+    // Request sync event - with validation
+    socket.on('request_sync', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'request_sync',
+        payload,
+        requestSyncSchema,
+        callback,
+        (validPayload: RequestSyncPayload) => this.handleRequestSync(socket, validPayload, callback!)
+      );
     });
 
-    // Heartbeat event
-    socket.on('heartbeat', (payload: HeartbeatPayload, callback) => {
-      this.handleHeartbeat(socket, payload, callback);
+    // Heartbeat event - with validation (no rate limiting on heartbeat)
+    socket.on('heartbeat', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      const validation = validateSocketData(heartbeatSchema, payload);
+      if (!validation.success) {
+        if (callback) {
+          callback(this.createErrorResponse(SocketErrorCode.VALIDATION_ERROR, validation.error));
+        }
+        return;
+      }
+      // Ensure timestamp is present for HeartbeatPayload
+      const heartbeatData: HeartbeatPayload = {
+        ...validation.data,
+        timestamp: validation.data.timestamp ?? Date.now()
+      };
+      this.handleHeartbeat(socket, heartbeatData, callback!);
     });
 
-    // Battle turn event
-    socket.on('battle_turn', (payload: BattleAction, callback) => {
-      this.handleBattleTurn(socket, payload, callback);
+    // Battle turn event - with validation and strict rate limiting
+    socket.on('battle_turn', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'battle_turn',
+        payload,
+        battleActionSchema,
+        callback,
+        (validPayload: BattleAction) => this.handleBattleTurn(socket, validPayload, callback!)
+      );
     });
 
-    // Scenario choice event
-    socket.on('scenario_choice', (payload: { playerId: string; scenarioId: string; choiceId: string }, callback) => {
-      this.handleScenarioChoice(socket, payload, callback);
+    // Scenario choice event - with validation
+    socket.on('scenario_choice', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'scenario_choice',
+        payload,
+        scenarioChoiceSchema,
+        callback,
+        (validPayload) => this.handleScenarioChoice(socket, validPayload as any, callback!)
+      );
     });
 
-    // Share clue event
-    socket.on('share_clue', (payload: { playerId: string; targetPlayerId: string; clueId: string }, callback) => {
-      this.handleShareClue(socket, payload, callback);
+    // Share clue event - with validation
+    socket.on('share_clue', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleValidatedEvent(
+        socket,
+        'share_clue',
+        payload,
+        shareClueSchema,
+        callback,
+        (validPayload) => this.handleShareClue(socket, validPayload as any, callback!)
+      );
     });
 
     // Disconnect event
@@ -142,7 +374,7 @@ export class MultiplayerService {
       // Check if trying to rejoin
       if (rejoin && this.reconnectionData.has(playerId)) {
         this.handleReconnect(socket, playerId);
-        callback({ success: true, timestamp: Date.now(), data: { reconnected: true } });
+        callback(this.createSuccessResponse({ reconnected: true }));
         return;
       }
 
@@ -611,7 +843,7 @@ export class MultiplayerService {
             lastSocketId: socket.id,
             disconnectTime: Date.now(),
             gamePhase: room.gamePhase,
-            playerState: {} // TODO: Save player-specific state
+            playerState: { turnIndex: room.currentTurn.playerOrder.indexOf(playerId), isCurrentTurn: room.currentTurn.playerOrder[room.currentTurn.currentPlayerIndex] === playerId }
           };
           this.reconnectionData.set(playerId, reconnectionData);
 
@@ -629,7 +861,7 @@ export class MultiplayerService {
   }
 
   /**
-   * Handle reconnection
+   * Handle reconnection with full state sync
    */
   private handleReconnect(socket: Socket, playerId: string): void {
     const reconnectionData = this.reconnectionData.get(playerId);
@@ -655,9 +887,30 @@ export class MultiplayerService {
     // Rejoin Socket.IO room
     socket.join(reconnectionData.roomId);
 
+    // Send full state sync to reconnecting player with acknowledgment
+    const fullState = this.sanitizeRoomState(room, playerId);
+    this.emitWithAck(
+      socket,
+      'state_sync',
+      {
+        type: 'full',
+        data: fullState,
+        timestamp: Date.now(),
+        missedEvents: this.getMissedEvents(room, reconnectionData.disconnectTime)
+      },
+      5000
+    ).then((acked) => {
+      if (acked) {
+        multiplayerLogger.info({ playerId }, 'State sync acknowledged by reconnecting player');
+      } else {
+        multiplayerLogger.warn({ playerId }, 'State sync not acknowledged - client may be out of sync');
+      }
+    });
+
     // Notify other players
     socket.to(reconnectionData.roomId).emit('player_reconnected', {
       playerId,
+      playerName: playerConnection?.playerName || 'Unknown',
       timestamp: Date.now()
     });
 
@@ -665,6 +918,35 @@ export class MultiplayerService {
     this.reconnectionData.delete(playerId);
 
     multiplayerLogger.info({ playerId, roomId: reconnectionData.roomId }, 'Player reconnected');
+  }
+
+  /**
+   * Get events that occurred while player was disconnected
+   */
+  private getMissedEvents(room: RoomState, disconnectTime: number): GlobalEvent[] {
+    return room.sharedState.globalEvents.filter(event => event.timestamp > disconnectTime);
+  }
+
+  /**
+   * Emit event with acknowledgment timeout
+   * Returns a promise that resolves to true if acknowledged, false if timed out
+   */
+  private emitWithAck(
+    socket: Socket,
+    event: string,
+    data: any,
+    timeoutMs: number = 5000
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        resolve(false);
+      }, timeoutMs);
+
+      socket.emit(event, data, (response: any) => {
+        clearTimeout(timeout);
+        resolve(response?.success !== false);
+      });
+    });
   }
 
   /**
@@ -744,7 +1026,179 @@ export class MultiplayerService {
   }
 
   /**
-   * Broadcast game phase change
+   * Find room ID by session ID
+   */
+  public findRoomBySessionId(sessionId: string): string | null {
+    for (const [roomId, sId] of this.roomToSession.entries()) {
+      if (sId === sessionId) {
+        return roomId;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get the PartyManager instance for external access
+   */
+  public getPartyManager(): PartyManager {
+    return this.partyManager;
+  }
+
+  /**
+   * Start game for a room - initializes session, phase, and turn management
+   */
+  public async startGame(roomId: string, hostPlayerId: string): Promise<{ success: boolean; error?: string; session?: ManagedSession }> {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return { success: false, error: 'Room not found' };
+    }
+
+    if (room.hostPlayerId !== hostPlayerId) {
+      return { success: false, error: 'Only host can start the game' };
+    }
+
+    try {
+      // Get host player info from room
+      const hostConnection = room.players.get(hostPlayerId);
+      const hostPlayerName = hostConnection?.playerName || 'Host';
+
+      // Create session in SessionManager
+      const session = await this.sessionManager.createSession({
+        partyCode: roomId,
+        hostPlayerId,
+        hostPlayerName,
+        maxPlayers: room.settings?.maxPlayers || 4,
+        settings: {}
+      });
+      if (!session) {
+        return { success: false, error: 'Failed to create session' };
+      }
+
+      // Add other players to session
+      for (const [playerId, connection] of room.players) {
+        if (playerId !== hostPlayerId) {
+          await this.sessionManager.addPlayer(session.id, playerId, connection.playerName);
+        }
+      }
+
+      // Store session mapping
+      this.roomToSession.set(roomId, session.id);
+
+      // Initialize turn order
+      await this.turnManager.initializeTurnOrder(session.id, { strategy: 'sequential' });
+
+      // Transition from LOBBY to INTERROGATION
+      const phaseResult = await this.phaseManager.transitionTo(
+        session.id,
+        GamePhase.INTERROGATION
+      );
+
+      if (!phaseResult.success) {
+        return { success: false, error: phaseResult.error };
+      }
+
+      // Update room state
+      room.gamePhase = GamePhase.INTERROGATION;
+      room.currentTurn.phaseStartTime = Date.now();
+
+      // Broadcast game started
+      this.io.to(roomId).emit('game_started', {
+        sessionId: session.id,
+        phase: GamePhase.INTERROGATION,
+        timestamp: Date.now()
+      });
+
+      multiplayerLogger.info({ roomId, sessionId: session.id }, 'Game started');
+
+      return { success: true, session };
+    } catch (error: any) {
+      multiplayerLogger.error({ roomId, error }, 'Failed to start game');
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Advance turn for a room
+   */
+  public async advanceTurn(roomId: string, playerId: string): Promise<{ success: boolean; error?: string }> {
+    const sessionId = this.roomToSession.get(roomId);
+    if (!sessionId) {
+      return { success: false, error: 'No session for room' };
+    }
+
+    // Validate it's this player's turn
+    const validation = await this.turnManager.validateTurnAction(sessionId, playerId);
+    if (!validation.success || !validation.canAct) {
+      return { success: false, error: validation.reason || 'Not your turn' };
+    }
+
+    // Advance the turn
+    const result = await this.turnManager.advanceTurn(sessionId);
+
+    if (result.success) {
+      // Broadcast turn change
+      this.io.to(roomId).emit('turn_changed', {
+        currentPlayerId: result.currentPlayerId,
+        turnNumber: result.turnNumber,
+        isNewRound: result.isNewRound,
+        timestamp: Date.now()
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Transition phase for a room
+   */
+  public async transitionPhase(
+    roomId: string,
+    targetPhase: GamePhase,
+    additionalData?: Record<string, any>
+  ): Promise<{ success: boolean; error?: string }> {
+    const sessionId = this.roomToSession.get(roomId);
+    if (!sessionId) {
+      return { success: false, error: 'No session for room' };
+    }
+
+    const room = this.rooms.get(roomId);
+    const result = await this.phaseManager.transitionTo(sessionId, targetPhase, additionalData);
+
+    if (result.success && room) {
+      // Update room phase
+      room.gamePhase = targetPhase;
+      room.currentTurn.phaseStartTime = Date.now();
+
+      // Broadcast phase change
+      const globalEvent: GlobalEvent = {
+        id: `event_${Date.now()}_phase`,
+        type: 'phase_change',
+        message: `Game phase changed to ${targetPhase}`,
+        timestamp: Date.now()
+      };
+      room.sharedState.globalEvents.push(globalEvent);
+
+      this.io.to(roomId).emit('phase_changed', {
+        newPhase: result.newPhase,
+        previousPhase: result.previousPhase,
+        timestamp: Date.now()
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Get session for a room
+   */
+  public async getSessionForRoom(roomId: string): Promise<ManagedSession | null> {
+    const sessionId = this.roomToSession.get(roomId);
+    if (!sessionId) return null;
+    return this.sessionManager.getSession(sessionId);
+  }
+
+  /**
+   * Broadcast game phase change (legacy method - kept for backward compatibility)
    */
   public changeGamePhase(roomId: string, newPhase: GamePhase): void {
     const room = this.rooms.get(roomId);

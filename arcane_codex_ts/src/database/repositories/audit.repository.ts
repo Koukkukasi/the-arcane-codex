@@ -4,13 +4,15 @@
  */
 
 import { DatabaseConnection } from '../connection';
+import { SQLiteConnection } from '../sqlite-connection';
+import { getDatabase } from '../index';
 import { AuditLogModel, CreateAuditLogDTO } from '../models/session.model';
 
 export class AuditRepository {
-  private db: DatabaseConnection;
+  private db: DatabaseConnection | SQLiteConnection;
 
-  constructor(db?: DatabaseConnection) {
-    this.db = db || DatabaseConnection.getInstance();
+  constructor(db?: DatabaseConnection | SQLiteConnection) {
+    this.db = db || getDatabase();
   }
 
   /**
@@ -127,7 +129,7 @@ export class AuditRepository {
 
     const query = `
       SELECT * FROM audit_logs
-      WHERE created_at > NOW() - make_interval(mins => $1)
+      WHERE created_at > datetime('now', '-' || $1 || ' minutes')
       ORDER BY created_at DESC
       LIMIT $2
     `;
@@ -145,8 +147,8 @@ export class AuditRepository {
   ): Promise<AuditLogModel[]> {
     const query = `
       SELECT * FROM audit_logs
-      WHERE event_data::text ILIKE $1
-         OR metadata::text ILIKE $1
+      WHERE event_data LIKE $1
+         OR metadata LIKE $1
       ORDER BY created_at DESC
       LIMIT $2
     `;
@@ -188,8 +190,8 @@ export class AuditRepository {
         COUNT(*) as total_events,
         COUNT(DISTINCT event_type) as unique_event_types,
         COUNT(DISTINCT actor_id) as unique_actors,
-        COUNT(CASE WHEN created_at > NOW() - INTERVAL '1 hour' THEN 1 END) as events_last_hour,
-        COUNT(CASE WHEN created_at > NOW() - INTERVAL '1 day' THEN 1 END) as events_last_day
+        COUNT(CASE WHEN created_at > datetime('now', '-1 hour') THEN 1 END) as events_last_hour,
+        COUNT(CASE WHEN created_at > datetime('now', '-1 day') THEN 1 END) as events_last_day
       FROM audit_logs
     `;
 
@@ -226,7 +228,7 @@ export class AuditRepository {
       SELECT
         ec.event_type,
         ec.count,
-        ROUND((ec.count::float / t.total_count * 100)::numeric, 2) as percentage
+        ROUND(CAST(ec.count AS REAL) / t.total_count * 100, 2) as percentage
       FROM event_counts ec
       CROSS JOIN total t
       ORDER BY ec.count DESC
@@ -273,12 +275,11 @@ export class AuditRepository {
 
     const query = `
       DELETE FROM audit_logs
-      WHERE created_at < NOW() - make_interval(days => $1)
-      RETURNING id
+      WHERE created_at < datetime('now', '-' || $1 || ' days')
     `;
 
     const result = await this.db.query(query, [safeDays]);
-    return result.rows.length;
+    return result.rowCount ?? 0;
   }
 
   /**
@@ -301,9 +302,9 @@ export class AuditRepository {
         actor_id,
         ip_address,
         COUNT(*) as event_count,
-        ARRAY_AGG(DISTINCT event_type) as event_types
+        GROUP_CONCAT(DISTINCT event_type) as event_types
       FROM audit_logs
-      WHERE created_at > NOW() - make_interval(hours => $1)
+      WHERE created_at > datetime('now', '-' || $1 || ' hours')
         AND event_type LIKE '%_failed%'
       GROUP BY actor_id, ip_address
       HAVING COUNT(*) >= $2
@@ -315,7 +316,7 @@ export class AuditRepository {
       actor_id: row.actor_id,
       ip_address: row.ip_address,
       event_count: parseInt(row.event_count),
-      event_types: row.event_types
+      event_types: row.event_types ? row.event_types.split(',') : []
     }));
   }
 
@@ -334,10 +335,10 @@ export class AuditRepository {
 
     const query = `
       SELECT
-        date_trunc('hour', created_at) as time_bucket,
+        strftime('%Y-%m-%d %H:00:00', created_at) as time_bucket,
         COUNT(*) as event_count
       FROM audit_logs
-      WHERE created_at > NOW() - make_interval(hours => $1)
+      WHERE created_at > datetime('now', '-' || $1 || ' hours')
       GROUP BY time_bucket
       ORDER BY time_bucket ASC
     `;

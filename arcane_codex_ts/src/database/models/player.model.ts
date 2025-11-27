@@ -46,6 +46,6 @@ export interface PlayerStatsDTO {
   total_playtime_minutes: number;
   victories: number;
   defeats: number;
-  win_rate: number;  // Calculated
+  win_rate: string;  // Calculated as string with 2 decimal places
   avg_session_length: number;  // Calculated
 }

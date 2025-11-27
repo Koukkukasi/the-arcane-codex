@@ -224,12 +224,28 @@ export type MultiplayerEvent =
   | { type: 'clue_shared'; payload: { playerId: string; clue: string } };
 
 /**
+ * Socket error codes for standardized error handling
+ */
+export enum SocketErrorCode {
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  ROOM_NOT_FOUND = 'ROOM_NOT_FOUND',
+  ROOM_FULL = 'ROOM_FULL',
+  PLAYER_NOT_IN_ROOM = 'PLAYER_NOT_IN_ROOM',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  RATE_LIMITED = 'RATE_LIMITED',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  NO_ACTIVE_BATTLE = 'NO_ACTIVE_BATTLE',
+  PLAYER_NOT_FOUND = 'PLAYER_NOT_FOUND'
+}
+
+/**
  * Socket response types
  */
 export interface SocketResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+  errorCode?: SocketErrorCode | string;
   timestamp: number;
 }
 

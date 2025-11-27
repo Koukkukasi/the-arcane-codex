@@ -4,13 +4,15 @@
  */
 
 import { DatabaseConnection } from '../connection';
+import { SQLiteConnection } from '../sqlite-connection';
+import { getDatabase } from '../index';
 import { ChatMessageModel, CreateChatMessageDTO } from '../models/session.model';
 
 export class ChatRepository {
-  private db: DatabaseConnection;
+  private db: DatabaseConnection | SQLiteConnection;
 
-  constructor(db?: DatabaseConnection) {
-    this.db = db || DatabaseConnection.getInstance();
+  constructor(db?: DatabaseConnection | SQLiteConnection) {
+    this.db = db || getDatabase();
   }
 
   /**
@@ -63,7 +65,7 @@ export class ChatRepository {
     const query = `
       SELECT * FROM chat_messages
       WHERE party_id = $1
-        AND created_at > NOW() - make_interval(mins => $2)
+        AND created_at > datetime('now', '-' || $2 || ' minutes')
       ORDER BY created_at ASC
     `;
 
@@ -183,12 +185,11 @@ export class ChatRepository {
     const query = `
       DELETE FROM chat_messages
       WHERE party_id = $1
-        AND created_at < NOW() - make_interval(days => $2)
-      RETURNING id
+        AND created_at < datetime('now', '-' || $2 || ' days')
     `;
 
     const result = await this.db.query(query, [partyId, safeDays]);
-    return result.rows.length;
+    return result.rowCount ?? 0;
   }
 
   /**
@@ -198,20 +199,19 @@ export class ChatRepository {
     const query = `
       DELETE FROM chat_messages
       WHERE party_id = $1
-      RETURNING id
     `;
 
     const result = await this.db.query(query, [partyId]);
-    return result.rows.length;
+    return result.rowCount ?? 0;
   }
 
   /**
    * Delete a specific message
    */
   async deleteMessage(messageId: string): Promise<boolean> {
-    const query = 'DELETE FROM chat_messages WHERE id = $1 RETURNING id';
+    const query = 'DELETE FROM chat_messages WHERE id = $1';
     const result = await this.db.query(query, [messageId]);
-    return result.rows.length > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   /**
@@ -255,7 +255,7 @@ export class ChatRepository {
       FROM chat_messages
       WHERE party_id = $1
         AND player_id = $2
-        AND created_at > NOW() - make_interval(secs => $3)
+        AND created_at > datetime('now', '-' || $3 || ' seconds')
     `;
 
     const result = await this.db.query(query, [partyId, playerId, safeSeconds]);

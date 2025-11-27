@@ -4,6 +4,8 @@
  */
 
 import { DatabaseConnection } from '../connection';
+import { SQLiteConnection } from '../sqlite-connection';
+import { getDatabase } from '../index';
 import {
   GameSessionModel,
   CreateGameSessionDTO,
@@ -11,10 +13,10 @@ import {
 } from '../models/session.model';
 
 export class SessionRepository {
-  private db: DatabaseConnection;
+  private db: DatabaseConnection | SQLiteConnection;
 
-  constructor(db?: DatabaseConnection) {
-    this.db = db || DatabaseConnection.getInstance();
+  constructor(db?: DatabaseConnection | SQLiteConnection) {
+    this.db = db || getDatabase();
   }
 
   /**
@@ -119,7 +121,7 @@ export class SessionRepository {
       return this.getSessionById(sessionId);
     }
 
-    updates.push(`updated_at = NOW()`);
+    updates.push(`updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')`);
     values.push(sessionId);
 
     const query = `
@@ -191,8 +193,8 @@ export class SessionRepository {
       SET outcome = $1,
           final_score = $2,
           duration_minutes = $3,
-          completed_at = NOW(),
-          updated_at = NOW()
+          completed_at = strftime('%Y-%m-%d %H:%M:%f', 'now'),
+          updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')
       WHERE id = $4
       RETURNING *
     `;
@@ -287,7 +289,7 @@ export class SessionRepository {
         COUNT(CASE WHEN outcome = 'victory' THEN 1 END) as victories,
         COUNT(CASE WHEN outcome = 'defeat' THEN 1 END) as defeats,
         COUNT(CASE WHEN outcome = 'abandoned' THEN 1 END) as abandoned,
-        AVG(duration_minutes)::integer as avg_duration_minutes
+        CAST(AVG(duration_minutes) AS INTEGER) as avg_duration_minutes
       FROM game_sessions
     `;
 
@@ -315,12 +317,11 @@ export class SessionRepository {
     const query = `
       DELETE FROM game_sessions
       WHERE outcome = 'abandoned'
-        AND completed_at < NOW() - make_interval(days => $1)
-      RETURNING id
+        AND completed_at < datetime('now', '-' || ? || ' days')
     `;
 
     const result = await this.db.query(query, [safeDays]);
-    return result.rows.length;
+    return result.rowCount ?? 0;
   }
 
   /**

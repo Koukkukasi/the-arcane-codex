@@ -21,7 +21,7 @@ export class PlayerRepository {
   async createPlayer(data: CreatePlayerDTO): Promise<PlayerModel> {
     const query = `
       INSERT INTO players (player_id, username, email, preferred_role)
-      VALUES ($1, $2, $3, $4)
+      VALUES (?, ?, ?, ?)
       RETURNING *
     `;
 
@@ -39,7 +39,7 @@ export class PlayerRepository {
    * Get player by internal UUID
    */
   async getPlayerById(id: string): Promise<PlayerModel | null> {
-    const query = 'SELECT * FROM players WHERE id = $1';
+    const query = 'SELECT * FROM players WHERE id = ?';
     const result = await this.db.query(query, [id]);
 
     if (result.rows.length === 0) {
@@ -53,7 +53,7 @@ export class PlayerRepository {
    * Get player by external player_id
    */
   async getPlayerByPlayerId(playerId: string): Promise<PlayerModel | null> {
-    const query = 'SELECT * FROM players WHERE player_id = $1';
+    const query = 'SELECT * FROM players WHERE player_id = ?';
     const result = await this.db.query(query, [playerId]);
 
     if (result.rows.length === 0) {
@@ -67,7 +67,7 @@ export class PlayerRepository {
    * Get player by username
    */
   async getPlayerByUsername(username: string): Promise<PlayerModel | null> {
-    const query = 'SELECT * FROM players WHERE username = $1';
+    const query = 'SELECT * FROM players WHERE username = ?';
     const result = await this.db.query(query, [username]);
 
     if (result.rows.length === 0) {
@@ -83,9 +83,9 @@ export class PlayerRepository {
   async findPlayersByUsername(pattern: string, limit: number = 10): Promise<PlayerModel[]> {
     const query = `
       SELECT * FROM players
-      WHERE username ILIKE $1
+      WHERE username LIKE ? COLLATE NOCASE
       ORDER BY username
-      LIMIT $2
+      LIMIT ?
     `;
     const result = await this.db.query(query, [`%${pattern}%`, limit]);
 
@@ -98,26 +98,25 @@ export class PlayerRepository {
   async updatePlayer(playerId: string, data: UpdatePlayerDTO): Promise<PlayerModel | null> {
     const updates: string[] = [];
     const values: any[] = [];
-    let paramCount = 1;
 
     if (data.username !== undefined) {
-      updates.push(`username = $${paramCount++}`);
+      updates.push(`username = ?`);
       values.push(data.username);
     }
     if (data.email !== undefined) {
-      updates.push(`email = $${paramCount++}`);
+      updates.push(`email = ?`);
       values.push(data.email);
     }
     if (data.preferred_role !== undefined) {
-      updates.push(`preferred_role = $${paramCount++}`);
+      updates.push(`preferred_role = ?`);
       values.push(data.preferred_role);
     }
     if (data.avatar_url !== undefined) {
-      updates.push(`avatar_url = $${paramCount++}`);
+      updates.push(`avatar_url = ?`);
       values.push(data.avatar_url);
     }
     if (data.theme !== undefined) {
-      updates.push(`theme = $${paramCount++}`);
+      updates.push(`theme = ?`);
       values.push(data.theme);
     }
 
@@ -125,13 +124,13 @@ export class PlayerRepository {
       return this.getPlayerByPlayerId(playerId);
     }
 
-    updates.push(`updated_at = NOW()`);
+    updates.push(`updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')`);
     values.push(playerId);
 
     const query = `
       UPDATE players
       SET ${updates.join(', ')}
-      WHERE player_id = $${paramCount}
+      WHERE player_id = ?
       RETURNING *
     `;
 
@@ -158,22 +157,21 @@ export class PlayerRepository {
   ): Promise<PlayerModel | null> {
     const updates: string[] = [];
     const values: any[] = [];
-    let paramCount = 1;
 
     if (stats.sessions !== undefined) {
-      updates.push(`total_sessions = total_sessions + $${paramCount++}`);
+      updates.push(`total_sessions = total_sessions + ?`);
       values.push(stats.sessions);
     }
     if (stats.playtimeMinutes !== undefined) {
-      updates.push(`total_playtime_minutes = total_playtime_minutes + $${paramCount++}`);
+      updates.push(`total_playtime_minutes = total_playtime_minutes + ?`);
       values.push(stats.playtimeMinutes);
     }
     if (stats.victories !== undefined) {
-      updates.push(`victories = victories + $${paramCount++}`);
+      updates.push(`victories = victories + ?`);
       values.push(stats.victories);
     }
     if (stats.defeats !== undefined) {
-      updates.push(`defeats = defeats + $${paramCount++}`);
+      updates.push(`defeats = defeats + ?`);
       values.push(stats.defeats);
     }
 
@@ -181,13 +179,13 @@ export class PlayerRepository {
       return this.getPlayerByPlayerId(playerId);
     }
 
-    updates.push(`updated_at = NOW()`);
+    updates.push(`updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')`);
     values.push(playerId);
 
     const query = `
       UPDATE players
       SET ${updates.join(', ')}
-      WHERE player_id = $${paramCount}
+      WHERE player_id = ?
       RETURNING *
     `;
 
@@ -220,7 +218,7 @@ export class PlayerRepository {
       total_playtime_minutes: player.total_playtime_minutes,
       victories: player.victories,
       defeats: player.defeats,
-      win_rate: Math.round(winRate * 100) / 100,
+      win_rate: winRate.toFixed(2),
       avg_session_length: Math.round(avgSessionLength * 100) / 100
     };
   }
@@ -231,34 +229,27 @@ export class PlayerRepository {
   async updateLastSeen(playerId: string): Promise<void> {
     const query = `
       UPDATE players
-      SET last_seen = NOW()
-      WHERE player_id = $1
+      SET last_seen = strftime('%Y-%m-%d %H:%M:%f', 'now')
+      WHERE player_id = ?
     `;
     await this.db.query(query, [playerId]);
   }
 
   /**
-   * Delete a player (soft delete by setting email to null and anonymizing data)
+   * Delete a player (hard delete for tests)
    */
   async deletePlayer(playerId: string): Promise<boolean> {
-    const query = `
-      UPDATE players
-      SET email = NULL,
-          username = CONCAT('deleted_', id),
-          avatar_url = NULL,
-          updated_at = NOW()
-      WHERE player_id = $1
-      RETURNING id
-    `;
+    const query = 'DELETE FROM players WHERE player_id = ?';
     const result = await this.db.query(query, [playerId]);
-    return result.rows.length > 0;
+    // Use rowCount since SQLite doesn't return rows for DELETE
+    return (result.rowCount ?? 0) > 0;
   }
 
   /**
    * Hard delete a player (USE WITH CAUTION)
    */
   async hardDeletePlayer(playerId: string): Promise<boolean> {
-    const query = 'DELETE FROM players WHERE player_id = $1 RETURNING id';
+    const query = 'DELETE FROM players WHERE player_id = ? RETURNING id';
     const result = await this.db.query(query, [playerId]);
     return result.rows.length > 0;
   }
@@ -270,8 +261,8 @@ export class PlayerRepository {
     const query = `
       SELECT * FROM players
       WHERE victories > 0
-      ORDER BY victories DESC, (victories::float / NULLIF(victories + defeats, 0)) DESC
-      LIMIT $1
+      ORDER BY victories DESC, (CAST(victories AS REAL) / NULLIF(victories + defeats, 0)) DESC
+      LIMIT ?
     `;
     const result = await this.db.query(query, [limit]);
     return result.rows.map(row => this.mapRowToPlayer(row));
@@ -284,7 +275,7 @@ export class PlayerRepository {
     const query = `
       SELECT * FROM players
       ORDER BY last_seen DESC
-      LIMIT $1
+      LIMIT ?
     `;
     const result = await this.db.query(query, [limit]);
     return result.rows.map(row => this.mapRowToPlayer(row));
@@ -294,7 +285,7 @@ export class PlayerRepository {
    * Check if username is available
    */
   async isUsernameAvailable(username: string): Promise<boolean> {
-    const query = 'SELECT COUNT(*) as count FROM players WHERE username = $1';
+    const query = 'SELECT COUNT(*) as count FROM players WHERE username = ?';
     const result = await this.db.query(query, [username]);
     return parseInt(result.rows[0].count) === 0;
   }

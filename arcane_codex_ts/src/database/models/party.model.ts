@@ -12,58 +12,59 @@ export interface PartyModel {
   host_player_id: string;
   max_players: number;
   is_public: boolean;
+  settings?: any;
 
   // State
-  status: 'lobby' | 'active' | 'completed' | 'disbanded';
-  current_phase: 'LOBBY' | 'INTERROGATION' | 'EXPLORATION' | 'BATTLE' | 'SCENARIO' | 'VICTORY';
+  status: 'waiting' | 'in_progress' | 'completed';
+  member_count: number;
 
   // Metadata
   created_at: Date;
   updated_at: Date;
-  started_at?: Date;
-  completed_at?: Date;
 }
 
 export interface CreatePartyDTO {
   code: string;
   name: string;
   host_player_id: string;
-  max_players: number;
+  max_players?: number;
   is_public?: boolean;
+  settings?: any;
 }
 
 export interface UpdatePartyDTO {
   name?: string;
   host_player_id?: string;
-  status?: 'lobby' | 'active' | 'completed' | 'disbanded';
-  current_phase?: 'LOBBY' | 'INTERROGATION' | 'EXPLORATION' | 'BATTLE' | 'SCENARIO' | 'VICTORY';
+  status?: 'waiting' | 'in_progress' | 'completed';
+  member_count?: number;
 }
 
 export interface PartyMemberModel {
-  id: string;  // UUID
   party_id: string;
   player_id: string;
 
   // Member details
-  role?: 'tank' | 'dps' | 'healer' | 'support';
+  role?: 'host' | 'player';
   is_ready: boolean;
-  is_connected: boolean;
+  character_data?: any;
 
   // Metadata
   joined_at: Date;
-  left_at?: Date;
+  updated_at: Date;
+  username?: string;
 }
 
 export interface AddPartyMemberDTO {
   party_id: string;
   player_id: string;
-  role?: 'tank' | 'dps' | 'healer' | 'support';
+  role?: 'host' | 'player';
+  character_data?: any;
 }
 
 export interface UpdatePartyMemberDTO {
-  role?: 'tank' | 'dps' | 'healer' | 'support';
+  role?: 'host' | 'player';
   is_ready?: boolean;
-  is_connected?: boolean;
+  character_data?: any;
 }
 
 export interface PartyWithMembersDTO extends PartyModel {
