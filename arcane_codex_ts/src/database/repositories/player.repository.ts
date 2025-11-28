@@ -297,6 +297,56 @@ export class PlayerRepository {
     return this.getTopPlayers(limit);
   }
 
+
+  /**
+   * Update player's password hash
+   */
+  async updatePasswordHash(playerId: string, passwordHash: string): Promise<boolean> {
+    const query = `
+      UPDATE players
+      SET password_hash = ?, updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')
+      WHERE player_id = ?
+    `;
+    const result = await this.db.query(query, [passwordHash, playerId]);
+    const rowCount: number = result.rowCount ?? 0;
+    return rowCount > 0;
+  }
+
+  /**
+   * Get player's password hash for authentication
+   */
+  async getPasswordHash(playerId: string): Promise<string | null> {
+    const query = 'SELECT password_hash FROM players WHERE player_id = ?';
+    const result = await this.db.query(query, [playerId]);
+
+    if (result.rows.length === 0 || !result.rows[0].password_hash) {
+      return null;
+    }
+
+    return result.rows[0].password_hash;
+  }
+
+  /**
+   * Create player with password hash
+   */
+  async createPlayerWithPassword(data: CreatePlayerDTO & { password_hash: string }): Promise<PlayerModel> {
+    const query = `
+      INSERT INTO players (player_id, username, email, preferred_role, password_hash)
+      VALUES (?, ?, ?, ?, ?)
+      RETURNING *
+    `;
+
+    const result = await this.db.query(query, [
+      data.player_id,
+      data.username,
+      data.email || null,
+      data.preferred_role || null,
+      data.password_hash
+    ]);
+
+    return this.mapRowToPlayer(result.rows[0]);
+  }
+
   /**
    * Map database row to PlayerModel
    */
@@ -306,6 +356,7 @@ export class PlayerRepository {
       player_id: row.player_id,
       username: row.username,
       email: row.email,
+      password_hash: row.password_hash,
       total_sessions: row.total_sessions,
       total_playtime_minutes: row.total_playtime_minutes,
       victories: row.victories,

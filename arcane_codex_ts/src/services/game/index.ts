@@ -3,6 +3,26 @@
  * Export all game logic services
  */
 
+// Game Session Management
+export { GameSessionService } from './GameSessionService';
+export type {
+  GameSession,
+  SessionPlayer,
+  ScenarioSessionState
+} from './GameSessionService';
+
+// Scenario Management
+export { ScenarioManager } from './ScenarioManager';
+export type {
+  Scenario,
+  ScenarioChoice,
+  ScenarioConsequence,
+  ScenarioType,
+  PlayerChoice,
+  ScenarioSession,
+  ScenarioOutcome
+} from './ScenarioManager';
+
 // Interrogation
 export { InterrogationService } from './interrogation.service';
 export type {

@@ -118,7 +118,7 @@ test.describe('Authentication API Endpoints', () => {
   const baseURL = 'http://localhost:3000';
 
   test('should require authentication for protected routes', async ({ request }) => {
-    const response = await request.get(`${baseURL}/api/players/me`, {
+    const response = await request.get(`${baseURL}/api/me`, {
       headers: {
         'Authorization': 'Bearer invalid-token'
       }
@@ -145,14 +145,14 @@ test.describe('Authentication API Endpoints', () => {
   });
 
   test('should reject requests without authorization header', async ({ request }) => {
-    const response = await request.get(`${baseURL}/api/players/me`);
+    const response = await request.get(`${baseURL}/api/me`);
 
     // Should be 401 Unauthorized or 403 Forbidden
     expect([401, 403]).toContain(response.status());
   });
 
   test('should reject malformed authorization header', async ({ request }) => {
-    const response = await request.get(`${baseURL}/api/players/me`, {
+    const response = await request.get(`${baseURL}/api/me`, {
       headers: {
         'Authorization': 'InvalidFormat token-here'
       }

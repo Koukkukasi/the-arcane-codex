@@ -5,7 +5,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:5000/api/multiplayer';
+const API_BASE = 'http://localhost:3000/api/multiplayer';
 
 test.describe('Party Management API', () => {
   let partyCode: string;

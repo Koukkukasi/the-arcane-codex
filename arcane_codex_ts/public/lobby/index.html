@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="arcane">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiplayer Lobby - The Arcane Codex</title>
+  <link rel="icon" href="/favicon.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --arcane-void: #0a0a0f;
+      --arcane-shadow: #1a1a2e;
+      --arcane-purple: #7b2cbf;
+      --arcane-gold: #d4af37;
+      --arcane-parchment: #e8dcc4;
+      --arcane-blood: #8b0000;
+      --crt-green: #33ff33;
+      --crt-amber: #ffb000;
+      --crt-glow: rgba(51, 255, 51, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--arcane-void);
+      color: var(--crt-green);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Arcane Background */
+    .arcane-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse at center, rgba(123, 44, 191, 0.1) 0%, transparent 70%),
+        linear-gradient(180deg, var(--arcane-void) 0%, var(--arcane-shadow) 100%);
+      z-index: -2;
+    }
+
+    /* Particles container */
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Main lobby container with CRT effect */
+    .lobby-container {
+      position: relative;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .lobby-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1),
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Lobby Header */
+    .lobby-header {
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .game-logo {
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: 2.5rem;
+      color: var(--arcane-gold);
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      animation: logoGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes logoGlow {
+      0%, 100% { text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+      50% { text-shadow: 0 0 40px rgba(212, 175, 55, 0.8); }
+    }
+
+    /* Connection Status */
+    #connectionStatus {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--crt-green);
+      box-shadow: 0 0 10px var(--crt-green);
+    }
+
+    .status-indicator.connecting {
+      background: var(--crt-amber);
+      box-shadow: 0 0 10px var(--crt-amber);
+      animation: pulse 1s infinite;
+    }
+
+    .status-indicator.disconnected {
+      background: var(--arcane-blood);
+      box-shadow: 0 0 10px var(--arcane-blood);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+    }
+
+    /* Lobby Content Layout */
+    .lobby-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .lobby-content {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .lobby-content {
+        grid-template-columns: 1fr;
+      }
+      .panel-left {
+        max-width: 100% !important;
+      }
+    }
+
+    /* Panels */
+    .panel {
+      background: rgba(26, 26, 46, 0.8);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(123, 44, 191, 0.2);
+    }
+
+    .panel-left {
+      max-width: 350px;
+    }
+
+    .panel-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: var(--arcane-gold);
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .role-selector-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      color: var(--arcane-gold);
+      margin-bottom: 10px;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      color: var(--crt-green);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 15px;
+      background: rgba(10, 10, 15, 0.8);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      color: var(--crt-green);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--crt-green);
+      box-shadow: 0 0 10px var(--crt-glow);
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 15px;
+      background: rgba(10, 10, 15, 0.8);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      color: var(--crt-green);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .form-select option {
+      background: var(--arcane-shadow);
+    }
+
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .checkbox-custom {
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--arcane-purple);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 15, 0.8);
+    }
+
+    #publicPartyCheck:checked + .checkbox-label .checkbox-custom {
+      background: var(--arcane-purple);
+    }
+
+    #publicPartyCheck:checked + .checkbox-label .checkbox-custom::after {
+      content: "\2713";
+      color: var(--crt-green);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: linear-gradient(180deg, var(--arcane-purple) 0%, #5a1f8f 100%);
+      border: 1px solid var(--arcane-gold);
+      border-radius: 4px;
+      color: var(--arcane-parchment);
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(123, 44, 191, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--arcane-purple);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    /* Player List */
+    #playerListContainer {
+      min-height: 200px;
+    }
+
+    .player-count {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 10px;
+    }
+
+    #playersList {
+      list-style: none;
+    }
+
+    #playersList li {
+      padding: 10px;
+      background: rgba(10, 10, 15, 0.5);
+      border-left: 3px solid var(--arcane-purple);
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #emptyState {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(51, 255, 51, 0.5);
+    }
+
+    /* Role Selector */
+    #roleSelector {
+      display: none;
+    }
+
+    #roleSelector.visible {
+      display: block;
+    }
+
+    .role-card {
+      padding: 15px;
+      background: rgba(10, 10, 15, 0.5);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .role-card:hover {
+      border-color: var(--arcane-gold);
+      transform: translateX(5px);
+    }
+
+    .role-card.selected {
+      border-color: var(--crt-green);
+      background: rgba(51, 255, 51, 0.1);
+    }
+
+    /* Phase Indicator */
+    #phaseIndicator {
+      display: none;
+      text-align: center;
+      padding: 15px;
+      background: rgba(123, 44, 191, 0.2);
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    #phaseIndicator.visible {
+      display: block;
+    }
+
+    #phaseIcon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    #phaseName {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: var(--arcane-gold);
+    }
+
+    /* Chat Container */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 300px;
+    }
+
+    #chatMessages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(10, 10, 15, 0.5);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .chat-message {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    .chat-message .sender {
+      color: var(--arcane-gold);
+      font-weight: bold;
+    }
+
+    .chat-input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    #chatInput {
+      flex: 1;
+      padding: 10px;
+      background: rgba(10, 10, 15, 0.8);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      color: var(--crt-green);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    #btnSendChat {
+      padding: 10px 20px;
+    }
+
+    /* Toast Container */
+    #toastContainer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+    }
+
+    .toast {
+      padding: 15px 20px;
+      background: var(--arcane-shadow);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      margin-bottom: 10px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.error {
+      border-color: var(--arcane-blood);
+    }
+
+    .toast.success {
+      border-color: var(--crt-green);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Public Parties Modal */
+    #publicPartiesModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 15, 0.9);
+      z-index: 1500;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #publicPartiesModal.visible {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--arcane-shadow);
+      border: 2px solid var(--arcane-purple);
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: var(--arcane-gold);
+    }
+
+    #btnClosePublic {
+      background: none;
+      border: none;
+      color: var(--crt-green);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    #publicPartiesList {
+      list-style: none;
+    }
+
+    #publicPartiesList li {
+      padding: 15px;
+      background: rgba(10, 10, 15, 0.5);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #publicPartiesList li:hover {
+      border-color: var(--arcane-gold);
+    }
+
+    /* Ready Button */
+    #btnReady {
+      display: none;
+    }
+
+    #btnReady.visible {
+      display: block;
+    }
+
+    /* Auth Modal */
+    #authModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 15, 0.95);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #authModal.visible {
+      display: flex;
+    }
+
+    .auth-modal-content {
+      background: var(--arcane-shadow);
+      border: 2px solid var(--arcane-purple);
+      border-radius: 8px;
+      padding: 40px;
+      max-width: 450px;
+      width: 90%;
+      box-shadow: 0 0 40px rgba(123, 44, 191, 0.5);
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .auth-title {
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: 2rem;
+      color: var(--arcane-gold);
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      margin-bottom: 10px;
+    }
+
+    .auth-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      color: var(--crt-green);
+      opacity: 0.7;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      border-bottom: 1px solid var(--arcane-purple);
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: rgba(51, 255, 51, 0.5);
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .auth-tab:hover {
+      color: var(--crt-green);
+    }
+
+    .auth-tab.active {
+      color: var(--arcane-gold);
+      border-bottom-color: var(--arcane-gold);
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+    }
+
+    .auth-form-group {
+      margin-bottom: 20px;
+    }
+
+    .auth-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--crt-green);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(10, 10, 15, 0.8);
+      border: 1px solid var(--arcane-purple);
+      border-radius: 4px;
+      color: var(--crt-green);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: var(--crt-green);
+      box-shadow: 0 0 15px var(--crt-glow);
+    }
+
+    .auth-checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .auth-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--arcane-purple);
+    }
+
+    .auth-checkbox-label {
+      color: var(--crt-green);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .auth-error {
+      display: none;
+      padding: 12px;
+      background: rgba(139, 0, 0, 0.2);
+      border: 1px solid var(--arcane-blood);
+      border-radius: 4px;
+      color: #ff6666;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .auth-error.visible {
+      display: block;
+    }
+
+    .auth-btn {
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(180deg, var(--arcane-purple) 0%, #5a1f8f 100%);
+      border: 1px solid var(--arcane-gold);
+      border-radius: 4px;
+      color: var(--arcane-parchment);
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .auth-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 25px rgba(123, 44, 191, 0.5);
+    }
+
+    .auth-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .auth-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: rgba(51, 255, 51, 0.5);
+    }
+
+    /* Logged in user display */
+    .user-display {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 8px 15px;
+      background: rgba(123, 44, 191, 0.2);
+      border-radius: 4px;
+      justify-content: center;
+    }
+
+    .user-display.visible {
+      display: flex;
+    }
+
+    .user-display-name {
+      font-family: 'Cinzel', serif;
+      color: var(--arcane-gold);
+    }
+
+    .btn-logout {
+      padding: 4px 12px;
+      background: transparent;
+      border: 1px solid var(--arcane-blood);
+      border-radius: 3px;
+      color: var(--arcane-blood);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: var(--arcane-blood);
+      color: var(--arcane-parchment);
+    }
+  </style>
+</head>
+<body>
+  <div class="arcane-background"></div>
+  <div id="particles"></div>
+
+  <!-- Auth Modal -->
+  <div id="authModal">
+    <div class="auth-modal-content">
+      <div class="auth-header">
+        <h2 class="auth-title">The Arcane Codex</h2>
+        <p class="auth-subtitle">Enter the realm of mystery</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Login</button>
+        <button class="auth-tab" data-tab="register">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="auth-form active">
+        <div class="auth-error" id="loginError"></div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="loginUsername">Username</label>
+          <input type="text" id="loginUsername" class="auth-input" placeholder="Enter username" autocomplete="username" required>
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="auth-input" placeholder="Enter password" autocomplete="current-password" required>
+        </div>
+
+        <div class="auth-checkbox-group">
+          <input type="checkbox" id="rememberMe" class="auth-checkbox">
+          <label for="rememberMe" class="auth-checkbox-label">Remember me</label>
+        </div>
+
+        <button type="submit" id="btnLogin" class="auth-btn">Enter the Codex</button>
+
+        <div class="auth-footer">
+          New seeker? Switch to the Register tab
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" class="auth-form">
+        <div class="auth-error" id="registerError"></div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="registerUsername">Username</label>
+          <input type="text" id="registerUsername" class="auth-input" placeholder="Choose a username" autocomplete="username" minlength="2" maxlength="20" required>
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="registerEmail">Email (optional)</label>
+          <input type="email" id="registerEmail" class="auth-input" placeholder="your@email.com" autocomplete="email">
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" class="auth-input" placeholder="Choose a password" autocomplete="new-password" minlength="6" required>
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="registerPasswordConfirm">Confirm Password</label>
+          <input type="password" id="registerPasswordConfirm" class="auth-input" placeholder="Confirm your password" autocomplete="new-password" minlength="6" required>
+        </div>
+
+        <button type="submit" id="btnRegister" class="auth-btn">Join the Codex</button>
+
+        <div class="auth-footer">
+          Already have an account? Switch to Login tab
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="lobby-container">
+    <!-- Header -->
+    <header class="lobby-header">
+      <h1 class="game-logo">The Arcane Codex</h1>
+      <div id="connectionStatus">
+        <div class="status-indicator connecting"></div>
+        <span class="status-text">CONNECTING</span>
+      </div>
+      <div id="userDisplay" class="user-display">
+        <span class="user-display-name" id="displayUsername"></span>
+        <button id="btnLogout" class="btn-logout">Logout</button>
+      </div>
+    </header>
+
+    <!-- Phase Indicator -->
+    <div id="phaseIndicator">
+      <div id="phaseIcon">&#9881;</div>
+      <div id="phaseName">LOBBY</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="lobby-content">
+      <!-- Left Panel - Create/Join Party -->
+      <div class="panel panel-left">
+        <!-- Create Party Section -->
+        <section id="createPartySection">
+          <h2 class="panel-title">Create Party</h2>
+          <div class="form-group">
+            <label class="form-label" for="partyNameInput">Party Name</label>
+            <input type="text" id="partyNameInput" class="form-input" placeholder="Enter party name..." maxlength="30">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="maxPlayersSelect">Max Players</label>
+            <select id="maxPlayersSelect" class="form-select">
+              <option value="2">2 Players</option>
+              <option value="3">3 Players</option>
+              <option value="4" selected>4 Players</option>
+              <option value="5">5 Players</option>
+              <option value="6">6 Players</option>
+            </select>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="publicPartyCheck" hidden>
+            <label for="publicPartyCheck" class="checkbox-label">
+              <span class="checkbox-custom"></span>
+              <span>Public Party</span>
+            </label>
+          </div>
+          <button id="btnCreateParty" class="btn btn-full">Create Party</button>
+        </section>
+
+        <!-- Join Party Section -->
+        <section style="margin-top: 30px;">
+          <h2 class="panel-title">Join Party</h2>
+          <div class="form-group">
+            <label class="form-label" for="partyCodeInput">Party Code</label>
+            <input type="text" id="partyCodeInput" class="form-input" placeholder="Enter 6-digit code..." maxlength="6" style="text-transform: uppercase;">
+          </div>
+          <button id="btnJoinParty" class="btn btn-full">Join Party</button>
+          <button id="btnBrowsePublic" class="btn btn-secondary btn-full" style="margin-top: 10px;">Browse Public Parties</button>
+        </section>
+      </div>
+
+      <!-- Center Panel - Player List -->
+      <div class="panel" id="playerListContainer">
+        <h2 class="panel-title">Party Members</h2>
+        <div class="player-count">
+          <span id="playerCount">0</span>/<span id="maxPlayers">4</span> Players
+        </div>
+        <ul id="playersList"></ul>
+        <div id="emptyState">
+          <p>No party joined yet.</p>
+          <p>Create or join a party to begin!</p>
+        </div>
+
+        <!-- Role Selector -->
+        <div id="roleSelector">
+          <h3 class="role-selector-title" style="margin-top: 20px;">Select Role</h3>
+          <div class="role-card" data-role="warrior">
+            <strong>Warrior</strong>
+            <p>Tank and melee damage</p>
+          </div>
+          <div class="role-card" data-role="mage">
+            <strong>Mage</strong>
+            <p>Arcane spellcaster</p>
+          </div>
+          <div class="role-card" data-role="rogue">
+            <strong>Rogue</strong>
+            <p>Stealth and precision</p>
+          </div>
+          <div class="role-card" data-role="healer">
+            <strong>Healer</strong>
+            <p>Support and restoration</p>
+          </div>
+        </div>
+
+        <button id="btnReady" class="btn btn-full" style="margin-top: 20px;">Ready</button>
+      </div>
+
+      <!-- Right Panel - Chat -->
+      <div class="panel">
+        <h2 class="panel-title">Party Chat</h2>
+        <div class="chat-container">
+          <div id="chatMessages">
+            <div class="chat-message">
+              <span class="sender">System:</span> Welcome to The Arcane Codex!
+            </div>
+          </div>
+          <div class="chat-input-group">
+            <input type="text" id="chatInput" placeholder="Type a message..." maxlength="200">
+            <button id="btnSendChat" class="btn">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- Public Parties Modal -->
+  <div id="publicPartiesModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Public Parties</h2>
+        <button id="btnClosePublic">&times;</button>
+      </div>
+      <ul id="publicPartiesList">
+        <li>Loading public parties...</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Socket.IO Client Library -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <!-- Auth Manager -->
+  <script src="/lobby/auth.js"></script>
+
+  <!-- Lobby Client Script -->
+  <script src="/lobby/lobby.js"></script>
+</body>
+</html>

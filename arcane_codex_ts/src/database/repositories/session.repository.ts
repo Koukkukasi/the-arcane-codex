@@ -321,7 +321,87 @@ export class SessionRepository {
     `;
 
     const result = await this.db.query(query, [safeDays]);
-    return result.rowCount ?? 0;
+    return typeof result.rowCount === 'number' ? result.rowCount : 0;
+  }
+
+  /**
+   * Get stale sessions (active but not updated for specified hours)
+   * These are sessions that may have been abandoned without proper cleanup
+   */
+  async getStaleSessions(hoursStale: number = 4): Promise<GameSessionModel[]> {
+    const safeHours = Math.max(1, Math.min(Math.floor(hoursStale), 168)); // 1 hour to 7 days
+
+    const query = `
+      SELECT * FROM game_sessions
+      WHERE completed_at IS NULL
+        AND updated_at < datetime('now', '-' || ? || ' hours')
+      ORDER BY updated_at ASC
+    `;
+
+    const result = await this.db.query(query, [safeHours]);
+    return result.rows.map(row => this.mapRowToSession(row));
+  }
+
+  /**
+   * Mark stale sessions as abandoned
+   * Returns the number of sessions marked as abandoned
+   */
+  async markStaleSessions(hoursStale: number = 4): Promise<number> {
+    const safeHours = Math.max(1, Math.min(Math.floor(hoursStale), 168));
+
+    const query = `
+      UPDATE game_sessions
+      SET outcome = 'abandoned',
+          completed_at = strftime('%Y-%m-%d %H:%M:%f', 'now'),
+          updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')
+      WHERE completed_at IS NULL
+        AND updated_at < datetime('now', '-' || ? || ' hours')
+    `;
+
+    const result = await this.db.query(query, [safeHours]);
+    return typeof result.rowCount === 'number' ? result.rowCount : 0;
+  }
+
+  /**
+   * Get all active sessions that need to be restored on server restart
+   * These are sessions that are not completed and were updated recently
+   */
+  async getRestorableSessions(maxAgeHours: number = 24): Promise<GameSessionModel[]> {
+    const safeHours = Math.max(1, Math.min(Math.floor(maxAgeHours), 168));
+
+    const query = `
+      SELECT * FROM game_sessions
+      WHERE completed_at IS NULL
+        AND updated_at > datetime('now', '-' || ? || ' hours')
+      ORDER BY updated_at DESC
+    `;
+
+    const result = await this.db.query(query, [safeHours]);
+    return result.rows.map(row => this.mapRowToSession(row));
+  }
+
+  /**
+   * Clean up timed out sessions
+   * Marks stale sessions as abandoned and deletes old abandoned sessions
+   * Returns statistics about the cleanup operation
+   */
+  async cleanupTimedOutSessions(
+    staleHours: number = 4,
+    deleteAbandonedDays: number = 7
+  ): Promise<{
+    markedAbandoned: number;
+    deletedSessions: number;
+  }> {
+    // Mark stale sessions as abandoned
+    const markedAbandoned = await this.markStaleSessions(staleHours);
+
+    // Delete old abandoned sessions
+    const deletedSessions = await this.cleanupOldSessions(deleteAbandonedDays);
+
+    return {
+      markedAbandoned,
+      deletedSessions
+    };
   }
 
   /**

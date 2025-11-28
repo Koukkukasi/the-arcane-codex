@@ -6,26 +6,42 @@
 import { test, expect } from '@playwright/test';
 import { io, Socket } from 'socket.io-client';
 
-const SERVER_URL = 'http://localhost:5000';
+const SERVER_URL = 'http://localhost:3000';
 const API_BASE = `${SERVER_URL}/api/multiplayer`;
 
 // Helper to create Socket.IO client
-function createSocket(): Socket {
+function createSocket(playerId?: string, playerName?: string): Socket {
   return io(SERVER_URL, {
     reconnection: false,
-    timeout: 5000
+    timeout: 5000,
+    auth: {
+      playerId: playerId || `player_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      playerName: playerName || 'TestPlayer'
+    }
   });
 }
 
-// Helper to wait for event
-function waitForEvent(socket: Socket, event: string, timeout = 5000): Promise<any> {
+// Helper to wait for event with error handling
+function waitForEvent(socket: Socket, event: string, timeout = 10000): Promise<any> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
+      socket.off('connect_error', errorHandler);
       reject(new Error(`Timeout waiting for event: ${event}`));
     }, timeout);
 
+    const errorHandler = (err: Error) => {
+      clearTimeout(timer);
+      reject(new Error(`Socket error while waiting for ${event}: ${err.message}`));
+    };
+
+    // Handle connect_error for connection events
+    if (event === 'connect') {
+      socket.once('connect_error', errorHandler);
+    }
+
     socket.once(event, (data) => {
       clearTimeout(timer);
+      socket.off('connect_error', errorHandler);
       resolve(data);
     });
   });
@@ -128,23 +144,30 @@ test.describe('Socket.IO Multiplayer', () => {
       await waitForEvent(socket1, 'connect');
       await waitForEvent(socket2, 'connect');
 
-      // Socket 1 joins
+      const player1Id = `player1_${Date.now()}`;
+      const player2Id = `player2_${Date.now()}`;
+
+      // Socket 1 joins first
       await new Promise<void>((resolve) => {
         socket1.emit('join_room', {
           roomId,
-          playerId: `player1_${Date.now()}`,
+          playerId: player1Id,
           playerName: 'SocketPlayer1',
           rejoin: false
         }, () => resolve());
       });
 
-      // Socket 2 joins and Socket 1 should be notified
+      // Wait a bit for the join to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Set up notification listener BEFORE socket 2 joins
       const notification = waitForEvent(socket1, 'player_joined');
 
+      // Socket 2 joins - Socket 1 should be notified
       await new Promise<void>((resolve) => {
         socket2.emit('join_room', {
           roomId,
-          playerId: `player2_${Date.now()}`,
+          playerId: player2Id,
           playerName: 'SocketPlayer2',
           rejoin: false
         }, () => resolve());
@@ -215,9 +238,13 @@ test.describe('Socket.IO Multiplayer', () => {
           rejoin: false
         }, () => resolve());
       });
+
+      // Wait for room joins to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     test('should send and receive chat messages', async () => {
+      // Set up listener BEFORE sending
       const messagePromise = waitForEvent(socket2, 'chat_message');
 
       await new Promise<void>((resolve) => {

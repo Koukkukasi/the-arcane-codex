@@ -9,6 +9,9 @@ import { multiplayerLogger, securityLogger } from '../logger';
 import { PhaseManager } from '../phase.manager';
 import { TurnManager } from '../turn.manager';
 import { SessionManager, ManagedSession } from '../session.manager';
+import { GameSessionService } from '../game/GameSessionService';
+import { ScenarioManager } from '../game/ScenarioManager';
+import { BattleService } from '../battle';
 import {
   PlayerConnection,
   RoomState,
@@ -69,6 +72,8 @@ export class MultiplayerService {
   private phaseManager: PhaseManager;
   private turnManager: TurnManager;
   private sessionManager: SessionManager;
+  private gameSessionService: GameSessionService;
+  private scenarioManager: ScenarioManager;
   private rooms: Map<string, RoomState>;
   private playerConnections: Map<string, PlayerConnection>;
   private reconnectionData: Map<string, ReconnectionData>;
@@ -81,10 +86,25 @@ export class MultiplayerService {
     this.phaseManager = PhaseManager.getInstance();
     this.turnManager = TurnManager.getInstance();
     this.sessionManager = SessionManager.getInstance();
+    this.gameSessionService = GameSessionService.getInstance();
+    this.scenarioManager = ScenarioManager.getInstance();
     this.rooms = new Map();
     this.playerConnections = new Map();
     this.reconnectionData = new Map();
     this.startHeartbeatMonitor();
+    this.initializeScenarios();
+  }
+
+  /**
+   * Initialize scenarios from data files
+   */
+  private async initializeScenarios(): Promise<void> {
+    try {
+      const count = await this.scenarioManager.loadScenariosFromFiles();
+      multiplayerLogger.info({ count }, 'Scenarios initialized');
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Failed to initialize scenarios');
+    }
   }
 
   /**
@@ -354,6 +374,21 @@ export class MultiplayerService {
       );
     });
 
+    // Start game event - host only
+    socket.on('start_game', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleStartGame(socket, payload as any, callback!);
+    });
+
+    // Submit battle action event
+    socket.on('submit_action', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleSubmitAction(socket, payload as any, callback!);
+    });
+
+    // Submit scenario response event
+    socket.on('scenario_response', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleScenarioResponse(socket, payload as any, callback!);
+    });
+
     // Disconnect event
     socket.on('disconnect', () => {
       this.handleDisconnect(socket);
@@ -371,17 +406,54 @@ export class MultiplayerService {
     try {
       const { roomId, playerId, playerName, rejoin } = payload;
 
-      // Check if trying to rejoin
+      // Check if trying to rejoin with reconnection data
       if (rejoin && this.reconnectionData.has(playerId)) {
         this.handleReconnect(socket, playerId);
         callback(this.createSuccessResponse({ reconnected: true }));
         return;
       }
 
-      // Get or create room
+      // Validate that the party exists before allowing join
+      const party = this.partyManager.getParty(roomId);
+      if (!party) {
+        callback({
+          success: false,
+          error: 'Party not found',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      // Get or create room for existing party
       let room = this.rooms.get(roomId);
       if (!room) {
         room = this.createRoom(roomId, playerId);
+      }
+
+      // Check if player was already in the room (reconnection without stored data)
+      const existingPlayer = room.players.get(playerId);
+      if (rejoin && existingPlayer) {
+        // Update existing player's socket
+        existingPlayer.socketId = socket.id;
+        existingPlayer.isConnected = true;
+        existingPlayer.lastSeen = Date.now();
+        this.playerConnections.set(playerId, existingPlayer);
+        socket.join(roomId);
+
+        callback({
+          success: true,
+          timestamp: Date.now(),
+          data: {
+            reconnected: true,
+            room: this.sanitizeRoomState(room, playerId),
+            players: Array.from(room.players.values()).map(p => ({
+              playerId: p.playerId,
+              playerName: p.playerName,
+              isConnected: p.isConnected
+            }))
+          }
+        });
+        return;
       }
 
       // Check room capacity
@@ -411,6 +483,11 @@ export class MultiplayerService {
       // Store player connection
       this.playerConnections.set(playerId, playerConnection);
 
+      // Sync player with party system (if not already in party)
+      if (party && !party.players.has(playerId)) {
+        this.partyManager.joinParty(roomId, playerId, playerName);
+      }
+
       // Join Socket.IO room
       socket.join(roomId);
 
@@ -436,6 +513,7 @@ export class MultiplayerService {
         success: true,
         timestamp: Date.now(),
         data: {
+          reconnected: rejoin || undefined, // Set to true if rejoining, undefined otherwise
           room: this.sanitizeRoomState(room, playerId),
           players: Array.from(room.players.values()).map(p => ({
             playerId: p.playerId,
@@ -478,6 +556,12 @@ export class MultiplayerService {
       // Remove player from room
       room.players.delete(playerId);
       this.playerConnections.delete(playerId);
+
+      // Sync with party system - remove player from party
+      const party = this.partyManager.getParty(roomId);
+      if (party && party.players.has(playerId)) {
+        this.partyManager.leaveParty(roomId, playerId);
+      }
 
       // Leave Socket.IO room
       socket.leave(roomId);
@@ -824,6 +908,263 @@ export class MultiplayerService {
   }
 
   /**
+   * Handle start game event
+   */
+  private async handleStartGame(
+    _socket: Socket,
+    payload: { roomId: string; playerId: string },
+    callback: (response: SocketResponse) => void
+  ): Promise<void> {
+    try {
+      const { roomId, playerId } = payload;
+      const room = this.rooms.get(roomId);
+
+      if (!room) {
+        callback(this.createErrorResponse(SocketErrorCode.ROOM_NOT_FOUND, 'Room not found'));
+        return;
+      }
+
+      if (room.hostPlayerId !== playerId) {
+        callback(this.createErrorResponse(SocketErrorCode.UNAUTHORIZED, 'Only host can start game'));
+        return;
+      }
+
+      // Create game session
+      const playerData = Array.from(room.players.values()).map(p => ({
+        playerId: p.playerId,
+        playerName: p.playerName,
+        characterClass: 'WARRIOR' // Default, can be customized
+      }));
+
+      const gameSession = await this.gameSessionService.startGameSession(roomId, playerData);
+
+      // Start with a scenario
+      const scenario = this.scenarioManager.getRandomScenario(
+        undefined,
+        1,
+        room.players.size
+      );
+
+      if (scenario) {
+        await this.gameSessionService.startScenario(gameSession.sessionId, scenario.id, scenario);
+        room.sharedState.scenarioState = {
+          scenarioId: scenario.id,
+          scenarioPhase: 0,
+          playersReady: [],
+          choicesMade: new Map(),
+          sharedClues: [],
+          consequencesRevealed: false
+        };
+      }
+
+      room.gamePhase = GamePhase.SCENARIO;
+
+      // Broadcast game started to all players
+      this.io.to(roomId).emit('game_started', {
+        sessionId: gameSession.sessionId,
+        phase: room.gamePhase,
+        scenario: scenario ? {
+          id: scenario.id,
+          title: scenario.title,
+          narrative: scenario.narrative,
+          choices: scenario.choices.map(c => ({
+            id: c.id,
+            text: c.text,
+            description: c.description
+          }))
+        } : null,
+        timestamp: Date.now()
+      });
+
+      multiplayerLogger.info({ roomId, sessionId: gameSession.sessionId }, 'Game started');
+      callback(this.createSuccessResponse({ sessionId: gameSession.sessionId }));
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Error starting game');
+      callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, error.message));
+    }
+  }
+
+  /**
+   * Handle submit battle action
+   */
+  private async handleSubmitAction(
+    _socket: Socket,
+    payload: { roomId: string; playerId: string; actionType: string; actionData?: any },
+    callback: (response: SocketResponse) => void
+  ): Promise<void> {
+    try {
+      const { roomId, playerId, actionType, actionData } = payload;
+      const room = this.rooms.get(roomId);
+
+      if (!room) {
+        callback(this.createErrorResponse(SocketErrorCode.ROOM_NOT_FOUND, 'Room not found'));
+        return;
+      }
+
+      const gameSession = this.gameSessionService.getSessionByPartyCode(roomId);
+      if (!gameSession || !gameSession.battleState) {
+        callback(this.createErrorResponse(SocketErrorCode.NO_ACTIVE_BATTLE, 'No active battle'));
+        return;
+      }
+
+      // Process battle action
+      let result: any;
+      const battleId = gameSession.battleState.battleId;
+
+      switch (actionType) {
+        case 'attack':
+          result = BattleService.executeAttack(battleId);
+          break;
+        case 'defend':
+          result = BattleService.executeDefend(battleId);
+          break;
+        case 'ability':
+          if (actionData?.abilityId) {
+            result = BattleService.useAbility(battleId, actionData.abilityId);
+          }
+          break;
+        case 'flee':
+          result = BattleService.attemptFlee(battleId);
+          break;
+        default:
+          callback(this.createErrorResponse(SocketErrorCode.VALIDATION_ERROR, 'Invalid action type'));
+          return;
+      }
+
+      if (!result) {
+        callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, 'Action failed'));
+        return;
+      }
+
+      // Update battle state in session
+      const updatedBattle = BattleService.getBattle(battleId);
+      if (updatedBattle) {
+        gameSession.battleState = updatedBattle;
+        await this.gameSessionService.saveSessionState(gameSession.sessionId);
+
+        // Update player stats if battle ended
+        if (updatedBattle.ended) {
+          await this.gameSessionService.updatePlayerAfterBattle(
+            gameSession.sessionId,
+            playerId,
+            updatedBattle
+          );
+        }
+      }
+
+      // Broadcast battle update to all players
+      this.io.to(roomId).emit('battle_update', {
+        battleId,
+        playerHp: updatedBattle?.player.currentHp,
+        enemyHp: updatedBattle?.enemy.currentHp,
+        isVictory: updatedBattle?.isVictory,
+        isDefeat: !updatedBattle?.isVictory && updatedBattle?.ended,
+        combatLog: result.combatLog || [],
+        timestamp: Date.now()
+      });
+
+      // If battle ended, transition phase
+      if (updatedBattle?.ended) {
+        room.gamePhase = updatedBattle.isVictory ? GamePhase.SCENARIO : GamePhase.LOBBY;
+
+        this.io.to(roomId).emit('game_ended', {
+          outcome: updatedBattle.isVictory ? 'victory' : 'defeat',
+          rewards: updatedBattle.isVictory ? BattleService.getBattleRewards(battleId) : null,
+          timestamp: Date.now()
+        });
+      }
+
+      callback(this.createSuccessResponse({ result }));
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Error handling battle action');
+      callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, error.message));
+    }
+  }
+
+  /**
+   * Handle scenario response
+   */
+  private async handleScenarioResponse(
+    _socket: Socket,
+    payload: { roomId: string; playerId: string; choiceId: string },
+    callback: (response: SocketResponse) => void
+  ): Promise<void> {
+    try {
+      const { roomId, playerId, choiceId } = payload;
+      const room = this.rooms.get(roomId);
+
+      if (!room) {
+        callback(this.createErrorResponse(SocketErrorCode.ROOM_NOT_FOUND, 'Room not found'));
+        return;
+      }
+
+      const gameSession = this.gameSessionService.getSessionByPartyCode(roomId);
+      if (!gameSession || !gameSession.scenarioState) {
+        callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, 'No active scenario'));
+        return;
+      }
+
+      const player = room.players.get(playerId);
+      if (!player) {
+        callback(this.createErrorResponse(SocketErrorCode.PLAYER_NOT_FOUND, 'Player not found'));
+        return;
+      }
+
+      // Record choice
+      await this.gameSessionService.recordScenarioChoice(
+        gameSession.sessionId,
+        playerId,
+        choiceId
+      );
+
+      // Update room state
+      if (room.sharedState.scenarioState) {
+        room.sharedState.scenarioState.choicesMade.set(playerId, true);
+      }
+
+      // Broadcast that a choice was made (not revealing which)
+      this.io.to(roomId).emit('scenario_presented', {
+        playerId,
+        choiceMade: true,
+        timestamp: Date.now()
+      });
+
+      // Check if all players have made choices
+      const allChosen = Array.from(room.players.keys()).every(pid =>
+        gameSession.scenarioState?.playerChoices.has(pid)
+      );
+
+      if (allChosen) {
+        // Resolve scenario
+        const scenarioSession = this.scenarioManager.getScenarioSession(gameSession.sessionId);
+        if (scenarioSession) {
+          const outcome = await this.scenarioManager.resolveScenario(gameSession.sessionId);
+
+          // Broadcast outcome
+          this.io.to(roomId).emit('scenario_resolved', {
+            outcome: outcome.success ? 'success' : 'failure',
+            narrative: outcome.narrative,
+            rewards: outcome.rewards,
+            consequences: outcome.consequences,
+            timestamp: Date.now()
+          });
+
+          // Complete scenario in game session
+          await this.gameSessionService.completeScenario(gameSession.sessionId);
+
+          // Transition to next phase (could be battle, another scenario, or victory)
+          room.gamePhase = GamePhase.BATTLE;
+        }
+      }
+
+      callback(this.createSuccessResponse());
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Error handling scenario response');
+      callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, error.message));
+    }
+  }
+
+  /**
    * Handle disconnect
    */
   private handleDisconnect(socket: Socket): void {
@@ -847,8 +1188,8 @@ export class MultiplayerService {
           };
           this.reconnectionData.set(playerId, reconnectionData);
 
-          // Notify other players
-          socket.to(connection.roomId!).emit('player_disconnected', {
+          // Notify other players using io.to() instead of socket.to() since socket is disconnecting
+          this.io.to(connection.roomId!).emit('player_disconnected', {
             playerId,
             timestamp: Date.now()
           });

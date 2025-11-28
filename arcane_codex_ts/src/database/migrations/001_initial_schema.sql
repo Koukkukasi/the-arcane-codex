@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS players (
     player_id VARCHAR(50) UNIQUE NOT NULL,
     username VARCHAR(30) NOT NULL,
     email VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255),  -- For JWT authentication (bcrypt hash)
 
     -- Stats
     total_sessions INTEGER DEFAULT 0,

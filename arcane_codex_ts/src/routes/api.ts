@@ -22,7 +22,8 @@ const mcpService = getMCPService();
 // Mount Domain Routes
 // ============================================================================
 
-// Auth routes (session, CSRF, username) - mounted at root level
+// Auth routes - JWT endpoints at /auth, legacy session endpoints at root
+router.use('/auth', authRoutes);
 router.use('/', authRoutes);
 
 // Game session routes (create, join, state)

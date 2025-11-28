@@ -5,7 +5,7 @@
 
 import { test, expect, Page } from '@playwright/test';
 
-const LOBBY_URL = 'http://localhost:5000/multiplayer_lobby.html';
+const LOBBY_URL = 'http://localhost:3000/lobby';
 
 test.describe('Multiplayer Lobby UI', () => {
 

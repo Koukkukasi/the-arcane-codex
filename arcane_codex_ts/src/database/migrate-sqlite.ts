@@ -12,40 +12,58 @@ async function runMigrations() {
   const db = SQLiteConnection.getInstance();
   await db.connect();
 
-  const migrationFile = path.join(__dirname, 'migrations', '001_initial_schema.sqlite.sql');
-  const sql = fs.readFileSync(migrationFile, 'utf-8');
+  // Migration files in order
+  const migrationFiles = [
+    '001_initial_schema.sqlite.sql',
+    '002_refresh_tokens.sqlite.sql'
+  ];
 
-  // Execute entire SQL file at once (SQLite supports this)
-  try {
-    // Better-sqlite3 can execute multiple statements with exec
-    const connection = db.getRawDb();
-    if (connection && connection.exec) {
-      connection.exec(sql);
-    } else {
-      // Fallback: split carefully and execute
-      const statements = sql
-        .split(/;\s*\n/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0 && !s.match(/^(--|PRAGMA)/));
+  const connection = db.getRawDb();
 
-      for (const statement of statements) {
-        try {
-          await db.query(statement + ';');
-        } catch (error: any) {
-          if (!error.message.includes('already exists')) {
-            console.error('Migration error:', statement.substring(0, 100));
-            throw error;
+  for (const filename of migrationFiles) {
+    console.log(`  Running migration: ${filename}`);
+    const migrationFile = path.join(__dirname, 'migrations', filename);
+
+    if (!fs.existsSync(migrationFile)) {
+      console.log(`  ⚠️  Migration file not found: ${filename}, skipping...`);
+      continue;
+    }
+
+    const sql = fs.readFileSync(migrationFile, 'utf-8');
+
+    // Execute entire SQL file at once (SQLite supports this)
+    try {
+      // Better-sqlite3 can execute multiple statements with exec
+      if (connection && connection.exec) {
+        connection.exec(sql);
+      } else {
+        // Fallback: split carefully and execute
+        const statements = sql
+          .split(/;\s*\n/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0 && !s.match(/^(--|PRAGMA)/));
+
+        for (const statement of statements) {
+          try {
+            await db.query(statement + ';');
+          } catch (error: any) {
+            if (!error.message.includes('already exists')) {
+              console.error('Migration error:', statement.substring(0, 100));
+              throw error;
+            }
           }
         }
       }
-    }
-  } catch (error: any) {
-    if (!error.message.includes('already exists')) {
-      throw error;
+      console.log(`  ✅ ${filename} applied`);
+    } catch (error: any) {
+      if (!error.message.includes('already exists')) {
+        throw error;
+      }
+      console.log(`  ✅ ${filename} already applied`);
     }
   }
 
-  console.log('✅ SQLite migrations complete!');
+  console.log('✅ All SQLite migrations complete!');
   await db.disconnect();
 }
 

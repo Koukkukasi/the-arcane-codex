@@ -8,3 +8,4 @@ export { PartyRepository } from './party.repository';
 export { SessionRepository } from './session.repository';
 export { ChatRepository } from './chat.repository';
 export { AuditRepository } from './audit.repository';
+export { RefreshTokenRepository } from './RefreshTokenRepository';

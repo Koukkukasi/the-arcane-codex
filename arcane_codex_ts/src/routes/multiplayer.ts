@@ -6,22 +6,24 @@
 import { Router, Request, Response } from 'express';
 import { PartyManager } from '../services/multiplayer/party_manager';
 import { apiLogger } from '../services/logger';
+import { requireAuth, optionalAuth } from '../middleware/authMiddleware';
 
 const router = Router();
 const partyManager = PartyManager.getInstance();
 
 /**
  * POST /api/multiplayer/party/create
- * Create a new party
+ * Create a new party (requires authentication)
  */
-router.post('/party/create', (req: Request, res: Response) => {
+router.post('/party/create', requireAuth, (req: Request, res: Response) => {
   try {
-    const { hostId, partyName, maxPlayers } = req.body;
+    const { partyName, maxPlayers } = req.body;
+    const hostId = req.user!.userId; // Use authenticated user's ID
 
-    if (!hostId || !partyName) {
+    if (!partyName) {
       res.status(400).json({
         success: false,
-        error: 'Host ID and party name are required'
+        error: 'Party name is required'
       });
       return;
     }
@@ -51,16 +53,18 @@ router.post('/party/create', (req: Request, res: Response) => {
 
 /**
  * POST /api/multiplayer/party/join
- * Join an existing party
+ * Join an existing party (requires authentication)
  */
-router.post('/party/join', (req: Request, res: Response) => {
+router.post('/party/join', requireAuth, (req: Request, res: Response) => {
   try {
-    const { partyCode, playerId, playerName } = req.body;
+    const { partyCode } = req.body;
+    const playerId = req.user!.userId;
+    const playerName = req.user!.username;
 
-    if (!partyCode || !playerId || !playerName) {
+    if (!partyCode) {
       res.status(400).json({
         success: false,
-        error: 'Party code, player ID, and player name are required'
+        error: 'Party code is required'
       });
       return;
     }
@@ -102,20 +106,12 @@ router.post('/party/join', (req: Request, res: Response) => {
 
 /**
  * POST /api/multiplayer/party/:partyCode/leave
- * Leave a party
+ * Leave a party (requires authentication)
  */
-router.post('/party/:partyCode/leave', (req: Request, res: Response) => {
+router.post('/party/:partyCode/leave', requireAuth, (req: Request, res: Response) => {
   try {
     const { partyCode } = req.params;
-    const { playerId } = req.body;
-
-    if (!playerId) {
-      res.status(400).json({
-        success: false,
-        error: 'Player ID is required'
-      });
-      return;
-    }
+    const playerId = req.user!.userId;
 
     partyManager.leaveParty(partyCode, playerId);
 
@@ -183,9 +179,9 @@ router.get('/party/:partyCode', (req: Request, res: Response) => {
 
 /**
  * GET /api/multiplayer/parties/public
- * Get list of public parties
+ * Get list of public parties (optional authentication)
  */
-router.get('/parties/public', (_req: Request, res: Response) => {
+router.get('/parties/public', optionalAuth, (_req: Request, res: Response) => {
   try {
     const publicParties = partyManager.getPublicParties();
 
@@ -205,20 +201,13 @@ router.get('/parties/public', (_req: Request, res: Response) => {
 
 /**
  * PUT /api/multiplayer/party/:partyCode/settings
- * Update party settings (host only)
+ * Update party settings (host only, requires authentication)
  */
-router.put('/party/:partyCode/settings', (req: Request, res: Response) => {
+router.put('/party/:partyCode/settings', requireAuth, (req: Request, res: Response) => {
   try {
     const { partyCode } = req.params;
-    const { hostId, settings } = req.body;
-
-    if (!hostId) {
-      res.status(400).json({
-        success: false,
-        error: 'Host ID is required'
-      });
-      return;
-    }
+    const { settings } = req.body;
+    const hostId = req.user!.userId;
 
     const party = partyManager.getParty(partyCode);
     if (!party) {
@@ -258,17 +247,18 @@ router.put('/party/:partyCode/settings', (req: Request, res: Response) => {
 
 /**
  * POST /api/multiplayer/party/:partyCode/ready
- * Set player ready status
+ * Set player ready status (requires authentication)
  */
-router.post('/party/:partyCode/ready', (req: Request, res: Response) => {
+router.post('/party/:partyCode/ready', requireAuth, (req: Request, res: Response) => {
   try {
     const { partyCode } = req.params;
-    const { playerId, ready } = req.body;
+    const { ready } = req.body;
+    const playerId = req.user!.userId;
 
-    if (!playerId || ready === undefined) {
+    if (ready === undefined) {
       res.status(400).json({
         success: false,
-        error: 'Player ID and ready status are required'
+        error: 'Ready status is required'
       });
       return;
     }
@@ -296,17 +286,18 @@ router.post('/party/:partyCode/ready', (req: Request, res: Response) => {
 
 /**
  * POST /api/multiplayer/party/:partyCode/kick
- * Kick a player from the party (host only)
+ * Kick a player from the party (host only, requires authentication)
  */
-router.post('/party/:partyCode/kick', (req: Request, res: Response) => {
+router.post('/party/:partyCode/kick', requireAuth, (req: Request, res: Response) => {
   try {
     const { partyCode } = req.params;
-    const { hostId, targetId } = req.body;
+    const { targetId } = req.body;
+    const hostId = req.user!.userId;
 
-    if (!hostId || !targetId) {
+    if (!targetId) {
       res.status(400).json({
         success: false,
-        error: 'Host ID and target player ID are required'
+        error: 'Target player ID is required'
       });
       return;
     }
@@ -337,17 +328,18 @@ router.post('/party/:partyCode/kick', (req: Request, res: Response) => {
 
 /**
  * POST /api/multiplayer/party/:partyCode/transfer-host
- * Transfer host to another player
+ * Transfer host to another player (requires authentication)
  */
-router.post('/party/:partyCode/transfer-host', (req: Request, res: Response) => {
+router.post('/party/:partyCode/transfer-host', requireAuth, (req: Request, res: Response) => {
   try {
     const { partyCode } = req.params;
-    const { currentHost, newHost } = req.body;
+    const { newHost } = req.body;
+    const currentHost = req.user!.userId;
 
-    if (!currentHost || !newHost) {
+    if (!newHost) {
       res.status(400).json({
         success: false,
-        error: 'Current host and new host IDs are required'
+        error: 'New host ID is required'
       });
       return;
     }
@@ -410,6 +402,73 @@ router.get('/player/:playerId/party', (req: Request, res: Response) => {
     });
   } catch (error: any) {
     apiLogger.error({ error }, 'Error getting player party');
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+    return;
+  }
+});
+
+/**
+ * POST /api/multiplayer/party/:partyCode/start
+ * Start the game (host only, requires authentication)
+ */
+router.post('/party/:partyCode/start', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { partyCode } = req.params;
+    const hostId = req.user!.userId;
+
+    const party = partyManager.getParty(partyCode);
+    if (!party) {
+      res.status(404).json({
+        success: false,
+        error: 'Party not found'
+      });
+      return;
+    }
+
+    if (party.host !== hostId) {
+      res.status(403).json({
+        success: false,
+        error: 'Only the host can start the game'
+      });
+      return;
+    }
+
+    // Check if all players are ready
+    const allReady = partyManager.areAllPlayersReady(partyCode);
+    if (!allReady) {
+      res.status(400).json({
+        success: false,
+        error: 'Not all players are ready'
+      });
+      return;
+    }
+
+    // Import MultiplayerService to start the game
+    const { MultiplayerService } = await import('../services/multiplayer/multiplayer_service');
+    const multiplayerService = MultiplayerService.getInstance();
+
+    // Start the game
+    const result = await multiplayerService.startGame(partyCode, hostId);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Game started successfully',
+        data: {
+          sessionId: result.session?.id
+        }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to start game'
+      });
+    }
+  } catch (error: any) {
+    apiLogger.error({ error }, 'Error starting game');
     res.status(500).json({
       success: false,
       error: error.message

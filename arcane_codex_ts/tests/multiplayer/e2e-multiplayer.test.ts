@@ -6,8 +6,37 @@
 import { test, expect, Page } from '@playwright/test';
 import { io, Socket } from 'socket.io-client';
 
-const SERVER_URL = 'http://localhost:5000';
+const SERVER_URL = 'http://localhost:3000';
 const API_BASE = `${SERVER_URL}/api/multiplayer`;
+
+// Helper to wait for socket connection with timeout
+function waitForConnection(socket: Socket, timeout = 10000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      socket.off('connect_error', errorHandler);
+      reject(new Error('Socket connection timeout'));
+    }, timeout);
+
+    const errorHandler = (err: Error) => {
+      clearTimeout(timer);
+      reject(new Error(`Socket connection error: ${err.message}`));
+    };
+
+    socket.once('connect_error', errorHandler);
+    socket.once('connect', () => {
+      clearTimeout(timer);
+      socket.off('connect_error', errorHandler);
+      resolve();
+    });
+
+    // If already connected
+    if (socket.connected) {
+      clearTimeout(timer);
+      socket.off('connect_error', errorHandler);
+      resolve();
+    }
+  });
+}
 
 test.describe('End-to-End Multiplayer Session', () => {
   test.describe('Two-Player Session Flow', () => {
@@ -41,12 +70,24 @@ test.describe('End-to-End Multiplayer Session', () => {
 
       // Step 2: Connect Socket.IO clients
       console.log('[E2E] Step 2: Connecting Socket.IO clients...');
-      socket1 = io(SERVER_URL, { reconnection: false });
-      socket2 = io(SERVER_URL, { reconnection: false });
+      socket1 = io(SERVER_URL, {
+        reconnection: false,
+        auth: {
+          playerId: player1Id,
+          playerName: 'Player One'
+        }
+      });
+      socket2 = io(SERVER_URL, {
+        reconnection: false,
+        auth: {
+          playerId: player2Id,
+          playerName: 'Player Two'
+        }
+      });
 
       await Promise.all([
-        new Promise(resolve => socket1.on('connect', resolve)),
-        new Promise(resolve => socket2.on('connect', resolve))
+        waitForConnection(socket1),
+        waitForConnection(socket2)
       ]);
 
       expect(socket1.connected).toBe(true);
@@ -213,8 +254,15 @@ test.describe('End-to-End Multiplayer Session', () => {
       partyCode = createData.data.code;
 
       // Initial connection
-      socket1 = io(SERVER_URL, { reconnection: true, reconnectionAttempts: 3 });
-      await new Promise(resolve => socket1.on('connect', resolve));
+      socket1 = io(SERVER_URL, {
+        reconnection: true,
+        reconnectionAttempts: 3,
+        auth: {
+          playerId,
+          playerName: 'ReconnectPlayer'
+        }
+      });
+      await waitForConnection(socket1);
 
       // Join room
       await new Promise<void>((resolve) => {
@@ -232,7 +280,7 @@ test.describe('End-to-End Multiplayer Session', () => {
 
       // Reconnect
       socket1.connect();
-      await new Promise(resolve => socket1.on('connect', resolve));
+      await waitForConnection(socket1);
 
       // Rejoin with same player ID
       const rejoinResponse = await new Promise<any>((resolve) => {
@@ -272,12 +320,18 @@ test.describe('End-to-End Multiplayer Session', () => {
 
       // Connect 3 players
       for (let i = 0; i < 3; i++) {
-        const socket = io(SERVER_URL, { reconnection: false });
         const playerId = `player${i + 1}_multi_${Date.now()}`;
+        const socket = io(SERVER_URL, {
+          reconnection: false,
+          auth: {
+            playerId,
+            playerName: `Player ${i + 1}`
+          }
+        });
         sockets.push(socket);
         playerIds.push(playerId);
 
-        await new Promise(resolve => socket.on('connect', resolve));
+        await waitForConnection(socket);
 
         await new Promise<void>((resolve) => {
           socket.emit('join_room', {
@@ -318,13 +372,20 @@ test.describe('End-to-End Multiplayer Session', () => {
 
   test.describe('Error Handling', () => {
     test('should handle invalid room gracefully', async () => {
-      const socket = io(SERVER_URL, { reconnection: false });
-      await new Promise(resolve => socket.on('connect', resolve));
+      const playerId = `error_test_${Date.now()}`;
+      const socket = io(SERVER_URL, {
+        reconnection: false,
+        auth: {
+          playerId,
+          playerName: 'ErrorTest'
+        }
+      });
+      await waitForConnection(socket);
 
       const response = await new Promise<any>((resolve) => {
         socket.emit('join_room', {
           roomId: 'INVALID',
-          playerId: `error_test_${Date.now()}`,
+          playerId,
           playerName: 'ErrorTest',
           rejoin: false
         }, resolve);
@@ -335,8 +396,15 @@ test.describe('End-to-End Multiplayer Session', () => {
     });
 
     test('should handle missing player ID', async () => {
-      const socket = io(SERVER_URL, { reconnection: false });
-      await new Promise(resolve => socket.on('connect', resolve));
+      const playerId = `missing_id_test_${Date.now()}`;
+      const socket = io(SERVER_URL, {
+        reconnection: false,
+        auth: {
+          playerId,
+          playerName: 'MissingIDTest'
+        }
+      });
+      await waitForConnection(socket);
 
       const response = await new Promise<any>((resolve) => {
         socket.emit('chat_message', {
@@ -363,10 +431,16 @@ test.describe('End-to-End Multiplayer Session', () => {
       const createData = await createResponse.json();
       const partyCode = createData.data.code;
 
-      const socket = io(SERVER_URL, { reconnection: false });
-      await new Promise(resolve => socket.on('connect', resolve));
-
       const playerId = `perf_player_${Date.now()}`;
+      const socket = io(SERVER_URL, {
+        reconnection: false,
+        auth: {
+          playerId,
+          playerName: 'PerfPlayer'
+        }
+      });
+      await waitForConnection(socket);
+
       await new Promise<void>((resolve) => {
         socket.emit('join_room', {
           roomId: partyCode,

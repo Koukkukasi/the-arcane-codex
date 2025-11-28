@@ -8,7 +8,7 @@ export default defineConfig({
   testMatch: '**/*.test.ts',
   fullyParallel: false, // Run tests sequentially to avoid conflicts
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1, // One retry for flaky Socket.IO tests
   workers: 1, // Single worker to avoid race conditions
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],

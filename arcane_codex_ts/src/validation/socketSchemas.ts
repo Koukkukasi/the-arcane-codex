@@ -23,7 +23,7 @@ export const joinRoomSchema = z.object({
   roomId: roomIdSchema,
   playerId: playerIdSchema,
   playerName: playerNameSchema,
-  isRejoin: z.boolean().optional()
+  rejoin: z.boolean().optional()
 });
 
 export const leaveRoomSchema = z.object({
@@ -68,7 +68,7 @@ export const roleSelectSchema = z.object({
 // ============================================
 
 export const scenarioChoiceSchema = z.object({
-  roomId: roomIdSchema,
+  roomId: roomIdSchema.optional(),
   playerId: playerIdSchema,
   scenarioId: z.string().min(1).max(100),
   choiceId: z.string().min(1).max(100)
@@ -92,9 +92,8 @@ export const battleActionSchema = z.object({
 // ============================================
 
 export const shareClueSchema = z.object({
-  roomId: roomIdSchema,
-  fromPlayerId: playerIdSchema,
-  toPlayerId: playerIdSchema,
+  playerId: playerIdSchema,
+  targetPlayerId: playerIdSchema,
   clueId: z.string().min(1).max(100)
 });
 

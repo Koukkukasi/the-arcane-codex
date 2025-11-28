@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS players (
   player_id TEXT UNIQUE NOT NULL,
   username TEXT NOT NULL,
   email TEXT,
+  password_hash TEXT,  -- For JWT authentication
 
   -- Stats
   total_sessions INTEGER DEFAULT 0,

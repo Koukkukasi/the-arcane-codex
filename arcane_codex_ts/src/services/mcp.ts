@@ -1,7 +1,21 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { InterrogationQuestion } from '../types/game';
 import { getMockInterrogationQuestion } from '../data/questions';
 import { mcpLogger } from './logger';
+
+// Lazy-load Anthropic SDK to avoid issues in test environments
+let Anthropic: any = null;
+function getAnthropicClass(): any {
+  if (!Anthropic) {
+    try {
+      // Dynamic import to avoid module loading issues in test environments
+      Anthropic = require('@anthropic-ai/sdk').default;
+    } catch (error) {
+      mcpLogger.warn('Anthropic SDK not available, using mock mode');
+      return null;
+    }
+  }
+  return Anthropic;
+}
 
 // MCP (Model Context Protocol) service for AI integration
 // Supports Claude API with streaming, rate limiting, and fallback to mock data
@@ -62,7 +76,7 @@ interface ScenarioContext {
  * MCP Service for AI-powered game content generation
  */
 export class MCPService {
-  private client: Anthropic | null = null;
+  private client: any = null;
   private isAvailable: boolean = false;
   private config: MCPConfig;
 
@@ -109,7 +123,13 @@ export class MCPService {
   private initialize(): void {
     if (this.config.apiKey) {
       try {
-        this.client = new Anthropic({
+        const AnthropicClass = getAnthropicClass();
+        if (!AnthropicClass) {
+          mcpLogger.info('Anthropic SDK not available, using mock data');
+          this.isAvailable = false;
+          return;
+        }
+        this.client = new AnthropicClass({
           apiKey: this.config.apiKey
         });
         this.isAvailable = true;

@@ -13,6 +13,8 @@ import { MultiplayerService } from './services/multiplayer/multiplayer_service';
 import GameService from './services/game';
 import { logger, socketLogger, securityLogger } from './services/logger';
 import { socketAuthMiddleware, AuthenticatedSocket } from './middleware/socketAuth';
+import { TokenCleanupService } from './services/tokenCleanup';
+import { SessionPersistenceService } from './services/sessionPersistence';
 
 // ============================================
 // SECURITY: Environment Configuration
@@ -207,9 +209,59 @@ setInterval(() => {
   GameService.cleanupOldSessions(4); // Clean up sessions older than 4 hours
 }, 15 * 60 * 1000);
 
+// ============================================
+// Token Cleanup Service
+// ============================================
+// Clean up expired refresh tokens every hour
+const tokenCleanupService = TokenCleanupService.getInstance({
+  intervalMinutes: parseInt(process.env.TOKEN_CLEANUP_INTERVAL || '60'),
+  enableLogging: true
+});
+tokenCleanupService.start();
+
+// ============================================
+// Session Persistence Service
+// ============================================
+// Initialize session persistence (restoration and cleanup)
+const sessionPersistenceService = SessionPersistenceService.getInstance({
+  staleSessionHours: parseInt(process.env.STALE_SESSION_HOURS || '4'),
+  deleteAbandonedDays: parseInt(process.env.DELETE_ABANDONED_DAYS || '7'),
+  cleanupIntervalMinutes: parseInt(process.env.SESSION_CLEANUP_INTERVAL || '15'),
+  restoreOnStartup: process.env.RESTORE_SESSIONS_ON_STARTUP !== 'false',
+  maxRestoreAgeHours: parseInt(process.env.MAX_RESTORE_AGE_HOURS || '24')
+});
+
+// ============================================
+// Graceful Shutdown
+// ============================================
+const shutdown = async (signal: string) => {
+  logger.info({ signal }, 'Received shutdown signal, starting graceful shutdown...');
+
+  // Stop accepting new connections
+  server.close(() => {
+    logger.info('HTTP server closed');
+  });
+
+  try {
+    // Stop cleanup jobs
+    tokenCleanupService.stop();
+    await sessionPersistenceService.shutdown();
+
+    logger.info('Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    logger.error({ err: error }, 'Error during shutdown');
+    process.exit(1);
+  }
+};
+
+// Handle shutdown signals
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 // Start server
 const PORT = process.env.PORT || 5000; // Changed from 5001 to 5000
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   logger.info({
     port: PORT,
     environment: process.env.NODE_ENV || 'development',
@@ -217,4 +269,12 @@ server.listen(PORT, () => {
     rateLimit: '500 requests/hour',
     sessionTimeout: '4 hours'
   }, 'The Arcane Codex server started');
+
+  // Initialize session persistence after server starts
+  try {
+    await sessionPersistenceService.initialize();
+    logger.info('Session persistence initialized successfully');
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to initialize session persistence');
+  }
 });
