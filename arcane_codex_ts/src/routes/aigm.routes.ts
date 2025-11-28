@@ -10,6 +10,9 @@ import GameService from '../services/game';
 import { io } from '../server';
 import { requireAuth, requireGameSession } from './auth.routes';
 import { gameLogger } from '../services/logger';
+import { AIGMService } from '../services/ai_gm_core';
+import { ScenarioType, ScenarioRequest, ScenarioContext, PlayerHistory } from '../types/ai_gm';
+import { CharacterClass, God } from '../types/game';
 
 const router = Router();
 
@@ -27,7 +30,7 @@ const aiGMScenarioLimiter = rateLimit({
 
 /**
  * POST /scenario/generate
- * Generate a new AI GM scenario
+ * Generate a new AI GM scenario using Claude AI
  */
 router.post('/scenario/generate', requireAuth, requireGameSession, aiGMScenarioLimiter, async (req: Request, res: Response): Promise<void> => {
   const { scenario_type, difficulty, context } = req.body;
@@ -43,34 +46,43 @@ router.post('/scenario/generate', requireAuth, requireGameSession, aiGMScenarioL
       return;
     }
 
-    // TODO: Use AIGMService.generateScenario when implemented
+    // Get AIGMService instance
+    const aigmService = AIGMService.getInstance();
+
+    // Build ScenarioRequest from game session
+    const scenarioRequest: ScenarioRequest = {
+      context: buildScenarioContext(gameSession),
+      desiredType: mapScenarioType(scenario_type),
+      difficulty: difficulty || 5,
+      theme: context?.theme
+    };
+
+    // Generate scenario using AI GM Service (calls Claude via MCP)
+    gameLogger.info({ gameCode, scenarioType: scenario_type }, 'Requesting AI scenario generation');
+    const aiScenario = await aigmService.generateScenario(scenarioRequest);
+
+    // Convert to game session format
     const scenario = {
-      scenario_id: uuidv4(),
-      scenario_type: scenario_type || 'mystery',
+      scenario_id: aiScenario.id,
+      scenario_type: aiScenario.type,
       difficulty: difficulty || 'medium',
-      title: 'A New Adventure Begins',
-      description: 'The AI GM weaves a tale of intrigue and danger...',
+      title: aiScenario.title,
+      description: aiScenario.narrative,
       player_count: gameSession.players.size,
       public_info: {
-        scene: 'You find yourselves at a crossroads in the ancient forest...',
+        scene: aiScenario.narrative,
         npcs: [],
         observations: []
       },
-      choices: [
-        {
-          choice_id: 'choice_1',
-          text: 'Investigate the mysterious sounds',
-          visible_to: 'all'
-        },
-        {
-          choice_id: 'choice_2',
-          text: 'Set up camp and wait',
-          visible_to: 'all'
-        }
-      ],
+      choices: aiScenario.choices.map(c => ({
+        choice_id: c.id,
+        text: c.text,
+        visible_to: c.visibility === 'ALL' ? 'all' : c.visibleTo
+      })),
       asymmetric_info: new Map(),
       created_at: new Date().toISOString(),
-      context: context || {}
+      context: context || {},
+      ai_generated: true
     };
 
     gameSession.current_scenario = scenario;
@@ -78,20 +90,21 @@ router.post('/scenario/generate', requireAuth, requireGameSession, aiGMScenarioL
     io.to(gameCode).emit('scenario_generated', {
       scenario_id: scenario.scenario_id,
       scenario_type: scenario.scenario_type,
-      generated_by: req.session.username
+      generated_by: req.session.username,
+      ai_generated: true
     });
 
-    gameLogger.info({ scenarioId: scenario.scenario_id, gameCode }, 'AI GM scenario generated');
+    gameLogger.info({ scenarioId: scenario.scenario_id, gameCode }, 'AI GM scenario generated successfully');
 
     res.json({
       success: true,
       scenario_id: scenario.scenario_id,
       scenario,
-      message: 'Scenario generated successfully'
+      message: 'AI scenario generated successfully'
     });
 
   } catch (error) {
-    gameLogger.error({ error }, 'Failed to generate AI GM scenario');
+    gameLogger.error({ error }, 'Failed to generate AI GM scenario, using fallback');
 
     const fallbackScenario = {
       scenario_id: uuidv4(),
@@ -105,19 +118,82 @@ router.post('/scenario/generate', requireAuth, requireGameSession, aiGMScenarioL
         observations: []
       },
       choices: [
-        { choice_id: 'fallback_1', text: 'Continue forward', visible_to: 'all' }
+        { choice_id: 'fallback_1', text: 'Continue forward', visible_to: 'all' },
+        { choice_id: 'fallback_2', text: 'Investigate surroundings', visible_to: 'all' }
       ],
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      ai_generated: false
     };
 
     res.status(500).json({
       success: false,
-      error: 'Failed to generate scenario, using fallback',
+      error: 'Failed to generate AI scenario, using fallback',
       scenario_id: fallbackScenario.scenario_id,
       scenario: fallbackScenario
     });
   }
 });
+
+/**
+ * Build ScenarioContext from game session data
+ */
+function buildScenarioContext(gameSession: any): ScenarioContext {
+  const playerEntries: [string, string][] = Array.from(gameSession.players.entries());
+  const playerHistories: PlayerHistory[] = playerEntries.map(([id, name]) => ({
+    playerId: id,
+    playerName: name,
+    characterClass: gameSession.player_classes?.get(id) || CharacterClass.WARRIOR,
+    godFavor: new Map<God, number>(),
+    specialItems: [],
+    npcRelationships: new Map<string, number>(),
+    knownSecrets: [],
+    personalGoals: [],
+    moralAlignment: { lawChaos: 0, goodEvil: 0 }
+  }));
+
+  return {
+    playerHistories,
+    partyState: {
+      location: gameSession.location || 'Unknown',
+      activeQuests: gameSession.active_quests || [],
+      sharedInventory: gameSession.shared_inventory || [],
+      partyReputation: gameSession.reputation || 0,
+      resources: { gold: gameSession.gold || 0, supplies: 100, influence: 0 },
+      partyModifiers: []
+    },
+    partyComposition: {
+      playerIds: Array.from(gameSession.players.keys()),
+      classes: gameSession.player_classes ? Array.from(gameSession.player_classes.values()) : [],
+      averageLevel: 1,
+      partySize: gameSession.players.size
+    },
+    worldState: {
+      factions: new Map(),
+      majorEvents: [],
+      playerActionsHistory: [],
+      worldTime: { day: 1, season: 'SPRING', year: 1 },
+      globalFlags: new Map()
+    }
+  };
+}
+
+/**
+ * Map scenario type string to ScenarioType enum
+ */
+function mapScenarioType(type?: string): ScenarioType | undefined {
+  if (!type) return undefined;
+  const typeMap: Record<string, ScenarioType> = {
+    'divine_interrogation': ScenarioType.DIVINE_INTERROGATION,
+    'moral_dilemma': ScenarioType.MORAL_DILEMMA,
+    'investigation': ScenarioType.INVESTIGATION,
+    'mystery': ScenarioType.INVESTIGATION,
+    'combat': ScenarioType.COMBAT_CHOICE,
+    'negotiation': ScenarioType.NEGOTIATION,
+    'betrayal': ScenarioType.BETRAYAL,
+    'discovery': ScenarioType.DISCOVERY
+  };
+  return typeMap[type.toLowerCase()];
+}
 
 /**
  * POST /scenario/:scenario_id/choose

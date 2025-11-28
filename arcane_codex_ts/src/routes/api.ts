@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getMCPService } from '../services/mcp';
+import { AIGMService } from '../services/ai_gm_core';
 import { apiLogger } from '../services/logger';
 
 // Import domain-specific route modules
@@ -17,6 +18,11 @@ import multiplayerRoutes from './multiplayer';
 
 const router = Router();
 const mcpService = getMCPService();
+
+// Register MCP service with AI GM Service for scenario generation
+const aigmService = AIGMService.getInstance();
+aigmService.setMCPServiceHook(mcpService);
+apiLogger.info('AI GM Service connected to MCP Service');
 
 // ============================================================================
 // Mount Domain Routes

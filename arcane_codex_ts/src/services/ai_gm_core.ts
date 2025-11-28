@@ -409,16 +409,134 @@ export class AIGMService {
   // Private helper methods
 
   /**
-   * Generate scenario using AI service
+   * Generate scenario using AI service (MCP/Claude)
    */
-  private async generateWithAI(_request: ScenarioRequest): Promise<ScenarioResponse> {
+  private async generateWithAI(request: ScenarioRequest): Promise<ScenarioResponse> {
     if (!this.mcpServiceHook) {
       throw new Error('MCP service not available');
     }
 
-    // This will be implemented when MCP service is integrated
-    // For now, return a placeholder
-    throw new Error('AI generation not yet implemented');
+    // Map AIGMService's ScenarioRequest to MCPService's ScenarioContext
+    const mcpContext = this.mapToMCPContext(request);
+
+    try {
+      this.log('info', `Generating AI scenario: type=${mcpContext.scenarioType}`);
+
+      // Call MCPService's generateDynamicScenario
+      const rawScenario = await this.mcpServiceHook.generateDynamicScenario(mcpContext);
+
+      // Transform the raw response to ScenarioResponse format
+      const scenario = this.transformToScenarioResponse(rawScenario, request);
+
+      this.log('info', `AI scenario generated: id=${scenario.id}`);
+      return scenario;
+    } catch (error) {
+      this.log('error', `AI generation failed: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Map AIGMService ScenarioRequest to MCPService ScenarioContext
+   */
+  private mapToMCPContext(request: ScenarioRequest): any {
+    // Map ScenarioType enum to MCP's scenarioType string
+    const scenarioTypeMap: Record<string, string> = {
+      'DIVINE_INTERROGATION': 'divine_interrogation',
+      'MORAL_DILEMMA': 'moral_dilemma',
+      'INVESTIGATION': 'investigation',
+      'BETRAYAL': 'general',
+      'DISCOVERY': 'general',
+      'COMBAT_CHOICE': 'general',
+      'NEGOTIATION': 'general'
+    };
+
+    // Extract player names from histories
+    const players = request.context.playerHistories.map(h => h.playerName);
+
+    // Extract player choices/context as flat array
+    const playerChoices = request.context.playerHistories.map(h => ({
+      playerId: h.playerId,
+      class: h.characterClass,
+      knownSecrets: h.knownSecrets
+    }));
+
+    // Build god favor map if available
+    const godFavor: Record<string, Record<string, number>> = {};
+    for (const player of request.context.playerHistories) {
+      godFavor[player.playerId] = {};
+      if (player.godFavor) {
+        for (const [god, favor] of player.godFavor.entries()) {
+          godFavor[player.playerId][god] = favor;
+        }
+      }
+    }
+
+    const desiredType = request.desiredType || ScenarioType.INVESTIGATION;
+
+    return {
+      gameCode: `game_${Date.now()}`,
+      players,
+      theme: request.theme,
+      scenarioType: scenarioTypeMap[desiredType] || 'general',
+      previousScenarios: request.context.previousScenarioId ? [request.context.previousScenarioId] : [],
+      playerChoices,
+      godFavor
+    };
+  }
+
+  /**
+   * Transform MCP raw scenario response to ScenarioResponse format
+   */
+  private transformToScenarioResponse(rawScenario: any, request: ScenarioRequest): ScenarioResponse {
+    const scenarioId = this.generateScenarioId();
+
+    // Map raw choices to ScenarioChoice format
+    const choices: ScenarioChoice[] = (rawScenario.choices || rawScenario.actions || [])
+      .slice(0, 4) // Ensure max 4 choices
+      .map((choice: any, index: number) => ({
+        id: `${scenarioId}_choice_${index}`,
+        text: typeof choice === 'string' ? choice : (choice.action || choice.text || choice.description || 'Unknown choice'),
+        hiddenConsequences: this.generateDefaultConsequences(),
+        visibility: 'ALL' as const
+      }));
+
+    // Ensure at least 2 choices
+    while (choices.length < 2) {
+      choices.push(this.createDefaultChoice(`action_${choices.length}`));
+    }
+
+    // Generate asymmetric info for all players
+    const asymmetricInfo: AsymmetricInfo[] = request.context.playerHistories.map(player =>
+      this.createDefaultAsymmetricInfo(player.playerId)
+    );
+
+    return {
+      id: scenarioId,
+      type: request.desiredType || ScenarioType.INVESTIGATION,
+      title: rawScenario.title || 'An Unexpected Turn',
+      narrative: rawScenario.description || rawScenario.narrative || rawScenario.scene || rawScenario.context || '',
+      atmosphere: rawScenario.atmosphere || rawScenario.context,
+      choices,
+      hiddenConsequences: [],
+      asymmetricInfo,
+      timeLimit: request.timeLimit,
+      gmNotes: `AI-generated at ${new Date().toISOString()}`
+    };
+  }
+
+  /**
+   * Generate default consequences for a choice
+   */
+  private generateDefaultConsequences(): Consequence[] {
+    return [{
+      id: `consequence_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: ConsequenceType.IMMEDIATE,
+      description: 'The consequences of your choice unfold...',
+      revealConditions: [{ type: 'IMMEDIATE' }],
+      target: 'PARTY',
+      severity: 'MODERATE'
+    }];
   }
 
   /**
