@@ -242,6 +242,30 @@ router.post('/scenario/:scenario_id/choose', requireAuth, requireGameSession, as
       return;
     }
 
+    // Get AIGMService to register the choice and apply consequences
+    const aigmService = AIGMService.getInstance();
+
+    // Register the choice
+    const choiceRegistered = aigmService.registerChoice(scenario_id, playerId, choice_id);
+    if (!choiceRegistered) {
+      res.status(400).json({
+        success: false,
+        error: 'Choice already made or invalid'
+      });
+      return;
+    }
+
+    // Apply consequences for this choice
+    gameLogger.info({ playerId, choiceId: choice_id, scenarioId: scenario_id }, 'Applying choice consequences');
+
+    const consequenceResult = await aigmService.applyChoiceConsequences(
+      scenario_id,
+      choice_id,
+      playerId,
+      gameCode
+    );
+
+    // Build the choice result with actual consequences
     const choiceResult = {
       player_id: playerId,
       player_name: req.session.username,
@@ -249,25 +273,49 @@ router.post('/scenario/:scenario_id/choose', requireAuth, requireGameSession, as
       choice_text: choice.text,
       timestamp: new Date().toISOString(),
       consequences: {
-        immediate: 'Your choice has been recorded...',
-        preview: 'This decision may have far-reaching effects...'
+        applied: consequenceResult.appliedConsequences.length,
+        worldEffects: consequenceResult.worldEffects.map(e => e.description),
+        playerEffects: Array.from(consequenceResult.playerEffects.entries()).map(([pid, effects]) => ({
+          playerId: pid,
+          effects: effects.map(e => e.description)
+        }))
       }
     };
 
+    // Broadcast choice made event
     io.to(gameCode).emit('choice_made', {
       scenario_id,
       player_name: req.session.username,
       choice_revealed: false
     });
 
-    gameLogger.info({ playerId, choiceId: choice_id, scenarioId: scenario_id }, 'Player made choice');
+    // Broadcast consequence resolution
+    if (consequenceResult.appliedConsequences.length > 0) {
+      io.to(gameCode).emit('consequences_resolved', {
+        scenario_id,
+        player_id: playerId,
+        world_effects: consequenceResult.worldEffects.map(e => ({
+          type: e.effectType,
+          description: e.description
+        })),
+        timestamp: Date.now()
+      });
+    }
+
+    gameLogger.info({
+      playerId,
+      choiceId: choice_id,
+      scenarioId: scenario_id,
+      consequencesApplied: consequenceResult.appliedConsequences.length
+    }, 'Player made choice and consequences applied');
 
     res.json({
       success: true,
       scenario_id,
       choice_id,
       result: choiceResult,
-      message: 'Choice recorded successfully'
+      consequences_applied: consequenceResult.appliedConsequences.length,
+      message: 'Choice recorded and consequences applied'
     });
 
   } catch (error) {

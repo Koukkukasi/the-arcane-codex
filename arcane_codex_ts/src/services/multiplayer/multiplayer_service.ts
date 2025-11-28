@@ -847,13 +847,13 @@ export class MultiplayerService {
   /**
    * Handle scenario choice
    */
-  private handleScenarioChoice(
+  private async handleScenarioChoice(
     socket: Socket,
     payload: { playerId: string; scenarioId: string; choiceId: string },
     callback: (response: SocketResponse) => void
-  ): void {
+  ): Promise<void> {
     try {
-      const { playerId, scenarioId } = payload;
+      const { playerId, scenarioId, choiceId } = payload;
       const playerConnection = this.playerConnections.get(playerId);
 
       if (!playerConnection || !playerConnection.roomId) {
@@ -869,6 +869,26 @@ export class MultiplayerService {
         return;
       }
 
+      // Register the choice with AIGMService
+      const aigmService = AIGMService.getInstance();
+      const choiceRegistered = aigmService.registerChoice(scenarioId, playerId, choiceId);
+
+      if (!choiceRegistered) {
+        callback({ success: false, error: 'Invalid choice or already chosen', timestamp: Date.now() });
+        return;
+      }
+
+      // Apply consequences for this choice
+      multiplayerLogger.info({ playerId, scenarioId, choiceId, roomId },
+        'Applying consequences for scenario choice');
+
+      const consequenceResult = await aigmService.applyChoiceConsequences(
+        scenarioId,
+        choiceId,
+        playerId,
+        roomId
+      );
+
       // Notify other players that this player made a choice (not revealing what)
       socket.to(roomId).emit('scenario_choice_made', {
         playerId,
@@ -876,7 +896,52 @@ export class MultiplayerService {
         timestamp: Date.now()
       });
 
-      callback({ success: true, timestamp: Date.now() });
+      // If consequences were applied, broadcast effects
+      if (consequenceResult.appliedConsequences.length > 0) {
+        // Broadcast world effects to all players
+        this.io.to(roomId).emit('consequences_resolved', {
+          scenarioId,
+          playerId,
+          worldEffects: consequenceResult.worldEffects.map(e => ({
+            type: e.effectType,
+            description: e.description
+          })),
+          timestamp: Date.now()
+        });
+
+        // Send player-specific effects privately
+        for (const [affectedPlayerId, effects] of consequenceResult.playerEffects.entries()) {
+          const affectedConnection = this.playerConnections.get(affectedPlayerId);
+          if (affectedConnection) {
+            this.io.to(affectedConnection.socketId).emit('player_effect_applied', {
+              scenarioId,
+              effects: effects.map(e => ({
+                type: e.effectType,
+                stat: e.stat,
+                oldValue: e.oldValue,
+                newValue: e.newValue,
+                description: e.description
+              })),
+              timestamp: Date.now()
+            });
+          }
+        }
+      }
+
+      // Log any errors but still return success if choice was registered
+      if (consequenceResult.errors.length > 0) {
+        multiplayerLogger.warn({ errors: consequenceResult.errors },
+          'Some consequences failed to apply');
+      }
+
+      callback({
+        success: true,
+        timestamp: Date.now(),
+        data: {
+          choiceId,
+          consequencesApplied: consequenceResult.appliedConsequences.length
+        }
+      });
     } catch (error: any) {
       multiplayerLogger.error({ error }, 'Error handling scenario choice');
       callback({ success: false, error: error.message, timestamp: Date.now() });

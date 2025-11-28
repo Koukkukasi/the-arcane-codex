@@ -15,6 +15,7 @@ import { logger, socketLogger, securityLogger } from './services/logger';
 import { socketAuthMiddleware, AuthenticatedSocket } from './middleware/socketAuth';
 import { TokenCleanupService } from './services/tokenCleanup';
 import { SessionPersistenceService } from './services/sessionPersistence';
+import { AIGMService } from './services/ai_gm_core';
 
 // ============================================
 // SECURITY: Environment Configuration
@@ -116,6 +117,11 @@ app.get('/health', (_req, res) => {
 
 // Initialize Multiplayer Service
 const multiplayerService = MultiplayerService.initialize(io);
+
+// Connect AIGMService to Socket.IO for consequence broadcasting
+const aigmService = AIGMService.getInstance();
+aigmService.setSocketServer(io);
+logger.info('AIGMService connected to Socket.IO for consequence broadcasting');
 
 // Socket.IO Authentication Middleware
 io.use(socketAuthMiddleware);

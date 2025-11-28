@@ -21,6 +21,7 @@ import {
   WorldEffect
 } from '../types/ai_gm';
 import { ScenarioTemplateService } from './scenario_templates';
+import { ConsequenceApplier, ConsequenceApplicationResult } from './consequence_applier';
 
 /**
  * Main AI Game Master service implementing the Singleton pattern
@@ -52,6 +53,9 @@ export class AIGMService {
   /** MCP service integration hook */
   private mcpServiceHook?: any;
 
+  /** Consequence applier for game state updates */
+  private consequenceApplier: ConsequenceApplier;
+
   /**
    * Private constructor for Singleton pattern
    */
@@ -60,6 +64,7 @@ export class AIGMService {
     this.scenarioHistory = new Map();
     this.playerKnowledge = new Map();
     this.templateService = ScenarioTemplateService.getInstance();
+    this.consequenceApplier = ConsequenceApplier.getInstance();
     this.logger = console;
 
     // Default configuration
@@ -376,6 +381,78 @@ export class AIGMService {
   public setMCPServiceHook(hook: any): void {
     this.mcpServiceHook = hook;
     this.log('info', 'MCP service hook registered');
+  }
+
+  /**
+   * Set Socket.IO server for consequence broadcasting
+   * @param io - Socket.IO server instance
+   */
+  public setSocketServer(io: any): void {
+    this.consequenceApplier.setSocketServer(io);
+    this.log('info', 'Socket.IO server registered with ConsequenceApplier');
+  }
+
+  /**
+   * Apply consequences for a player's choice in a scenario
+   * This is the main integration point between AI GM and game state
+   * @param scenarioId - ID of the scenario
+   * @param choiceId - ID of the choice made
+   * @param playerId - ID of the player making the choice
+   * @param partyCode - Party/room code for the game session
+   * @returns Result of applying consequences
+   */
+  public async applyChoiceConsequences(
+    scenarioId: string,
+    choiceId: string,
+    playerId: string,
+    partyCode: string
+  ): Promise<ConsequenceApplicationResult> {
+    const activeScenario = this.activeScenarios.get(scenarioId);
+    if (!activeScenario) {
+      return {
+        success: false,
+        appliedConsequences: [],
+        playerEffects: new Map(),
+        worldEffects: [],
+        errors: [`Scenario ${scenarioId} not found`]
+      };
+    }
+
+    const choice = activeScenario.scenario.choices.find(c => c.id === choiceId);
+    if (!choice) {
+      return {
+        success: false,
+        appliedConsequences: [],
+        playerEffects: new Map(),
+        worldEffects: [],
+        errors: [`Choice ${choiceId} not found in scenario`]
+      };
+    }
+
+    // Get all consequences from the choice
+    const consequences = choice.hiddenConsequences;
+
+    this.log('info', `Applying ${consequences.length} consequences for choice ${choiceId}`);
+
+    // Use the ConsequenceApplier to actually modify game state
+    const result = await this.consequenceApplier.applyConsequences(
+      scenarioId,
+      choiceId,
+      playerId,
+      partyCode,
+      consequences
+    );
+
+    this.log('info', `Applied ${result.appliedConsequences.length} consequences, ${result.errors.length} errors`);
+
+    return result;
+  }
+
+  /**
+   * Get the ConsequenceApplier instance for direct access
+   */
+  public getConsequenceApplier(): ConsequenceApplier {
+    return this.consequenceApplier;
   }
 
   /**
