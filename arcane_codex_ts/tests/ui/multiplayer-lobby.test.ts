@@ -7,7 +7,95 @@ import { test, expect, Page } from '@playwright/test';
 
 const LOBBY_URL = 'http://localhost:3000/lobby';
 
+/**
+ * Helper to dismiss auth modal by registering/logging in
+ * The auth modal blocks all other interactions until dismissed
+ */
+async function dismissAuthModal(page: Page): Promise<void> {
+  // Wait for page to load
+  await page.waitForLoadState('networkidle');
+
+  // Check if auth modal is visible
+  const authModal = page.locator('#authModal');
+  const isVisible = await authModal.isVisible();
+
+  if (!isVisible) {
+    return; // No modal to dismiss
+  }
+
+  // Check if modal has 'visible' class (blocking interactions)
+  const hasVisibleClass = await authModal.evaluate(el => el.classList.contains('visible'));
+  if (!hasVisibleClass) {
+    return; // Modal not blocking
+  }
+
+  // Generate unique username for this test run
+  const uniqueId = `test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const username = uniqueId.substring(0, 20); // Max 20 chars
+  const password = 'testpass123';
+  const email = `${username}@test.com`;
+
+  // Click on Register tab
+  const registerTab = page.locator('.auth-tab:has-text("Register")');
+  if (await registerTab.isVisible()) {
+    await registerTab.click();
+    await page.waitForTimeout(300);
+  }
+
+  // Fill registration form with correct field IDs
+  const regUsername = page.locator('#registerUsername');
+  const regEmail = page.locator('#registerEmail');
+  const regPassword = page.locator('#registerPassword');
+  const regConfirm = page.locator('#registerPasswordConfirm');
+  const btnRegister = page.locator('#btnRegister');
+
+  if (await regUsername.isVisible()) {
+    await regUsername.fill(username);
+    await regEmail.fill(email);
+    await regPassword.fill(password);
+    await regConfirm.fill(password);
+    await btnRegister.click();
+
+    // Wait for registration to complete and modal to be dismissed
+    await page.waitForTimeout(2000);
+
+    // Check if modal is still visible
+    const stillVisible = await authModal.evaluate(el => el.classList.contains('visible'));
+    if (stillVisible) {
+      // Registration might have failed, try login tab
+      const loginTab = page.locator('.auth-tab:has-text("Login")');
+      if (await loginTab.isVisible()) {
+        await loginTab.click();
+        await page.waitForTimeout(300);
+
+        const loginUsername = page.locator('#loginUsername');
+        const loginPassword = page.locator('#loginPassword');
+        const btnLogin = page.locator('#btnLogin');
+
+        await loginUsername.fill(username);
+        await loginPassword.fill(password);
+        await btnLogin.click();
+        await page.waitForTimeout(2000);
+      }
+    }
+  }
+
+  // Final check - wait for modal to definitely be hidden
+  await page.waitForFunction(() => {
+    const modal = document.getElementById('authModal');
+    return !modal || !modal.classList.contains('visible');
+  }, { timeout: 5000 }).catch(() => {
+    // If still visible, continue anyway - some tests might work
+  });
+}
+
 test.describe('Multiplayer Lobby UI', () => {
+
+  // Automatically dismiss auth modal before each test
+  test.beforeEach(async ({ page }) => {
+    await page.goto(LOBBY_URL);
+    await dismissAuthModal(page);
+  });
 
   test.describe('Page Load and Layout', () => {
     test('should load lobby page successfully', async ({ page }) => {
@@ -76,6 +164,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should validate party name input', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const partyNameInput = page.locator('#partyNameInput');
       const createButton = page.locator('#btnCreateParty');
@@ -109,6 +198,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should toggle public party checkbox', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const publicCheckbox = page.locator('#publicPartyCheck');
       const checkboxLabel = page.locator('label[for="publicPartyCheck"]');
@@ -305,6 +395,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should clear input after clicking send', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const chatInput = page.locator('#chatInput');
       const sendButton = page.locator('#btnSendChat');
@@ -341,6 +432,7 @@ test.describe('Multiplayer Lobby UI', () => {
   test.describe('Button Interactions', () => {
     test('should have hover effects on buttons', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const createButton = page.locator('#btnCreateParty');
 
@@ -370,6 +462,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should show loading states', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const createButton = page.locator('#btnCreateParty');
       const partyNameInput = page.locator('#partyNameInput');
@@ -398,6 +491,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should show toast on action', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const createButton = page.locator('#btnCreateParty');
 
@@ -419,6 +513,7 @@ test.describe('Multiplayer Lobby UI', () => {
   test.describe('Public Parties Modal', () => {
     test('should open public parties modal', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       const browseButton = page.locator('#btnBrowsePublic');
       await browseButton.click();
@@ -432,6 +527,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should close modal when clicking close button', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       // Open modal
       await page.locator('#btnBrowsePublic').click();
@@ -449,6 +545,7 @@ test.describe('Multiplayer Lobby UI', () => {
 
     test('should display public parties list', async ({ page }) => {
       await page.goto(LOBBY_URL);
+      await dismissAuthModal(page);
 
       await page.locator('#btnBrowsePublic').click();
       await page.waitForTimeout(300);
