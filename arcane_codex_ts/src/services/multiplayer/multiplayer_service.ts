@@ -12,6 +12,9 @@ import { SessionManager, ManagedSession } from '../session.manager';
 import { GameSessionService } from '../game/GameSessionService';
 import { ScenarioManager } from '../game/ScenarioManager';
 import { BattleService } from '../battle';
+import { AIGMService } from '../ai_gm_core';
+import { ScenarioRequest, ScenarioContext, PlayerHistory, ScenarioType } from '../../types/ai_gm';
+import { CharacterClass, God } from '../../types/game';
 import {
   PlayerConnection,
   RoomState,
@@ -387,6 +390,11 @@ export class MultiplayerService {
     // Submit scenario response event
     socket.on('scenario_response', (payload: unknown, callback?: (response: SocketResponse) => void) => {
       this.handleScenarioResponse(socket, payload as any, callback!);
+    });
+
+    // Request new AI scenario event (host only)
+    socket.on('request_ai_scenario', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleRequestAIScenario(socket, payload as any, callback!);
     });
 
     // Disconnect event
@@ -908,6 +916,125 @@ export class MultiplayerService {
   }
 
   /**
+   * Handle request for new AI scenario (host only, mid-game)
+   */
+  private async handleRequestAIScenario(
+    _socket: Socket,
+    payload: { roomId: string; playerId: string; scenarioType?: string; theme?: string },
+    callback: (response: SocketResponse) => void
+  ): Promise<void> {
+    try {
+      const { roomId, playerId, scenarioType, theme } = payload;
+      const room = this.rooms.get(roomId);
+
+      if (!room) {
+        callback(this.createErrorResponse(SocketErrorCode.ROOM_NOT_FOUND, 'Room not found'));
+        return;
+      }
+
+      // Only host can request new scenarios
+      if (room.hostPlayerId !== playerId) {
+        callback(this.createErrorResponse(SocketErrorCode.UNAUTHORIZED, 'Only host can request new scenarios'));
+        return;
+      }
+
+      // Notify players that AI is generating
+      this.io.to(roomId).emit('scenario_generation_started', {
+        message: 'The AI Game Master is crafting a new scenario...',
+        requestedBy: playerId,
+        timestamp: Date.now()
+      });
+
+      // Build player data from room
+      const playerData = Array.from(room.players.values()).map(p => ({
+        playerId: p.playerId,
+        playerName: p.playerName,
+        characterClass: 'WARRIOR'
+      }));
+
+      // Generate AI scenario
+      const aigmService = AIGMService.getInstance();
+      const scenarioRequest = this.buildScenarioRequest(room, playerData);
+
+      // Override type and theme if specified
+      if (scenarioType) {
+        const typeMap: Record<string, ScenarioType> = {
+          'investigation': ScenarioType.INVESTIGATION,
+          'moral_dilemma': ScenarioType.MORAL_DILEMMA,
+          'combat': ScenarioType.COMBAT_CHOICE,
+          'negotiation': ScenarioType.NEGOTIATION,
+          'discovery': ScenarioType.DISCOVERY,
+          'betrayal': ScenarioType.BETRAYAL
+        };
+        scenarioRequest.desiredType = typeMap[scenarioType.toLowerCase()] || ScenarioType.INVESTIGATION;
+      }
+      if (theme) {
+        scenarioRequest.theme = theme;
+      }
+
+      multiplayerLogger.info({ roomId, scenarioType, theme }, 'Requesting new AI scenario');
+      const aiScenario = await aigmService.generateScenario(scenarioRequest);
+
+      const scenario = {
+        id: aiScenario.id,
+        title: aiScenario.title,
+        narrative: aiScenario.narrative,
+        choices: aiScenario.choices,
+        type: aiScenario.type,
+        ai_generated: true
+      };
+
+      // Update room state
+      const sessionId = this.roomToSession.get(roomId);
+      if (sessionId) {
+        await this.gameSessionService.startScenario(sessionId, scenario.id, scenario);
+      }
+
+      room.sharedState.scenarioState = {
+        scenarioId: scenario.id,
+        scenarioPhase: 0,
+        playersReady: [],
+        choicesMade: new Map(),
+        sharedClues: [],
+        consequencesRevealed: false
+      };
+      room.gamePhase = GamePhase.SCENARIO;
+
+      // Broadcast new scenario to all players
+      this.io.to(roomId).emit('new_scenario', {
+        scenario: {
+          id: scenario.id,
+          title: scenario.title,
+          narrative: scenario.narrative,
+          choices: scenario.choices.map((c: any) => ({
+            id: c.id,
+            text: c.text,
+            description: c.description
+          })),
+          ai_generated: true
+        },
+        timestamp: Date.now()
+      });
+
+      multiplayerLogger.info({ roomId, scenarioId: scenario.id }, 'New AI scenario generated and broadcast');
+      callback(this.createSuccessResponse({ scenarioId: scenario.id, ai_generated: true }));
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Error generating AI scenario');
+
+      // Notify players of failure
+      const room = this.rooms.get(payload.roomId);
+      if (room) {
+        this.io.to(payload.roomId).emit('scenario_generation_failed', {
+          error: 'Failed to generate AI scenario',
+          timestamp: Date.now()
+        });
+      }
+
+      callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, error.message));
+    }
+  }
+
+  /**
    * Handle start game event
    */
   private async handleStartGame(
@@ -938,12 +1065,45 @@ export class MultiplayerService {
 
       const gameSession = await this.gameSessionService.startGameSession(roomId, playerData);
 
-      // Start with a scenario
-      const scenario = this.scenarioManager.getRandomScenario(
-        undefined,
-        1,
-        room.players.size
-      );
+      // Notify players that AI is generating scenario
+      this.io.to(roomId).emit('scenario_generation_started', {
+        message: 'The AI Game Master is crafting your adventure...',
+        timestamp: Date.now()
+      });
+
+      // Generate AI scenario
+      let scenario: any = null;
+      try {
+        const aigmService = AIGMService.getInstance();
+        const scenarioRequest = this.buildScenarioRequest(room, playerData);
+
+        multiplayerLogger.info({ roomId }, 'Requesting AI scenario generation for game start');
+        const aiScenario = await aigmService.generateScenario(scenarioRequest);
+
+        scenario = {
+          id: aiScenario.id,
+          title: aiScenario.title,
+          narrative: aiScenario.narrative,
+          choices: aiScenario.choices,
+          type: aiScenario.type,
+          ai_generated: true
+        };
+
+        multiplayerLogger.info({ roomId, scenarioId: aiScenario.id }, 'AI scenario generated for game');
+      } catch (aiError) {
+        // Fallback to template-based scenario if AI fails
+        multiplayerLogger.warn({ roomId, error: aiError }, 'AI scenario generation failed, using fallback');
+        const fallbackScenario = this.scenarioManager.getRandomScenario(undefined, 1, room.players.size);
+        if (fallbackScenario) {
+          scenario = {
+            id: fallbackScenario.id,
+            title: fallbackScenario.title,
+            narrative: fallbackScenario.narrative,
+            choices: fallbackScenario.choices,
+            ai_generated: false
+          };
+        }
+      }
 
       if (scenario) {
         await this.gameSessionService.startScenario(gameSession.sessionId, scenario.id, scenario);
@@ -967,17 +1127,18 @@ export class MultiplayerService {
           id: scenario.id,
           title: scenario.title,
           narrative: scenario.narrative,
-          choices: scenario.choices.map(c => ({
+          choices: scenario.choices.map((c: any) => ({
             id: c.id,
             text: c.text,
             description: c.description
-          }))
+          })),
+          ai_generated: scenario.ai_generated
         } : null,
         timestamp: Date.now()
       });
 
-      multiplayerLogger.info({ roomId, sessionId: gameSession.sessionId }, 'Game started');
-      callback(this.createSuccessResponse({ sessionId: gameSession.sessionId }));
+      multiplayerLogger.info({ roomId, sessionId: gameSession.sessionId, aiGenerated: scenario?.ai_generated }, 'Game started');
+      callback(this.createSuccessResponse({ sessionId: gameSession.sessionId, aiGenerated: scenario?.ai_generated }));
     } catch (error: any) {
       multiplayerLogger.error({ error }, 'Error starting game');
       callback(this.createErrorResponse(SocketErrorCode.INTERNAL_ERROR, error.message));
@@ -1571,6 +1732,55 @@ export class MultiplayerService {
    */
   public getRoom(roomId: string): RoomState | undefined {
     return this.rooms.get(roomId);
+  }
+
+  /**
+   * Build ScenarioRequest for AI scenario generation
+   */
+  private buildScenarioRequest(_room: RoomState, playerData: { playerId: string; playerName: string; characterClass: string }[]): ScenarioRequest {
+    const playerHistories: PlayerHistory[] = playerData.map(p => ({
+      playerId: p.playerId,
+      playerName: p.playerName,
+      characterClass: (p.characterClass as CharacterClass) || CharacterClass.WARRIOR,
+      godFavor: new Map<God, number>(),
+      specialItems: [],
+      npcRelationships: new Map<string, number>(),
+      knownSecrets: [],
+      personalGoals: [],
+      moralAlignment: { lawChaos: 0, goodEvil: 0 }
+    }));
+
+    const context: ScenarioContext = {
+      playerHistories,
+      partyState: {
+        location: 'Starting Location',
+        activeQuests: [],
+        sharedInventory: [],
+        partyReputation: 0,
+        resources: { gold: 0, supplies: 100, influence: 0 },
+        partyModifiers: []
+      },
+      partyComposition: {
+        playerIds: playerData.map(p => p.playerId),
+        classes: playerData.map(p => (p.characterClass as CharacterClass) || CharacterClass.WARRIOR),
+        averageLevel: 1,
+        partySize: playerData.length
+      },
+      worldState: {
+        factions: new Map(),
+        majorEvents: [],
+        playerActionsHistory: [],
+        worldTime: { day: 1, season: 'SPRING', year: 1 },
+        globalFlags: new Map()
+      }
+    };
+
+    return {
+      context,
+      desiredType: ScenarioType.INVESTIGATION,
+      difficulty: 5,
+      theme: 'dark fantasy adventure'
+    };
   }
 
   /**
