@@ -13,6 +13,7 @@ import { GameSessionService } from '../game/GameSessionService';
 import { ScenarioManager } from '../game/ScenarioManager';
 import { BattleService } from '../battle';
 import { AIGMService } from '../ai_gm_core';
+import { AsymmetricInfoManager } from '../asymmetric_info_manager';
 import { ScenarioRequest, ScenarioContext, PlayerHistory, ScenarioType } from '../../types/ai_gm';
 import { CharacterClass, God } from '../../types/game';
 import {
@@ -77,6 +78,7 @@ export class MultiplayerService {
   private sessionManager: SessionManager;
   private gameSessionService: GameSessionService;
   private scenarioManager: ScenarioManager;
+  private asymmetricInfoManager: AsymmetricInfoManager;
   private rooms: Map<string, RoomState>;
   private playerConnections: Map<string, PlayerConnection>;
   private reconnectionData: Map<string, ReconnectionData>;
@@ -91,11 +93,13 @@ export class MultiplayerService {
     this.sessionManager = SessionManager.getInstance();
     this.gameSessionService = GameSessionService.getInstance();
     this.scenarioManager = ScenarioManager.getInstance();
+    this.asymmetricInfoManager = AsymmetricInfoManager.getInstance();
     this.rooms = new Map();
     this.playerConnections = new Map();
     this.reconnectionData = new Map();
     this.startHeartbeatMonitor();
     this.initializeScenarios();
+    this.setupAsymmetricInfoListeners();
   }
 
   /**
@@ -395,6 +399,16 @@ export class MultiplayerService {
     // Request new AI scenario event (host only)
     socket.on('request_ai_scenario', (payload: unknown, callback?: (response: SocketResponse) => void) => {
       this.handleRequestAIScenario(socket, payload as any, callback!);
+    });
+
+    // Whisper (private message) event
+    socket.on('whisper', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleWhisper(socket, payload as any, callback!);
+    });
+
+    // Get player knowledge event
+    socket.on('get_knowledge', (payload: unknown, callback?: (response: SocketResponse) => void) => {
+      this.handleGetKnowledge(socket, payload as any, callback!);
     });
 
     // Disconnect event
@@ -949,7 +963,7 @@ export class MultiplayerService {
   }
 
   /**
-   * Handle sharing a clue
+   * Handle sharing a clue using AsymmetricInfoManager
    */
   private handleShareClue(
     _socket: Socket,
@@ -966,18 +980,169 @@ export class MultiplayerService {
         return;
       }
 
-      // Send clue to target player
+      // Use AsymmetricInfoManager to properly share the clue
+      const shareSuccess = this.asymmetricInfoManager.shareClue(playerId, targetPlayerId, clueId);
+
+      if (!shareSuccess) {
+        callback({ success: false, error: 'Cannot share this clue', timestamp: Date.now() });
+        return;
+      }
+
+      // Get the clue details to send to the recipient
+      const clues = this.asymmetricInfoManager.getPlayerClues(targetPlayerId);
+      const sharedClue = clues.find(c => c.id === clueId);
+
+      // Send clue to target player with full details
       this.io.to(targetConnection.socketId).emit('clue_received', {
         fromPlayerId: playerId,
+        fromPlayerName: playerConnection.playerName,
         clueId,
+        clue: sharedClue,
         timestamp: Date.now()
       });
 
-      callback({ success: true, timestamp: Date.now() });
+      // Notify sender of successful share
+      callback({
+        success: true,
+        timestamp: Date.now(),
+        data: { clueId, recipientId: targetPlayerId }
+      });
+
+      multiplayerLogger.info({ playerId, targetPlayerId, clueId }, 'Clue shared via AsymmetricInfoManager');
     } catch (error: any) {
       multiplayerLogger.error({ error }, 'Error sharing clue');
       callback({ success: false, error: error.message, timestamp: Date.now() });
     }
+  }
+
+  /**
+   * Handle whisper (private message) between players
+   */
+  private handleWhisper(
+    socket: Socket,
+    payload: { playerId: string; targetPlayerId: string; message: string; isSecret?: boolean },
+    callback: (response: SocketResponse) => void
+  ): void {
+    try {
+      const { playerId, targetPlayerId, message, isSecret } = payload;
+      const playerConnection = this.playerConnections.get(playerId);
+      const targetConnection = this.playerConnections.get(targetPlayerId);
+
+      if (!playerConnection || !targetConnection) {
+        callback({ success: false, error: 'Player not found', timestamp: Date.now() });
+        return;
+      }
+
+      // Verify both players are in the same room
+      if (playerConnection.roomId !== targetConnection.roomId) {
+        callback({ success: false, error: 'Players not in the same room', timestamp: Date.now() });
+        return;
+      }
+
+      // Send whisper to target player only
+      this.io.to(targetConnection.socketId).emit('whisper_received', {
+        fromPlayerId: playerId,
+        fromPlayerName: playerConnection.playerName,
+        message,
+        isSecret: isSecret || false,
+        timestamp: Date.now()
+      });
+
+      // Send confirmation to sender
+      socket.emit('whisper_sent', {
+        toPlayerId: targetPlayerId,
+        toPlayerName: targetConnection.playerName,
+        message,
+        timestamp: Date.now()
+      });
+
+      multiplayerLogger.debug({ playerId, targetPlayerId, isSecret }, 'Whisper sent');
+
+      callback({ success: true, timestamp: Date.now() });
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Error sending whisper');
+      callback({ success: false, error: error.message, timestamp: Date.now() });
+    }
+  }
+
+  /**
+   * Handle request for player's current knowledge/asymmetric info
+   */
+  private handleGetKnowledge(
+    _socket: Socket,
+    payload: { playerId: string; scenarioId?: string },
+    callback: (response: SocketResponse) => void
+  ): void {
+    try {
+      const { playerId, scenarioId } = payload;
+
+      // Get player's discovered clues
+      const clues = this.asymmetricInfoManager.getPlayerClues(playerId);
+
+      // Get scenario-specific knowledge if scenarioId provided
+      let scenarioKnowledge = null;
+      if (scenarioId) {
+        scenarioKnowledge = this.asymmetricInfoManager.getPlayerKnowledge(playerId, scenarioId);
+      }
+
+      callback({
+        success: true,
+        timestamp: Date.now(),
+        data: {
+          playerId,
+          clues,
+          scenarioKnowledge,
+          clueCount: clues.length
+        }
+      });
+    } catch (error: any) {
+      multiplayerLogger.error({ error }, 'Error getting player knowledge');
+      callback({ success: false, error: error.message, timestamp: Date.now() });
+    }
+  }
+
+  /**
+   * Setup listeners for AsymmetricInfoManager events
+   */
+  private setupAsymmetricInfoListeners(): void {
+    // Listen for clue discoveries and broadcast to the player
+    this.asymmetricInfoManager.on('clueDiscovered', (playerId: string, clue: any) => {
+      const connection = this.playerConnections.get(playerId);
+      if (connection) {
+        this.io.to(connection.socketId).emit('clue_discovered', {
+          playerId,
+          clue,
+          timestamp: Date.now()
+        });
+      }
+    });
+
+    // Listen for hidden info reveals
+    this.asymmetricInfoManager.on('hiddenInfoRevealed', (playerId: string, revealId: string, content: any) => {
+      const connection = this.playerConnections.get(playerId);
+      if (connection) {
+        this.io.to(connection.socketId).emit('info_revealed', {
+          playerId,
+          revealId,
+          content,
+          timestamp: Date.now()
+        });
+      }
+    });
+
+    // Listen for deductions made
+    this.asymmetricInfoManager.on('deductionMade', (playerId: string, deduction: any) => {
+      const connection = this.playerConnections.get(playerId);
+      if (connection) {
+        this.io.to(connection.socketId).emit('deduction_made', {
+          playerId,
+          deduction,
+          timestamp: Date.now()
+        });
+      }
+    });
+
+    multiplayerLogger.info('AsymmetricInfoManager listeners configured');
   }
 
   /**
